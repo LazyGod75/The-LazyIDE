@@ -30,7 +30,7 @@ import { runManagerActionHandler } from '../../lib/agents/managerActionDispatch'
 // bot storage/engine modules are deliberately imported at module top (no
 // circular dependency: they never import back from agentsStore).
 import { listBots, saveBot } from '../../lib/bots/botStorage';
-import { launchBotRun, stopBotRun, finishBotRun, registerBotRun, listActiveRunsForBot, getBotRuntimeState, toBotNewMissionInput } from '../../lib/bots/botEngine';
+import { launchBotRun, stopBotRun, finishBotRun, registerBotRun, listActiveRunsForBot, getBotRuntimeState, pruneBotRunsNotLive, toBotNewMissionInput } from '../../lib/bots/botEngine';
 import type { BotConfig } from '../../lib/bots/botTypes';
 import { resolveLazyBotRef, summarizeLazyBot } from '../../lib/bots/botManagerContext';
 import { resolveLazyBotRunModel } from '../../lib/bots/botRunModel';
@@ -5548,6 +5548,30 @@ export function AgentsStoreProvider({ children }: Props) {
             });
           }
 
+          // BOT-RUN ZOMBIE PRUNE (restart lockout root-cause): every LazyBot
+          // run whose mission this boot recovery did NOT leave live is a
+          // zombie — the restart killed the runMission chain that would have
+          // called finishBotRun, so .lazy/bot-runtime.json still lists it
+          // 'running' (sometimes since a PREVIOUS boot, when the mission was
+          // already force-failed and no interrupted-id list mentions it
+          // again). restoreBotRuntime rehydrates such runs on every boot and
+          // the bot can never launch ("already has N concurrent run(s)").
+          // Live = recovered missions the pass left running/queued (native
+          // runner reattaches + queued relaunch candidates) UNION any
+          // mission the user managed to launch during this boot's async load
+          // (mission-vanish race — those live in state.missions already, not
+          // in `recovered`). Idempotent + order-independent (cleans in-memory
+          // AND on-disk runs, before or after restoreBotRuntime),
+          // best-effort/fire-and-forget.
+          const liveBotMissionIds = new Set<string>();
+          for (const m of recovered) {
+            if (m.status === 'running' || m.status === 'queued') liveBotMissionIds.add(m.id);
+          }
+          for (const m of stateRef.current.missions) {
+            if (m.status === 'running' || m.status === 'queued') liveBotMissionIds.add(m.id);
+          }
+          void pruneBotRunsNotLive(liveBotMissionIds);
+
           // RE-FLAG LOOP fix (live QA 2026-09-02 — M82/M93/M94 announced as
           // "failed (interrupted)" by a manager wakeup on EVERY boot, project
           // switch and provider remount; M93 collected 10 pairs of
@@ -5749,6 +5773,22 @@ export function AgentsStoreProvider({ children }: Props) {
             ],
           };
         });
+
+        // Bot-run zombie prune — legacy-path twin of the journal path's
+        // pruneBotRunsNotLive call above (same restart lockout root cause:
+        // the dead process never called finishBotRun, so its run is still
+        // 'running' in .lazy/bot-runtime.json). This fallback force-fails
+        // every running/queued mission, so recovered holds nothing live —
+        // the live set only ever contains a mission the user managed to
+        // launch during this boot's async load (mission-vanish race).
+        const legacyLiveBotMissionIds = new Set<string>();
+        for (const m of recovered) {
+          if (m.status === 'running' || m.status === 'queued') legacyLiveBotMissionIds.add(m.id);
+        }
+        for (const m of stateRef.current.missions) {
+          if (m.status === 'running' || m.status === 'queued') legacyLiveBotMissionIds.add(m.id);
+        }
+        void pruneBotRunsNotLive(legacyLiveBotMissionIds);
 
         // Id-collision hardening (companion to the mission-vanish fix above):
         // ratchet the counter past whatever this session's persisted data
@@ -6550,6 +6590,13 @@ export function AgentsStoreProvider({ children }: Props) {
         t,
       })).then(() => {
         launchPhaseExit(mission.id, 'runMission');
+        // LazyBot missions: end the run's engine bookkeeping + Solari session
+        // release when the relaunched mission settles (same hook addMission's
+        // chain and retryMission use). A queued bot mission relaunched across
+        // a restart keeps its ORIGINAL id, whose run restoreBotRuntime
+        // rehydrated at boot — without this the run would stay 'running'
+        // forever after the mission completes and block every later launch.
+        if (mission.botId) void finishBotRun(mission.id);
       }).catch((err: unknown) => {
         // Failure honesty — same contract as addMission's own catch
         // handler: a rejection here used to mean nothing (this whole
@@ -12679,6 +12726,51 @@ stopAll(action.filter);
           };
         } catch (err) {
           const reason = errorMessage(err);
+          // Auto-recovery: if the bot's launch is blocked by stale (zombie)
+          // runs — engine bookkeeping whose mission is already terminal
+          // (force-failed on a restart / HMR crash without finishBotRun) —
+          // clear them and retry once. Conservative by design: a run is only
+          // treated as stale when its mission is PRESENT in state.missions
+          // with a terminal status. A genuinely live run (running/queued/
+          // paused mission, possibly of another open project) is never
+          // touched — maxConcurrentSessions is a real cap, not a bug.
+          if (reason.includes('concurrent run')) {
+            const byId = new Map(stateRef.current.missions.map((m) => [m.id, m] as const));
+            const staleRuns = listActiveRunsForBot(bot.id).filter((run) => {
+              const mission = byId.get(run.missionId);
+              // Terminal-and-known is the ONLY provably-dead case. A mission
+              // absent from state.missions may still be live in a project
+              // that is not the active one — leave those runs alone here
+              // (stop_lazybot / the next boot sweep handle them).
+              return mission !== undefined && mission.status !== 'running'
+                && mission.status !== 'queued' && mission.status !== 'paused';
+            });
+            if (staleRuns.length > 0) {
+              for (const run of staleRuns) {
+                // The mission is already terminal — only the bot-engine
+                // bookkeeping is stale, so stopBotRun alone is enough;
+                // stopMission would clobber the terminal mission's honest
+                // state (failed → cancelled).
+                await stopBotRun(run).catch(() => {});
+              }
+              try {
+                const resolvedModel2 = resolveLazyBotRunModel(action.model, [_model, getActiveModel().id]);
+                const run = await launchBotRun(bot, action.task, {
+                  model: resolvedModel2.model,
+                  createMission: async (input) => addMission(toBotNewMissionInput(input, { originConversationId: conversationId })),
+                });
+                toast(`LazyBot "${bot.name}" run launched (after stale cleanup) — ${run.missionId}`, 'success');
+                return {
+                  message: `run_lazybot: "${bot.name}" launched after cleaning ${staleRuns.length} stale run(s) — runId: ${run.id}, missionId: ${run.missionId}`,
+                };
+              } catch (err2) {
+                const reason2 = errorMessage(err2);
+                const msg2 = `run_lazybot: could not launch "${bot.name}" (${bot.id}) even after stale cleanup: ${reason2}`;
+                toast(msg2, 'error');
+                return { failed: true, message: msg2 };
+              }
+            }
+          }
           const msg = `run_lazybot: could not launch "${bot.name}" (${bot.id}): ${reason}`;
           toast(msg, 'error');
           return { failed: true, message: msg };

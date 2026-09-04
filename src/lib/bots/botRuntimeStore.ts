@@ -104,6 +104,23 @@ export async function persistActiveRuns(runs: BotRun[]): Promise<void> {
   });
 }
 
+/** Remove every persisted running-run whose missionId is in `missionIds`
+ *  (boot-time zombie sweep — see botEngine.sweepInterruptedBotRuns). Unlike
+ *  persistActiveRuns this edits the file in place, so runs NOT yet restored
+ *  into the in-memory maps (restoreBotRuntime still pending) are also
+ *  dropped instead of being resurrected by a later restore. History and
+ *  lastTime are preserved. Returns how many runs were removed. */
+export async function removePersistedRuns(missionIds: ReadonlySet<string>): Promise<number> {
+  if (missionIds.size === 0) return 0;
+  return enqueue(async () => {
+    const state = await readFile();
+    const before = state.runs.length;
+    state.runs = state.runs.filter((r) => !missionIds.has(r.missionId));
+    if (state.runs.length !== before) await writeFile(state);
+    return before - state.runs.length;
+  });
+}
+
 export async function loadPersistedRuns(): Promise<BotRun[]> {
   return enqueue(async () => (await readFile()).runs.filter((r) => r.status === 'running'));
 }

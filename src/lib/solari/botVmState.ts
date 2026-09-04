@@ -30,7 +30,10 @@ export interface BotVmState {
   lastActionAt?: number;
 }
 
-const lastStateByBot = new Map<string, BotVmState>();
+// Pinned on globalThis to survive Vite dev-mode double module instances
+// (same fix as bus.ts, botVmWindows.ts, botEngine.ts).
+const _g = globalThis as typeof globalThis & { __lazyBotVmStateMap?: Map<string, BotVmState> };
+const lastStateByBot: Map<string, BotVmState> = (_g.__lazyBotVmStateMap ??= new Map());
 
 function resolveBotIdFromBrowserPayload(payload: {
   missionId?: string;

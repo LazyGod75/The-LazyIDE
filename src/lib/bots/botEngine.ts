@@ -27,6 +27,7 @@ import {
   loadBotLastTime,
   loadPersistedRuns,
   persistActiveRuns,
+  removePersistedRuns,
 } from './botRuntimeStore.js';
 
 // ── Cloud tool name constants ──────────────────────────────────────
@@ -204,8 +205,10 @@ export function buildBotToolPolicy(bot: BotConfig): { allowedTools: string[]; de
 }
 
 // ── Runtime state ──────────────────────────────────────────────────
-
-const runtimeStates = new Map<string, BotRuntimeState>();
+// Pinned on globalThis to survive Vite dev-mode double module instances.
+type BotRuntimeStateMap = Map<string, BotRuntimeState>;
+const _g = globalThis as typeof globalThis & { __lazyBotRuntimeStates?: BotRuntimeStateMap; __lazyActiveBotRuns?: Map<string, BotRun>; };
+const runtimeStates: BotRuntimeStateMap = (_g.__lazyBotRuntimeStates ??= new Map());
 
 function getOrCreateState(botId: string): BotRuntimeState {
   let state = runtimeStates.get(botId);
@@ -230,7 +233,7 @@ export function getBotRuntimeState(botId: string): BotRuntimeState {
  *  stopped (stopBotRun), so the values here are exactly the bot's currently
  *  active runs. Powers the `listActiveRunsForBot` helper (the LazyManager's
  *  stop_lazybot action) and the canvas bot node's working/waiting halo. */
-const activeBotRuns = new Map<string, BotRun>();
+const activeBotRuns: Map<string, BotRun> = (_g.__lazyActiveBotRuns ??= new Map());
 
 /** Registers an ALREADY-CREATED mission as a bot's active run (runtime
  *  state + run bookkeeping, keyed by the real mission id). Used by
@@ -313,9 +316,24 @@ function assertBotCanLaunch(bot: BotConfig): void {
   const warning = checkBotBudgetWarning(bot.id);
   if (warning) console.warn(`[lazybot] ${warning}`);
   const max = bot.capabilities.maxConcurrentSessions || 1;
-  // Count committed + in-flight launch slots (state.activeRuns) so two
-  // concurrent launchBotRun calls cannot both pass before registerBotRun.
-  const active = getOrCreateState(bot.id).activeRuns.length;
+  const state = getOrCreateState(bot.id);
+  // Count REAL running runs from activeBotRuns (the source of truth),
+  // not activeRuns which can hold stale ids after HMR/crash. Pending
+  // launch slots (__pending_) still count to prevent double-launch races.
+  const realRunning = [...activeBotRuns.values()].filter(
+    (r) => r.botId === bot.id && r.status === 'running',
+  ).length;
+  const pendingSlots = state.activeRuns.filter((id) => {
+    if (!id.startsWith('__pending_')) return false;
+    const ts = parseInt(id.slice('__pending_'.length, '__pending_'.length + 8), 36);
+    return Date.now() - ts < 30_000;
+  }).length;
+  // Sync activeRuns to reality so listActiveRunsForBot and the UI stay honest.
+  state.activeRuns = [
+    ...[...activeBotRuns.values()].filter((r) => r.botId === bot.id && r.status === 'running').map((r) => r.missionId),
+    ...state.activeRuns.filter((id) => id.startsWith('__pending_') && Date.now() - parseInt(id.slice('__pending_'.length, '__pending_'.length + 8), 36) < 30_000),
+  ];
+  const active = realRunning + pendingSlots;
   if (active >= max) {
     throw new Error(`Bot "${bot.name}" already has ${active} concurrent run(s) (max ${max}).`);
   }
@@ -427,6 +445,62 @@ export function setBotRunSummary(missionId: string, summary: string): void {
  *  simply yield an empty array. */
 export function listActiveRunsForBot(botId: string): BotRun[] {
   return [...activeBotRuns.values()].filter((r) => r.botId === botId && r.status === 'running');
+}
+
+/** Boot-time zombie prune (root-cause fix for the "already has N concurrent
+ *  run(s)" lockout). When the app restarts mid-run, the runMission chain that
+ *  would have called finishBotRun dies with the process: the boot recovery
+ *  pass (applyReplayRecovery / the legacy missions.json fallback, both in
+ *  agentsStore) force-fails the mission, but `.lazy/bot-runtime.json` keeps
+ *  its run marked 'running' — sometimes since a PREVIOUS boot (the mission is
+ *  already 'failed' now, so no interrupted-id list mentions it again).
+ *  restoreBotRuntime then rehydrates that zombie on every boot, so the bot is
+ *  blocked forever: max 1 concurrent run is already "taken" by a mission that
+ *  no longer exists (M105-class incident). This ends bookkeeping for every
+ *  run whose mission is NOT in `liveMissionIds` (the missions the recovery
+ *  pass left genuinely live: native-runner-reattached 'running' + queued
+ *  relaunch candidates). Idempotent and order-independent — it prunes BOTH
+ *  the in-memory maps (restoreBotRuntime may already have run) AND the
+ *  persisted file (restoreBotRuntime may not have run yet), so no later
+ *  restore can resurrect the zombie. Best-effort, never throws. Returns how
+ *  many runs were cleared (in-memory + disk, each logical run counted once). */
+export async function pruneBotRunsNotLive(liveMissionIds: ReadonlySet<string>): Promise<number> {
+  const isLive = (missionId: string) => liveMissionIds.has(missionId);
+  let cleared = 0;
+  const inMemoryClearedIds = new Set<string>();
+  // 1. In-memory runs — restoreBotRuntime may already have rehydrated the
+  //    persisted zombies by the time agentsStore's recovery pass runs.
+  for (const run of [...activeBotRuns.values()]) {
+    if (run.status !== 'running' || isLive(run.missionId)) continue;
+    inMemoryClearedIds.add(run.missionId);
+    cleared += 1;
+    const state = runtimeStates.get(run.botId);
+    if (state) {
+      state.activeRuns = state.activeRuns.filter((id) => id !== run.missionId);
+    }
+    run.status = 'cancelled';
+    run.completedAt = new Date().toISOString();
+    activeBotRuns.delete(run.missionId);
+    // Visible in the bot's RunHistory (same shape stopBotRun uses) — a swept
+    // run must not vanish without a trace.
+    void appendBotRunHistory({ ...run });
+    await releaseAll(run.missionId).catch(() => {});
+  }
+  // 2. Persisted runs — without this a later restoreBotRuntime would re-add
+  //    exactly the zombie we just cleared (restore may not have run yet).
+  const persistedRuns = await loadPersistedRuns();
+  const diskZombies = persistedRuns.filter((r) => !isLive(r.missionId));
+  if (diskZombies.length > 0) {
+    await removePersistedRuns(new Set(diskZombies.map((r) => r.missionId)));
+    for (const run of diskZombies) {
+      if (inMemoryClearedIds.has(run.missionId)) continue; // already counted above
+      cleared += 1;
+      const cancelled = { ...run, status: 'cancelled' as const, completedAt: new Date().toISOString() };
+      void appendBotRunHistory(cancelled);
+      await releaseAll(run.missionId).catch(() => {});
+    }
+  }
+  return cleared;
 }
 
 /** Clear all runtime state — tests and hot-reload only. */
