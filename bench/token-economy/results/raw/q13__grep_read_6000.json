@@ -1,0 +1,49 @@
+{
+  "questionId": "q13",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 4696,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "resolveConcurrencyEnv"
+    ],
+    "filesMatched": 3,
+    "filesPicked": 3
+  },
+  "latencyMs": 9278,
+  "answer": "The four parameters of `resolveConcurrencyEnv()` are:\n\n1. **`rawValue: string | undefined`** — the raw environment variable value to parse\n2. **`fallback: number`** — the value to use when `rawValue` is unset, blank, or non-numeric\n3. **`min: number`** — the minimum allowed concurrency level\n4. **`max: number`** — the maximum allowed concurrency level\n\nFor out-of-range values, the function **clamps the parsed value to the range `[min, max]`** using `Math.min(max, Math.max(min, base))`. This ensures:\n- Values below `min` are clamped up to `min`\n- Values above `max` are clamped down to `max`\n- Values within the range are returned as-is\n\nThe tests confirm this behavior: \"clamps below the minimum\" (e.g., `'0'` and `'-3'` both return `1` when `min = 1`) and \"clamps above the maximum\" (e.g., `'999'` returns `12` when `max = 12`).",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 647,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10453,
+    "costUsd": 0.0319904
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 4,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "fallback",
+        "present": true
+      },
+      {
+        "term": "min",
+        "present": true
+      },
+      {
+        "term": "max",
+        "present": true
+      },
+      {
+        "term": "clamp",
+        "present": true
+      }
+    ]
+  }
+}

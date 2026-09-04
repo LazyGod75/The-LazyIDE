@@ -1,0 +1,67 @@
+{
+  "questionId": "q07",
+  "category": "behavioral",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2973,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 4,
+    "queryTokens": [
+      "commands",
+      "inject-context",
+      "mode",
+      "turn",
+      "had",
+      "been",
+      "replaced",
+      "ide",
+      "raw",
+      "search",
+      "--strip",
+      "--top",
+      "call",
+      "because",
+      "stale",
+      "rust",
+      "comment",
+      "claiming",
+      "mode",
+      "turn",
+      "returns",
+      "empty",
+      "bundled",
+      "sidecar",
+      "real",
+      "underlying",
+      "bug",
+      "workaround",
+      "hiding",
+      "where",
+      "live"
+    ]
+  },
+  "latencyMs": 13066,
+  "answer": "The context provided does not contain the answer to this question. While the code shows the current implementation of `runTurnInjectDetailed` and references to the nudge-style logic, it does not explain:\n\n1. What the actual underlying bug was that caused `mode=turn` to return empty results\n2. Where in the codebase that bug lived\n3. Which Rust comment in search.rs made the stale claim about the bundled sidecar\n\nTo answer this, I would need to see either:\n- The historical Rust comment in `search.rs` that mentioned `mode=turn` returning empty\n- Documentation of the bug fix that addressed the root cause\n- The diff or commit that fixed the underlying issue\n\nIf you can point me to the relevant file or commit, I can help identify the exact bug and its location.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 764,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8381,
+    "costUsd": 0.0263784
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "pickLevel",
+        "present": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "questionId": "q13",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2986,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 5,
+    "queryTokens": [
+      "are",
+      "four",
+      "parameters",
+      "resolveconcurrencyenv",
+      "engine",
+      "src",
+      "util",
+      "concurrency.ts",
+      "out-of-range",
+      "value"
+    ]
+  },
+  "latencyMs": 8197,
+  "answer": "Based on the test cases in the context, the four parameters of `resolveConcurrencyEnv()` are:\n\n1. **envValue** (string | undefined) — the environment variable value to parse\n2. **fallback** (number) — the default value to use if envValue is undefined, blank, or non-numeric\n3. **minimum** (number) — the lower bound for clamping\n4. **maximum** (number) — the upper bound for clamping\n\n**Out-of-range handling:**\n\nWhen an out-of-range value is provided, the function **clamps it** to the min/max bounds:\n- Values below the minimum are clamped UP to the minimum (e.g., `resolveConcurrencyEnv('0', 5, 1, 12)` returns `1`)\n- Values above the maximum are clamped DOWN to the maximum (e.g., `resolveConcurrencyEnv('999', 5, 1, 12)` returns `12`)",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 857,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8625,
+    "costUsd": 0.0275794
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 4,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "fallback",
+        "present": true
+      },
+      {
+        "term": "min",
+        "present": true
+      },
+      {
+        "term": "max",
+        "present": true
+      },
+      {
+        "term": "clamp",
+        "present": true
+      }
+    ]
+  }
+}

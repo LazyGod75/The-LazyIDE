@@ -1,0 +1,55 @@
+{
+  "questionId": "q09",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2810,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 6,
+    "queryTokens": [
+      "engine",
+      "src",
+      "store",
+      "upsert.ts",
+      "two",
+      "functions",
+      "added",
+      "support",
+      "upsertifricher",
+      "write",
+      "path",
+      "they",
+      "one",
+      "line",
+      "each"
+    ]
+  },
+  "latencyMs": 7682,
+  "answer": "The context provided does not contain `engine/src/store/upsert.ts`. I cannot answer this question based on the available context. You would need to share that file's contents or a relevant excerpt to answer what two functions were added for the 'upsertIfRicher' write path.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 304,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8214,
+    "costUsd": 0.0235854
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "isRicherBody",
+        "present": false
+      },
+      {
+        "term": "mergeUpsertHtml",
+        "present": false
+      }
+    ]
+  }
+}

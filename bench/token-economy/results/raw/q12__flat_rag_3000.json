@@ -1,0 +1,56 @@
+{
+  "questionId": "q12",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2958,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 6,
+    "queryTokens": [
+      "engine",
+      "src",
+      "util",
+      "concurrency.ts",
+      "maplimit",
+      "return",
+      "results",
+      "input",
+      "order",
+      "completion",
+      "order",
+      "bounded",
+      "concurrency",
+      "implemented",
+      "chunking",
+      "strategy"
+    ]
+  },
+  "latencyMs": 12643,
+  "answer": "Based on the context provided:\n\n**Results are returned in input order**, not completion order. The docstring explicitly states: \"resolving to results in the SAME order as `items` (independent of completion order).\" This is confirmed by the test at line 1-17 of the test file, which verifies that even when item 0 resolves slowest and item 4 resolves fastest, the output remains `[0, 1, 2, 3, 4]` — matching the original input order.\n\n**Bounded concurrency is implemented via fixed-size chunking:**\n- Items are divided into chunks of size `limit`\n- Each chunk is processed concurrently using `Promise.all()` (line 42-43 of concurrency.ts)\n- The next chunk only starts after the current chunk fully completes\n- The limit is clamped to a minimum of 1 (line 37: `Math.max(1, Math.trunc(limit) || 1)`)\n\nThe chunking strategy is straightforward: the for-loop increments by `boundedLimit` (line 40), slices items into chunks (line 41), awaits all chunk items together (line 42), then pushes results before moving to the next chunk. This ensures concurrency never exceeds `limit` and is \"trivially auditable,\" as the comment notes.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 822,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8656,
+    "costUsd": 0.027484400000000003
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "input order",
+        "present": true
+      },
+      {
+        "term": "chunk",
+        "present": true
+      }
+    ]
+  }
+}

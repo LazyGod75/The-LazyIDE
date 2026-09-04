@@ -1,0 +1,41 @@
+{
+  "questionId": "q15",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "pickLevel"
+    ],
+    "filesMatched": 3,
+    "filesPicked": 1
+  },
+  "latencyMs": 8325,
+  "answer": "The CONTEXT provided doesn't include the `pickLevel()` function or details about the threshold for routing short queries to pure L2. I can see the file structure and some retrieval routing logic, but not the specific code you're asking about.\n\nTo answer this question, I'd need to read the `pickLevel()` function and any related git history or comments documenting the threshold change. Would you like me to look up that function in the file?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 369,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6278,
+    "costUsd": 0.018092399999999998
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "5",
+        "present": false
+      },
+      {
+        "term": "2",
+        "present": true
+      }
+    ]
+  }
+}

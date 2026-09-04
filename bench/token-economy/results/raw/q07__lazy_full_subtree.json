@@ -1,0 +1,33 @@
+{
+  "questionId": "q07",
+  "category": "behavioral",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 3954,
+  "configMeta": {
+    "corpusDir": "engine/src/retrieval",
+    "fileCount": 23
+  },
+  "latencyMs": 6849,
+  "answer": "I don't have the answer in the provided context. The context shows only the `retrieval/` directory structure and metadata, but your question asks about:\n\n1. A bug in `commands/inject-context` (mode=turn)\n2. A Rust comment in a bundled sidecar component\n3. The real underlying issue being masked by the `search --strip --top 6` workaround\n\nNone of this is covered by the retrieval module skeleton you've provided. To answer this, I'd need to see:\n\n- The `commands/inject-context` implementation\n- The Rust sidecar code with the stale comment\n- The actual error or behavior that triggered the workaround\n- The git history or PR that introduced the workaround\n\nCan you point me to the relevant files or run a grep to find where this workaround was introduced?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 473,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10867,
+    "costUsd": 0.0323614
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "pickLevel",
+        "present": false
+      }
+    ]
+  }
+}

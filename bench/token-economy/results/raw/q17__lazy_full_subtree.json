@@ -1,0 +1,49 @@
+{
+  "questionId": "q17",
+  "category": "structural",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 3954,
+  "configMeta": {
+    "corpusDir": "engine/src/retrieval",
+    "fileCount": 23
+  },
+  "latencyMs": 6653,
+  "answer": "I don't have access to the actual header comment of `engine/src/retrieval/router.ts` in the provided context. The context only shows a skeleton summary of the file (403 lines, 7 functions, 6 exports), not the file's contents.\n\nTo answer your question, I would need to read the actual router.ts file to see what the header comment describes about the five phases. Would you like me to read that file?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 333,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10829,
+    "costUsd": 0.0315324
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 5,
+    "hits": [
+      {
+        "term": "l1.ts",
+        "present": false
+      },
+      {
+        "term": "l2.ts",
+        "present": false
+      },
+      {
+        "term": "l3.ts",
+        "present": false
+      },
+      {
+        "term": "l4.ts",
+        "present": false
+      },
+      {
+        "term": "hybrid.ts",
+        "present": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "questionId": "q05",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "#fn-<name>",
+      "#cls-<name>",
+      "toAnchorId"
+    ],
+    "filesMatched": 1,
+    "filesPicked": 1
+  },
+  "latencyMs": 7880,
+  "answer": "Looking at the `toAnchorId()` function in engine/src/annotator/blocks/composers/file-neuron.ts (lines shown in context), it applies three transformations:\n\n1. **Lowercase**: converts the name to lowercase via `.toLowerCase()`\n2. **Replace non-alphanumeric**: replaces any sequence of one or more non-alphanumeric characters (`[^a-z0-9]+`) with a single hyphen\n3. **Strip edges**: removes leading and trailing hyphens via `/^-+|-+$/g`\n\nThis ensures the result is a valid HTML id fragment suitable for use in anchors like `#fn-NAME` or `#cls-NAME`. For example, a symbol named `my-function_2.0()` would become `my-function-2-0`.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 479,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6035,
+    "costUsd": 0.0179604
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "lowercase",
+        "present": true
+      },
+      {
+        "term": "hyphen",
+        "present": true
+      }
+    ]
+  }
+}

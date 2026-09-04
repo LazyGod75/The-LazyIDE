@@ -1,0 +1,34 @@
+{
+  "questionId": "q04",
+  "category": "behavioral",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 91,
+  "configMeta": {
+    "corpusDir": "engine/src/annotator/blocks/composers",
+    "siblingFileCount": 9,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 9217,
+  "answer": "Based on the context provided, the new exported function is **`fileNeuronArticleId`**.\n\nAccording to the context, it's exported from `engine/src/annotator/blocks/composers/file-neuron.ts` and takes a `node` parameter. Given the problem description, this function computes the **persisted id** that the FTS index uses for file-neurons — the id that differs from the logical graph id (file:<relPath>) used by `resolveExistingInbound`.\n\nThis mapping function would allow lookups to use the correct persisted identifier when querying the FTS index, fixing the attachment of conversation-derived decisions/bugs to their target file-neurons.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 618,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 4974,
+    "costUsd": 0.0154094
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 1,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "fileNeuronArticleId",
+        "present": true
+      }
+    ]
+  }
+}

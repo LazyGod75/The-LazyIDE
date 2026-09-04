@@ -1,0 +1,37 @@
+{
+  "questionId": "q20",
+  "category": "structural",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 1535,
+  "configMeta": {
+    "corpusDir": "src/cli/lib",
+    "fileCount": 7
+  },
+  "latencyMs": 8623,
+  "answer": "The context provided only contains a skeleton outline of `agentLoop.ts` showing function signatures and structure, not the actual implementation code. I can see that `claudeCall(messages, model)` exists as a function, and that it likely uses `spawnClaude` from `claude.ts`, but the specific CLI flags passed are not included in this skeleton dump.\n\nTo answer your question about the exact CLI flags, I'd need to read the full implementation of the `claudeCall` function in `src/cli/lib/agentLoop.ts`. Would you like me to fetch that file?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 428,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 7151,
+    "costUsd": 0.0209834
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "--output-format json",
+        "present": false
+      },
+      {
+        "term": "--safe-mode",
+        "present": false
+      }
+    ]
+  }
+}

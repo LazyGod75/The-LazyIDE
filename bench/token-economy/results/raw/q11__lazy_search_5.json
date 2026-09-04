@@ -1,0 +1,37 @@
+{
+  "questionId": "q11",
+  "category": "structural",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 352,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 9805,
+  "answer": "I don't have access to the actual code contents of `engine/src/commands/repair.ts` in the context you've provided. The context only shows that repair.ts exists as a 232-line TypeScript file with 6 functions, but doesn't include the file's actual implementation details.\n\nTo answer your question about:\n1. The specific CLI command added to undo notes invalidated by the dream-noise-cleanup bug\n2. The flags that were added\n3. The default value of the `--tags` flag\n\nI would need to read the repair.ts file directly. Would you like me to do that?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 490,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5283,
+    "costUsd": 0.0157364
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "un-invalidate-noise",
+        "present": false
+      },
+      {
+        "term": "mission,agent,skill",
+        "present": false
+      }
+    ]
+  }
+}

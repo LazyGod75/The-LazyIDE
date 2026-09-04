@@ -1,0 +1,38 @@
+{
+  "questionId": "q11",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 393,
+  "configMeta": {
+    "corpusDir": "engine/src/commands",
+    "siblingFileCount": 64,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 11303,
+  "answer": "I'm unable to read the file directly as all file reading tools are currently disabled in this session. The context provided shows that `engine/src/commands/repair.ts` exists and has an exported function `runRepairUnInvalidateNoise(opts)`, but it doesn't include the actual implementation details, CLI command name, flags, or the default value for the `--tags` flag.\n\nTo answer your question accurately, I would need to access the actual source code of `engine/src/commands/repair.ts`. Could you either:\n1. Enable file reading tools in your session, or\n2. Share the relevant excerpt from repair.ts that defines the CLI command and its flags?",
+  "usage": {
+    "inputTokens": 42,
+    "outputTokens": 825,
+    "cacheReadInputTokens": 96122,
+    "cacheCreationInputTokens": 6186,
+    "costUsd": 0.0274772
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "un-invalidate-noise",
+        "present": false
+      },
+      {
+        "term": "mission,agent,skill",
+        "present": false
+      }
+    ]
+  }
+}

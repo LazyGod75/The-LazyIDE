@@ -1,0 +1,30 @@
+<article id="concept-bug-type-episodic-status-active-tags-auth-bug-performan">
+
+  <header>
+    <h1>Type: episodic | Status: active | Tags: auth, bug, performance</h1>
+    <dl>
+      <dt>Kind</dt><dd>bug</dd>
+      <dt>Confidence</dt><dd>0.01</dd>
+      <dt>Date</dt><dd>2026-05-19</dd>
+    </dl>
+  </header>
+
+  <div><a href="#/tradelab">Tradelab</a> / <a href="#/tradelab/concepts">Concepts</a></div>
+
+  <section>
+    <p>bug concept — Type: episodic | Status: active | Tags: auth, bug, performance</p>
+  </section>
+
+  <section>
+    <p>Type: episodic | Status: active | Tags: auth, bug, performance, llm, python, docs, shell, config | Source: session:dream-ca39c6cd | Confidence: 0.01</p>
+    <p>Auth middleware adds 200ms+ latency per request due to redundant token validation calls. JWT verification hits the database on every request instead of using the in-memory cache.</p>
+  </section>
+
+  <section>
+    <h3>Related neurons</h3>
+    <ul>
+      <li><a href="#/file:src/middleware/auth.py">src/middleware/auth.py</a></li>
+      <li><a href="#/file:src/cache/token_cache.py">src/cache/token_cache.py</a></li>
+    </ul>
+  </section>
+</article>

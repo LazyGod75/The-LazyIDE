@@ -1,0 +1,15 @@
+{
+  "questionId": "q01",
+  "category": "behavioral",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 558,
+  "configMeta": {
+    "corpusDir": "engine/src/graph",
+    "siblingFileCount": 29,
+    "leafKind": "symbol-anchor"
+  },
+  "error": "claude exited 1: ",
+  "correct": false
+}

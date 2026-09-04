@@ -1,0 +1,41 @@
+{
+  "questionId": "q08",
+  "category": "structural",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 70,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 23552,
+  "answer": "I'm unable to read the file `engine/src/commands/inject-context/markers.ts` because it's outside the allowed working directories for this session (which is restricted to `bench/token-economy`). \n\nThe file is referenced in the context provided, but its contents aren't included, so I cannot answer your question about the three values of the `NudgeStyle` type and which is the default.\n\nCould you either:\n1. Share the contents of the `NudgeStyle` type definition from that file, or\n2. Navigate to that file and I can read it from there?",
+  "usage": {
+    "inputTokens": 70,
+    "outputTokens": 1582,
+    "cacheReadInputTokens": 176756,
+    "cacheCreationInputTokens": 16270,
+    "costUsd": 0.0590126
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 3,
+    "hits": [
+      {
+        "term": "skill",
+        "present": false
+      },
+      {
+        "term": "tool",
+        "present": false
+      },
+      {
+        "term": "none",
+        "present": false
+      }
+    ]
+  }
+}

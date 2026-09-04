@@ -1,0 +1,95 @@
+node_modules/
+dist/
+.env*
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Caches and indexes
+_cache/
+*.sqlite
+*.sqlite-journal
+*.db
+
+# Downloaded ML models (~500MB)
+models/
+
+# Telemetry and reports
+telemetry.jsonl
+bench/reports/
+bench/results/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.example.json
+
+# User content (must NEVER be in LazyBrain engine repo)
+brain/
+!examples/sample-brain/
+
+# Local config
+settings.local.json
+
+# Binary artifacts
+*.bin
+
+# Project-specific scratch artifacts (not part of LazyBrain itself)
+*-scratch.html
+NOTES_SUMMARY*.md
+bash.exe.stackdump
+SHOULD-NOT-USE/
+
+# Bench data (third-party datasets)
+bench/data/
+.lazybrain/
+
+# Brain backup directories and files created by prune/wipe operations
+notes_backup_*/
+*.backup
+
+# Internal planning/inspiration docs — kept local, not published
+docs/superpowers/
+docs/MEGA-PROMPT.md
+docs/FUSION-PLAN.md
+docs/PLAN-knowledge-nodes.md
+docs/COMPARISON-vs-UA-GRAPHIFY.md
+
+# Normative spec — kept local/private, not published (owner decision)
+spec/
+
+# Internal audit and lint scratch output
+AUDIT-LAZYBRAIN.md
+lint_*.txt
+
+# Python bytecode (vibe tool validation)
+__pycache__/
+
+# Playwright / test artifacts
+test-output.txt
+test_output.txt
+test-results/
+playwright-report/
+.cache/
+
+# Generated demo/publish site output — build artifacts, not source
+# NOTE: /demo/ is intentionally NOT listed here — it is the committed real-brain
+# demo (scoped to lazybrain topic, public-strict scrubbed) served via GitHub Pages.
+/demo-site/
+/_site/
+/public-site/
+/public/
+
+# Generated coverage reports and build logs
+coverage/
+build-output.txt
+*-output.txt
+
+# Teams nested build artifacts — belt-and-suspenders (teams/.gitignore covers these too)
+teams/node_modules/
+teams/dist/
+teams/data/
+teams/coverage/

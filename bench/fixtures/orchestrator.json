@@ -1,0 +1,111 @@
+{
+  "scenarios": [
+    {
+      "id": "routing-basic",
+      "name": "Basic routing: code task → Coder, review task → Reviewer",
+      "steps": [
+        { "id": "s1", "task": "Implement auth module", "expectedAgent": "Coder", "assignedAgent": "Coder" },
+        { "id": "s2", "task": "Review PR #42", "expectedAgent": "Reviewer", "assignedAgent": "Reviewer" },
+        { "id": "s3", "task": "Write unit tests", "expectedAgent": "Coder", "assignedAgent": "Coder" }
+      ],
+      "nodes": [
+        { "id": "n1" },
+        { "id": "n2" },
+        { "id": "n3" }
+      ],
+      "edges": [
+        { "source": "n1", "target": "n2" },
+        { "source": "n2", "target": "n3" }
+      ],
+      "macros": { "used": 1, "total": 2 }
+    },
+    {
+      "id": "routing-parallel",
+      "name": "Parallel routing: 3 independent tasks dispatched simultaneously",
+      "steps": [
+        { "id": "s1", "task": "Fix login bug", "expectedAgent": "Coder", "assignedAgent": "Coder" },
+        { "id": "s2", "task": "Update docs", "expectedAgent": "Writer", "assignedAgent": "Writer" },
+        { "id": "s3", "task": "Run security scan", "expectedAgent": "Auditor", "assignedAgent": "Auditor" }
+      ],
+      "nodes": [
+        { "id": "n1" },
+        { "id": "n2" },
+        { "id": "n3" },
+        { "id": "n4" }
+      ],
+      "edges": [
+        { "source": "n1", "target": "n2" },
+        { "source": "n1", "target": "n3" },
+        { "source": "n1", "target": "n4" }
+      ],
+      "macros": { "used": 2, "total": 3 }
+    },
+    {
+      "id": "routing-failure-recovery",
+      "name": "Failure recovery: failed node triggers replan",
+      "steps": [
+        { "id": "s1", "task": "Deploy to staging", "expectedAgent": "Deployer", "assignedAgent": "Deployer" },
+        { "id": "s2", "task": "Run integration tests", "expectedAgent": "Tester", "assignedAgent": "Tester" },
+        { "id": "s3", "task": "Fix failing test", "expectedAgent": "Coder", "assignedAgent": "Coder" },
+        { "id": "s4", "task": "Re-run tests", "expectedAgent": "Tester", "assignedAgent": "Tester" }
+      ],
+      "nodes": [
+        { "id": "n1" },
+        { "id": "n2" },
+        { "id": "n3" },
+        { "id": "n4" },
+        { "id": "n5" }
+      ],
+      "edges": [
+        { "source": "n1", "target": "n2" },
+        { "source": "n2", "target": "n3" },
+        { "source": "n3", "target": "n4" },
+        { "source": "n4", "target": "n5" }
+      ],
+      "macros": { "used": 0, "total": 4 }
+    },
+    {
+      "id": "routing-contest",
+      "name": "Contest selection: 3 agents compete, best output wins",
+      "steps": [
+        { "id": "s1", "task": "Design API schema", "expectedAgent": "Architect", "assignedAgent": "Architect" },
+        { "id": "s2", "task": "Implement schema (contest)", "expectedAgent": "Coder", "assignedAgent": "Coder" }
+      ],
+      "nodes": [
+        { "id": "n1" },
+        { "id": "n2" },
+        { "id": "n3" },
+        { "id": "n4" },
+        { "id": "n5" }
+      ],
+      "edges": [
+        { "source": "n1", "target": "n2" },
+        { "source": "n1", "target": "n3" },
+        { "source": "n1", "target": "n4" },
+        { "source": "n2", "target": "n5" },
+        { "source": "n3", "target": "n5" },
+        { "source": "n4", "target": "n5" }
+      ],
+      "macros": { "used": 1, "total": 2 }
+    },
+    {
+      "id": "routing-misassigned",
+      "name": "Misassigned routing: 1 of 3 tasks assigned to wrong agent",
+      "steps": [
+        { "id": "s1", "task": "Write migration script", "expectedAgent": "Coder", "assignedAgent": "Coder" },
+        { "id": "s2", "task": "Review migration", "expectedAgent": "Reviewer", "assignedAgent": "Coder" },
+        { "id": "s3", "task": "Deploy migration", "expectedAgent": "Deployer", "assignedAgent": "Deployer" }
+      ],
+      "nodes": [
+        { "id": "n1" },
+        { "id": "n2" },
+        { "id": "n3" }
+      ],
+      "edges": [
+        { "source": "n1", "target": "n2" },
+        { "source": "n2", "target": "n3" }
+      ],
+      "macros": { "used": 1, "total": 3 }
+    }
+  ]
+}

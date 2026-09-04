@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; base-uri 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LazyBrain — Knowledge Graph</title>
+  <link rel="stylesheet" href="styles/graph.css">
+  <!-- vis-network vendored locally — no CDN dependency -->
+  <script src="lib/vendor/vis-network.min.js"></script>
+</head>
+<body>
+  <!-- Loading overlay -->
+  <div id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading graph…</div>
+  </div>
+
+  <!-- ====================================================
+       TOOLBAR
+       ==================================================== -->
+  <div id="toolbar">
+    <div class="brand">Lazy<span>Brain</span></div>
+    <div class="toolbar-sep"></div>
+
+    <!-- Search -->
+    <input
+      type="text"
+      id="toolbar-search"
+      placeholder="Search nodes… (S)"
+      autocomplete="off"
+      aria-label="Search nodes"
+    >
+
+    <div class="toolbar-sep"></div>
+
+    <!-- Stats -->
+    <span class="stat-badge">
+      <span id="stat-nodes">0</span> nodes · <span id="stat-edges">0</span> edges
+    </span>
+
+    <div class="toolbar-spacer"></div>
+
+    <!-- Action buttons -->
+    <button class="tb-btn" id="btn-fit" title="Fit to screen (F)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+      </svg>
+      Fit
+    </button>
+
+    <button class="tb-btn" id="btn-path" title="Path finder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 3l18 18M3 12h.01M12 3v.01M21 12h-.01M12 21v-.01"/>
+        <circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/>
+      </svg>
+      Path
+    </button>
+
+    <button class="tb-btn" id="btn-filter" title="Filters">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+      </svg>
+      Filter
+    </button>
+
+    <button class="tb-btn" id="btn-export" title="Export as PNG">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Export
+    </button>
+
+    <button class="tb-btn" id="btn-theme" title="Toggle dark/light mode">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ====================================================
+       GRAPH AREA
+       ==================================================== -->
+  <div id="graph-container">
+    <div id="graph-network"></div>
+  </div>
+
+  <!-- ====================================================
+       LEFT SIDEBAR — Legend + Filter + Path
+       ==================================================== -->
+  <div class="sidebar" id="left-sidebar">
+
+    <!-- Cluster legend -->
+    <div class="panel" id="panel-legend">
+      <div class="panel-header" data-target="panel-legend">
+        <span class="panel-title">Clusters</span>
+        <span class="panel-toggle">&#9660;</span>
+      </div>
+      <div class="panel-body">
+        <div id="legend-list"></div>
+      </div>
+    </div>
+
+    <!-- Path finder — hidden by default -->
+    <div class="panel" id="panel-path" style="display:none;">
+      <div class="panel-header" data-target="panel-path">
+        <span class="panel-title">Path Finder</span>
+        <span class="panel-toggle">&#9660;</span>
+      </div>
+      <div class="panel-body">
+        <div class="path-row">
+          <input class="path-input" id="path-from" placeholder="From node ID or title…" autocomplete="off">
+          <input class="path-input" id="path-to"   placeholder="To node ID or title…"   autocomplete="off">
+        </div>
+        <button class="path-find-btn" id="path-find-btn">Find Shortest Path</button>
+        <div class="path-result" id="path-result"></div>
+      </div>
+    </div>
+
+    <!-- Edge filter — hidden by default -->
+    <div class="panel" id="panel-filter" style="display:none;">
+      <div class="panel-header" data-target="panel-filter">
+        <span class="panel-title">Filters</span>
+        <span class="panel-toggle">&#9660;</span>
+      </div>
+      <div class="panel-body">
+
+        <div class="filter-group">
+          <div class="filter-label">Edge type</div>
+          <div class="filter-chips">
+            <button class="chip active" data-edge-type="EXTRACTED">Extracted</button>
+            <button class="chip active" data-edge-type="INFERRED">Inferred</button>
+            <button class="chip active" data-edge-type="AMBIGUOUS">Ambiguous</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-label">Min confidence</div>
+          <div class="range-row">
+            <span>0</span>
+            <input type="range" id="conf-range" min="0" max="1" step="0.05" value="0">
+            <span id="conf-val">0</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ====================================================
+       RIGHT SIDEBAR — Info panel
+       ==================================================== -->
+  <div id="info-panel" class="panel">
+    <div class="panel-header" style="cursor:default;">
+      <span class="panel-title">Node Info</span>
+      <button class="info-close" id="info-close" title="Close (Esc)">&times;</button>
+    </div>
+    <div class="panel-body" id="info-body">
+      <!-- populated dynamically -->
+    </div>
+  </div>
+
+  <!-- ====================================================
+       ZOOM CONTROLS
+       ==================================================== -->
+  <div id="zoom-controls">
+    <button class="zoom-btn" id="zoom-in"    title="Zoom in">+</button>
+    <button class="zoom-btn small-text" id="zoom-fit"  title="Fit (F)">fit</button>
+    <button class="zoom-btn" id="zoom-out"   title="Zoom out">−</button>
+  </div>
+
+  <!-- Back link -->
+  <a href="./" id="back-link">&#8592; Wiki</a>
+
+  <!-- Keyboard shortcut hint -->
+  <div id="shortcut-hint">
+    <kbd>F</kbd> fit &nbsp; <kbd>S</kbd> search &nbsp; <kbd>Esc</kbd> clear
+  </div>
+
+  <!-- ====================================================
+       MAIN SCRIPT (extracted to lib/graph.js — no inline code)
+       ==================================================== -->
+  <script src="lib/graph.js"></script>
+</body>
+</html>

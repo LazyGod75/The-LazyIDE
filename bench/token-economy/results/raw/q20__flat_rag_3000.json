@@ -1,0 +1,57 @@
+{
+  "questionId": "q20",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2989,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 6,
+    "queryTokens": [
+      "src",
+      "cli",
+      "lib",
+      "agentloop.ts",
+      "claude-backend",
+      "fallback",
+      "claudecall",
+      "shells",
+      "out",
+      "claude",
+      "cli",
+      "via",
+      "spawnsync.",
+      "exact",
+      "cli",
+      "flags",
+      "pass"
+    ]
+  },
+  "latencyMs": 10486,
+  "answer": "The context provided does not contain the file `src/cli/lib/agentLoop.ts` or details about its `claudeCall` function and the specific CLI flags it passes via `spawnSync`.\n\nWhile the context shows several Claude CLI wrapper files (`engine/src/util/claude-cli.ts`, `engine/src/commands/extract.ts`), the relevant function signatures are either incomplete (the `runClaudeCli` snippet at line 360 of extract.ts cuts off mid-function before showing the `args` array) or call a `spawnClaude` helper that isn't defined in the provided snippets.\n\nTo answer your question accurately, I would need to see the actual implementation in `src/cli/lib/agentLoop.ts` or the complete definition of the spawn call with its flags.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 644,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8639,
+    "costUsd": 0.0265414
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "--output-format json",
+        "present": false
+      },
+      {
+        "term": "--safe-mode",
+        "present": false
+      }
+    ]
+  }
+}

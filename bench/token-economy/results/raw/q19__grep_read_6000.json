@@ -1,0 +1,55 @@
+{
+  "questionId": "q19",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 5645,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "--mode",
+      "lazybrain",
+      "--max-tokens"
+    ],
+    "filesMatched": 76,
+    "filesPicked": 3
+  },
+  "latencyMs": 6632,
+  "answer": "I don't see that information in the provided context. The grep results shown are from `config.test.ts`, `config.ts`, and `init-vibe.ts`, which cover config discovery and Vibe integration, but don't mention the `inject-context` command or its `--mode` option values or `--max-tokens` defaults.\n\nTo answer your question, I would need to see the source file that defines the `inject-context` command (likely in `engine/src/commands/` directory based on the file structure shown).",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 302,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 11752,
+    "costUsd": 0.0341784
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 5,
+    "hits": [
+      {
+        "term": "session",
+        "present": false
+      },
+      {
+        "term": "turn",
+        "present": false
+      },
+      {
+        "term": "marker",
+        "present": false
+      },
+      {
+        "term": "highlights",
+        "present": false
+      },
+      {
+        "term": "3000",
+        "present": false
+      }
+    ]
+  }
+}

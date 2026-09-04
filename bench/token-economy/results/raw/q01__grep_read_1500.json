@@ -1,0 +1,41 @@
+{
+  "questionId": "q01",
+  "category": "behavioral",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "parseFile"
+    ],
+    "filesMatched": 6,
+    "filesPicked": 1
+  },
+  "latencyMs": 7253,
+  "answer": "I can see the test file `engine/src/graph/__tests__/ast-parser.test.ts` in the context, but the context does not include the actual implementation of `engine/src/graph/ast-parser.ts` itself, which is where the fix would be located.\n\nTo answer your question about the specific call and control-flow construct used to fix the WASM Tree memory leak in `parseFile()`, I would need to see the implementation file. Can you share the contents of `ast-parser.ts`, or would you like me to read it from the repository?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 378,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6229,
+    "costUsd": 0.0180284
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "tree.delete",
+        "present": false
+      },
+      {
+        "term": "finally",
+        "present": false
+      }
+    ]
+  }
+}

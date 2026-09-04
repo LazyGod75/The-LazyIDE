@@ -1,0 +1,41 @@
+{
+  "questionId": "q09",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1416,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "upsertIfRicher"
+    ],
+    "filesMatched": 3,
+    "filesPicked": 2
+  },
+  "latencyMs": 10258,
+  "answer": "Based on the context provided, the two functions added to `engine/src/store/upsert.ts` to support the `upsertIfRicher` write path are:\n\n1. **`isRicherBody`** — Compares two HTML strings to determine if one is \"richer\" (has strictly more alphanumeric words than the other).\n\n2. **`mergeUpsertHtml`** — Merges existing and candidate HTML, preserving the original `data-cerveau-created` timestamp while refreshing `data-cerveau-updated` to the current time.\n\nBoth are imported and used in `engine/src/store/writer.ts` in the `upsertExisting()` function to implement the smart upsert logic.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 708,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6599,
+    "costUsd": 0.0207624
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "isRicherBody",
+        "present": true
+      },
+      {
+        "term": "mergeUpsertHtml",
+        "present": true
+      }
+    ]
+  }
+}

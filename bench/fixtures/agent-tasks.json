@@ -1,0 +1,103 @@
+{
+  "_comment": "Synthetic agent task golden set. No paid model calls by default — dry/fixture mode only.",
+  "tasks": [
+    {
+      "id": "task-pure-fn-clamp",
+      "title": "Implement clamp utility",
+      "spec": "Write a pure ESM function clamp(value, min, max) that returns value clamped to [min, max]. No mutation. Export it as default. Include a passing test file that covers: value below min, value above max, value within range, min === max edge case.",
+      "outputFile": "bench/agent-output/clamp.mjs",
+      "testFile": "bench/agent-output/clamp.test.mjs",
+      "scorer": {
+        "checks": [
+          {
+            "id": "exports-default",
+            "description": "Output file exports a default function",
+            "pattern": "export default"
+          },
+          {
+            "id": "no-mutation",
+            "description": "No direct object/array mutation (no assignments to .x = )",
+            "patternAbsent": "\\.\\w+ = [^=]"
+          },
+          {
+            "id": "handles-below-min",
+            "description": "Test covers value below min",
+            "testPattern": "below|min|lower|less"
+          },
+          {
+            "id": "handles-above-max",
+            "description": "Test covers value above max",
+            "testPattern": "above|max|higher|greater"
+          },
+          {
+            "id": "handles-within-range",
+            "description": "Test covers value within range",
+            "testPattern": "within|range|between|inside"
+          }
+        ]
+      }
+    },
+    {
+      "id": "task-pure-fn-groupby",
+      "title": "Implement groupBy utility",
+      "spec": "Write a pure ESM function groupBy(array, keyFn) that returns a new object grouping array elements by the string key returned by keyFn. No mutation of the input array. Export as default. Include a test file with at least 3 assertions.",
+      "outputFile": "bench/agent-output/groupBy.mjs",
+      "testFile": "bench/agent-output/groupBy.test.mjs",
+      "scorer": {
+        "checks": [
+          {
+            "id": "exports-default",
+            "description": "Output file exports a default function",
+            "pattern": "export default"
+          },
+          {
+            "id": "returns-object",
+            "description": "Returns a plain object (uses {} or Object pattern)",
+            "pattern": "\\{\\}"
+          },
+          {
+            "id": "no-input-mutation",
+            "description": "Does not call array.push / array.splice / array.sort on input",
+            "patternAbsent": "array\\.push|array\\.splice|array\\.sort"
+          },
+          {
+            "id": "test-assertions",
+            "description": "Test file contains at least 3 assertions",
+            "testMinOccurrences": { "pattern": "assert|expect|deepEqual|strictEqual", "min": 3 }
+          }
+        ]
+      }
+    },
+    {
+      "id": "task-pure-fn-debounce",
+      "title": "Implement debounce utility",
+      "spec": "Write a pure ESM function debounce(fn, delayMs) that returns a new function. When the returned function is called repeatedly, fn fires only after delayMs milliseconds of silence. No global state mutation. Export as default. Include a test file using fake timers.",
+      "outputFile": "bench/agent-output/debounce.mjs",
+      "testFile": "bench/agent-output/debounce.test.mjs",
+      "scorer": {
+        "checks": [
+          {
+            "id": "exports-default",
+            "description": "Output file exports a default function",
+            "pattern": "export default"
+          },
+          {
+            "id": "uses-setTimeout",
+            "description": "Implementation uses setTimeout",
+            "pattern": "setTimeout"
+          },
+          {
+            "id": "clears-previous",
+            "description": "Clears the previous timer on re-call",
+            "pattern": "clearTimeout"
+          },
+          {
+            "id": "test-fake-timers",
+            "description": "Test uses fake/mock timers",
+            "testPattern": "fake|useFake|fake_timer|fakeTimers|vi\\.useFakeTimers|jest\\.useFakeTimers"
+          }
+        ]
+      }
+    }
+  ]
+}

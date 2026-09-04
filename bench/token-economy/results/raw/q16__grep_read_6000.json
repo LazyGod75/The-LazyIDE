@@ -1,0 +1,38 @@
+{
+  "questionId": "q16",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 5998,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "pickLevel",
+      "L2_L3_HYBRID"
+    ],
+    "filesMatched": 10,
+    "filesPicked": 4
+  },
+  "latencyMs": 12534,
+  "answer": "According to the comment in `pickLevel()` (router.ts, lines for the L2_L3_HYBRID case):\n\nThe range was **widened from 6-15 to 3-15 tokens**.\n\nThe comment explains the rationale:\n> \"Widened from 6-15 so short natural-language questions get semantic recall (via RRF fusion with keyword search) instead of being stuck keyword-only.\"\n\nThis change allows 3-5 token queries (like \"how does auth work\") to reach semantic search via the L2_L3_HYBRID hybrid path, rather than being routed to keyword-only L2.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 767,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 12701,
+    "costUsd": 0.0393424
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 1,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "6-15",
+        "present": true
+      }
+    ]
+  }
+}

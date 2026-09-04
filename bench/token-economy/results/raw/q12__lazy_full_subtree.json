@@ -1,0 +1,37 @@
+{
+  "questionId": "q12",
+  "category": "structural",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 3367,
+  "configMeta": {
+    "corpusDir": "engine/src/util",
+    "fileCount": 21
+  },
+  "latencyMs": 7905,
+  "answer": "The context provided does not include the actual implementation of `mapLimit()` in `concurrency.ts`—only its signature `mapLimit(items, limit, fn)` and export information. To answer your specific questions about:\n\n1. Whether results are returned in input order or completion order\n2. How bounded concurrency is implemented\n3. What chunking strategy is used\n\nI would need to read the actual file content at `engine/src/util/concurrency.ts`. Would you like me to read that file to get those details?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 388,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 9712,
+    "costUsd": 0.0284554
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "input order",
+        "present": true
+      },
+      {
+        "term": "chunk",
+        "present": true
+      }
+    ]
+  }
+}

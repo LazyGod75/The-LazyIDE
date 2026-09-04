@@ -1,0 +1,6021 @@
+{
+  "generatedAt": "2026-08-16T11:07:10.278Z",
+  "summary": {
+    "source": {
+      "full": 21,
+      "n": 24,
+      "ceil": 0.875,
+      "struct": 0.8824,
+      "behav": 0.8571,
+      "meanTokens": 5000,
+      "meanRecall": 0.9167
+    },
+    "cap12_surgical": {
+      "full": 13,
+      "n": 24,
+      "ceil": 0.5417,
+      "struct": 0.4706,
+      "behav": 0.7143,
+      "meanTokens": 1107,
+      "meanRecall": 0.6458
+    },
+    "cap12_surgicalPlusHeader": {
+      "full": 13,
+      "n": 24,
+      "ceil": 0.5417,
+      "struct": 0.4706,
+      "behav": 0.7143,
+      "meanTokens": 1239,
+      "meanRecall": 0.6458
+    },
+    "cap12_bodyOnly": {
+      "full": 7,
+      "n": 24,
+      "ceil": 0.2917,
+      "struct": 0.2353,
+      "behav": 0.4286,
+      "meanTokens": 76,
+      "meanRecall": 0.4583
+    },
+    "cap24_surgical": {
+      "full": 15,
+      "n": 24,
+      "ceil": 0.625,
+      "struct": 0.5882,
+      "behav": 0.7143,
+      "meanTokens": 1129,
+      "meanRecall": 0.7083
+    },
+    "cap24_surgicalPlusHeader": {
+      "full": 15,
+      "n": 24,
+      "ceil": 0.625,
+      "struct": 0.5882,
+      "behav": 0.7143,
+      "meanTokens": 1271,
+      "meanRecall": 0.7083
+    },
+    "cap24_bodyOnly": {
+      "full": 9,
+      "n": 24,
+      "ceil": 0.375,
+      "struct": 0.3529,
+      "behav": 0.4286,
+      "meanTokens": 108,
+      "meanRecall": 0.5208
+    },
+    "cap40_surgical": {
+      "full": 16,
+      "n": 24,
+      "ceil": 0.6667,
+      "struct": 0.6471,
+      "behav": 0.7143,
+      "meanTokens": 1150,
+      "meanRecall": 0.7292
+    },
+    "cap40_surgicalPlusHeader": {
+      "full": 16,
+      "n": 24,
+      "ceil": 0.6667,
+      "struct": 0.6471,
+      "behav": 0.7143,
+      "meanTokens": 1292,
+      "meanRecall": 0.7292
+    },
+    "cap40_bodyOnly": {
+      "full": 10,
+      "n": 24,
+      "ceil": 0.4167,
+      "struct": 0.4118,
+      "behav": 0.4286,
+      "meanTokens": 129,
+      "meanRecall": 0.5417
+    },
+    "cap80_surgical": {
+      "full": 17,
+      "n": 24,
+      "ceil": 0.7083,
+      "struct": 0.6471,
+      "behav": 0.8571,
+      "meanTokens": 1163,
+      "meanRecall": 0.7708
+    },
+    "cap80_surgicalPlusHeader": {
+      "full": 17,
+      "n": 24,
+      "ceil": 0.7083,
+      "struct": 0.6471,
+      "behav": 0.8571,
+      "meanTokens": 1305,
+      "meanRecall": 0.7708
+    },
+    "cap80_bodyOnly": {
+      "full": 11,
+      "n": 24,
+      "ceil": 0.4583,
+      "struct": 0.4118,
+      "behav": 0.5714,
+      "meanTokens": 142,
+      "meanRecall": 0.5833
+    },
+    "commentOnly": {
+      "full": 6,
+      "n": 24,
+      "ceil": 0.25,
+      "struct": 0.2941,
+      "behav": 0.1429,
+      "meanTokens": 1023,
+      "meanRecall": 0.3542
+    },
+    "headerOnly": {
+      "full": 4,
+      "n": 24,
+      "ceil": 0.1667,
+      "struct": 0.1765,
+      "behav": 0.1429,
+      "meanTokens": 142,
+      "meanRecall": 0.2292
+    }
+  },
+  "rows": [
+    {
+      "id": "q01",
+      "category": "behavioral",
+      "symbol": "parseFile",
+      "file": "engine/src/graph/ast-parser.ts",
+      "declFound": true,
+      "bodyLines": 76,
+      "commentChars": 0,
+      "headerChars": 728,
+      "source": {
+        "tokens": 9027,
+        "chars": 36106,
+        "present": 2,
+        "total": 2,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 87,
+            "chars": 347,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 269,
+            "chars": 1076,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 87,
+            "chars": 347,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 182,
+            "chars": 728,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 152,
+            "chars": 607,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 334,
+            "chars": 1336,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 152,
+            "chars": 607,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 182,
+            "chars": 728,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 348,
+            "chars": 1392,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 531,
+            "chars": 2121,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 348,
+            "chars": 1392,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 182,
+            "chars": 728,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 600,
+            "chars": 2397,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 782,
+            "chars": 3126,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 600,
+            "chars": 2397,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 182,
+            "chars": 728,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "tree.delete",
+              "finally"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q02",
+      "category": "behavioral",
+      "symbol": "getConfig",
+      "file": "engine/src/util/config.ts",
+      "declFound": true,
+      "bodyLines": 6,
+      "commentChars": 3730,
+      "headerChars": 0,
+      "source": {
+        "tokens": 2271,
+        "chars": 9084,
+        "present": 2,
+        "total": 2,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 992,
+            "chars": 3968,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 992,
+            "chars": 3968,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 60,
+            "chars": 237,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "cache-migrated",
+              "marker"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 933,
+            "chars": 3730,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "cache-migrated",
+              "marker"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 992,
+            "chars": 3968,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 992,
+            "chars": 3968,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 60,
+            "chars": 237,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "cache-migrated",
+              "marker"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 933,
+            "chars": 3730,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "cache-migrated",
+              "marker"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 992,
+            "chars": 3968,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 992,
+            "chars": 3968,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 60,
+            "chars": 237,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "cache-migrated",
+              "marker"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 933,
+            "chars": 3730,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "cache-migrated",
+              "marker"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 992,
+            "chars": 3968,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 992,
+            "chars": 3968,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 60,
+            "chars": 237,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "cache-migrated",
+              "marker"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 933,
+            "chars": 3730,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "cache-migrated",
+              "marker"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q03",
+      "category": "behavioral",
+      "symbol": "parseTargetId",
+      "file": "engine/src/graph/backlinks.ts",
+      "declFound": true,
+      "bodyLines": 21,
+      "commentChars": 4776,
+      "headerChars": 0,
+      "source": {
+        "tokens": 2298,
+        "chars": 9191,
+        "present": 1,
+        "total": 2,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "1658"
+        ]
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 1343,
+            "chars": 5370,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 1343,
+            "chars": 5370,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 149,
+            "chars": 593,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1194,
+            "chars": 4776,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "1658",
+              "wiki"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 1455,
+            "chars": 5819,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 1455,
+            "chars": 5819,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 261,
+            "chars": 1042,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1194,
+            "chars": 4776,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "1658",
+              "wiki"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 1455,
+            "chars": 5819,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 1455,
+            "chars": 5819,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 261,
+            "chars": 1042,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1194,
+            "chars": 4776,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "1658",
+              "wiki"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 1455,
+            "chars": 5819,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 1455,
+            "chars": 5819,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 261,
+            "chars": 1042,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1194,
+            "chars": 4776,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "1658"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "1658",
+              "wiki"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q04",
+      "category": "behavioral",
+      "symbol": "fileNeuronArticleId",
+      "file": "engine/src/annotator/blocks/composers/file-neuron.ts",
+      "declFound": true,
+      "bodyLines": 5,
+      "commentChars": 17317,
+      "headerChars": 307,
+      "source": {
+        "tokens": 6980,
+        "chars": 27918,
+        "present": 1,
+        "total": 1,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 4395,
+            "chars": 17578,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 4472,
+            "chars": 17886,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 65,
+            "chars": 260,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 4330,
+            "chars": 17317,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "fileNeuronArticleId"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 77,
+            "chars": 307,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "fileNeuronArticleId"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 4395,
+            "chars": 17578,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 4472,
+            "chars": 17886,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 65,
+            "chars": 260,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 4330,
+            "chars": 17317,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "fileNeuronArticleId"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 77,
+            "chars": 307,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "fileNeuronArticleId"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 4395,
+            "chars": 17578,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 4472,
+            "chars": 17886,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 65,
+            "chars": 260,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 4330,
+            "chars": 17317,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "fileNeuronArticleId"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 77,
+            "chars": 307,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "fileNeuronArticleId"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 4395,
+            "chars": 17578,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 4472,
+            "chars": 17886,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 65,
+            "chars": 260,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 4330,
+            "chars": 17317,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "fileNeuronArticleId"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 77,
+            "chars": 307,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "fileNeuronArticleId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q05",
+      "category": "structural",
+      "symbol": "toAnchorId",
+      "file": "engine/src/annotator/blocks/composers/file-neuron.ts",
+      "declFound": true,
+      "bodyLines": 6,
+      "commentChars": 3276,
+      "headerChars": 307,
+      "source": {
+        "tokens": 6980,
+        "chars": 27918,
+        "present": 2,
+        "total": 2,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 855,
+            "chars": 3418,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 932,
+            "chars": 3726,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 36,
+            "chars": 141,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "hyphen"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 819,
+            "chars": 3276,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 77,
+            "chars": 307,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "lowercase",
+              "hyphen"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 855,
+            "chars": 3418,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 932,
+            "chars": 3726,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 36,
+            "chars": 141,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "hyphen"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 819,
+            "chars": 3276,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 77,
+            "chars": 307,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "lowercase",
+              "hyphen"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 855,
+            "chars": 3418,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 932,
+            "chars": 3726,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 36,
+            "chars": 141,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "hyphen"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 819,
+            "chars": 3276,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 77,
+            "chars": 307,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "lowercase",
+              "hyphen"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 855,
+            "chars": 3418,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 932,
+            "chars": 3726,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 36,
+            "chars": 141,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "hyphen"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 819,
+            "chars": 3276,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 77,
+            "chars": 307,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "lowercase",
+              "hyphen"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q06",
+      "category": "structural",
+      "symbol": "MAX_FILE_NEURONS_PER_PROJECT",
+      "file": "engine/src/graph/code-scanner.ts",
+      "declFound": true,
+      "bodyLines": 2,
+      "commentChars": 1167,
+      "headerChars": 468,
+      "source": {
+        "tokens": 7754,
+        "chars": 31014,
+        "present": 2,
+        "total": 2,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 321,
+            "chars": 1283,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 438,
+            "chars": 1752,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 29,
+            "chars": 115,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 292,
+            "chars": 1167,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "400"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 117,
+            "chars": 468,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "400",
+              "LAZYBRAIN_MAX_FILE_NEURONS"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 321,
+            "chars": 1283,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 438,
+            "chars": 1752,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 29,
+            "chars": 115,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 292,
+            "chars": 1167,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "400"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 117,
+            "chars": 468,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "400",
+              "LAZYBRAIN_MAX_FILE_NEURONS"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 321,
+            "chars": 1283,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 438,
+            "chars": 1752,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 29,
+            "chars": 115,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 292,
+            "chars": 1167,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "400"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 117,
+            "chars": 468,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "400",
+              "LAZYBRAIN_MAX_FILE_NEURONS"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 321,
+            "chars": 1283,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 438,
+            "chars": 1752,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 29,
+            "chars": 115,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 292,
+            "chars": 1167,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "400"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 117,
+            "chars": 468,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "400",
+              "LAZYBRAIN_MAX_FILE_NEURONS"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q07",
+      "category": "behavioral",
+      "symbol": "pickLevel",
+      "file": "engine/src/retrieval/router.ts",
+      "declFound": true,
+      "bodyLines": 23,
+      "commentChars": 173,
+      "headerChars": 702,
+      "source": {
+        "tokens": 3888,
+        "chars": 15549,
+        "present": 1,
+        "total": 1,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 329,
+            "chars": 996,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 425,
+            "chars": 1699,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 206,
+            "chars": 822,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 173,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "pickLevel"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "pickLevel"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 380,
+            "chars": 1519,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 556,
+            "chars": 2222,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 337,
+            "chars": 1345,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 173,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "pickLevel"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "pickLevel"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 380,
+            "chars": 1519,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 556,
+            "chars": 2222,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 337,
+            "chars": 1345,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 173,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "pickLevel"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "pickLevel"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 380,
+            "chars": 1519,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 556,
+            "chars": 2222,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 337,
+            "chars": 1345,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 173,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "pickLevel"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "pickLevel"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q08",
+      "category": "structural",
+      "symbol": "NudgeStyle",
+      "file": "engine/src/commands/inject-context/markers.ts",
+      "declFound": true,
+      "bodyLines": 1,
+      "commentChars": 3357,
+      "headerChars": 373,
+      "source": {
+        "tokens": 2024,
+        "chars": 8094,
+        "present": 3,
+        "total": 3,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 853,
+            "chars": 3409,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 946,
+            "chars": 3783,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 13,
+            "chars": 51,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 840,
+            "chars": 3357,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 94,
+            "chars": 373,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "skill",
+              "tool",
+              "none"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 853,
+            "chars": 3409,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 946,
+            "chars": 3783,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 13,
+            "chars": 51,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 840,
+            "chars": 3357,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 94,
+            "chars": 373,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "skill",
+              "tool",
+              "none"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 853,
+            "chars": 3409,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 946,
+            "chars": 3783,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 13,
+            "chars": 51,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 840,
+            "chars": 3357,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 94,
+            "chars": 373,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "skill",
+              "tool",
+              "none"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 853,
+            "chars": 3409,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 946,
+            "chars": 3783,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 13,
+            "chars": 51,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 840,
+            "chars": 3357,
+            "present": 3,
+            "total": 3,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 94,
+            "chars": 373,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "skill",
+              "tool",
+              "none"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q09",
+      "category": "structural",
+      "symbol": "isRicherBody",
+      "file": "engine/src/store/upsert.ts",
+      "declFound": true,
+      "bodyLines": 5,
+      "commentChars": 2171,
+      "headerChars": 1084,
+      "source": {
+        "tokens": 1137,
+        "chars": 4545,
+        "present": 2,
+        "total": 2,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 607,
+            "chars": 2427,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "mergeUpsertHtml"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 878,
+            "chars": 3512,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "mergeUpsertHtml"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 64,
+            "chars": 255,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "mergeUpsertHtml"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 543,
+            "chars": 2171,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "isRicherBody",
+              "mergeUpsertHtml"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 271,
+            "chars": 1084,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "isRicherBody",
+              "mergeUpsertHtml"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 607,
+            "chars": 2427,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "mergeUpsertHtml"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 878,
+            "chars": 3512,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "mergeUpsertHtml"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 64,
+            "chars": 255,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "mergeUpsertHtml"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 543,
+            "chars": 2171,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "isRicherBody",
+              "mergeUpsertHtml"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 271,
+            "chars": 1084,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "isRicherBody",
+              "mergeUpsertHtml"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 607,
+            "chars": 2427,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "mergeUpsertHtml"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 878,
+            "chars": 3512,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "mergeUpsertHtml"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 64,
+            "chars": 255,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "mergeUpsertHtml"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 543,
+            "chars": 2171,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "isRicherBody",
+              "mergeUpsertHtml"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 271,
+            "chars": 1084,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "isRicherBody",
+              "mergeUpsertHtml"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 607,
+            "chars": 2427,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "mergeUpsertHtml"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 878,
+            "chars": 3512,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "mergeUpsertHtml"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 64,
+            "chars": 255,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "mergeUpsertHtml"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 543,
+            "chars": 2171,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "isRicherBody",
+              "mergeUpsertHtml"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 271,
+            "chars": 1084,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "isRicherBody",
+              "mergeUpsertHtml"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q10",
+      "category": "behavioral",
+      "symbol": "hasNoiseExemptTag",
+      "file": "engine/src/commands/dream.ts",
+      "declFound": true,
+      "bodyLines": 5,
+      "commentChars": 26917,
+      "headerChars": 671,
+      "source": {
+        "tokens": 10823,
+        "chars": 43291,
+        "present": 4,
+        "total": 4,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 6784,
+            "chars": 27134,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 6952,
+            "chars": 27806,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 54,
+            "chars": 216,
+            "present": 1,
+            "total": 4,
+            "all": false,
+            "ratio": 0.25,
+            "missing": [
+              "mission",
+              "agent",
+              "skill"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 6730,
+            "chars": 26917,
+            "present": 3,
+            "total": 4,
+            "all": false,
+            "ratio": 0.75,
+            "missing": [
+              "hasNoiseExemptTag"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 168,
+            "chars": 671,
+            "present": 0,
+            "total": 4,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "mission",
+              "agent",
+              "skill",
+              "hasNoiseExemptTag"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 6784,
+            "chars": 27134,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 6952,
+            "chars": 27806,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 54,
+            "chars": 216,
+            "present": 1,
+            "total": 4,
+            "all": false,
+            "ratio": 0.25,
+            "missing": [
+              "mission",
+              "agent",
+              "skill"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 6730,
+            "chars": 26917,
+            "present": 3,
+            "total": 4,
+            "all": false,
+            "ratio": 0.75,
+            "missing": [
+              "hasNoiseExemptTag"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 168,
+            "chars": 671,
+            "present": 0,
+            "total": 4,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "mission",
+              "agent",
+              "skill",
+              "hasNoiseExemptTag"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 6784,
+            "chars": 27134,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 6952,
+            "chars": 27806,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 54,
+            "chars": 216,
+            "present": 1,
+            "total": 4,
+            "all": false,
+            "ratio": 0.25,
+            "missing": [
+              "mission",
+              "agent",
+              "skill"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 6730,
+            "chars": 26917,
+            "present": 3,
+            "total": 4,
+            "all": false,
+            "ratio": 0.75,
+            "missing": [
+              "hasNoiseExemptTag"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 168,
+            "chars": 671,
+            "present": 0,
+            "total": 4,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "mission",
+              "agent",
+              "skill",
+              "hasNoiseExemptTag"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 6784,
+            "chars": 27134,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 6952,
+            "chars": 27806,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 54,
+            "chars": 216,
+            "present": 1,
+            "total": 4,
+            "all": false,
+            "ratio": 0.25,
+            "missing": [
+              "mission",
+              "agent",
+              "skill"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 6730,
+            "chars": 26917,
+            "present": 3,
+            "total": 4,
+            "all": false,
+            "ratio": 0.75,
+            "missing": [
+              "hasNoiseExemptTag"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 168,
+            "chars": 671,
+            "present": 0,
+            "total": 4,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "mission",
+              "agent",
+              "skill",
+              "hasNoiseExemptTag"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q11",
+      "category": "structural",
+      "symbol": "runRepairUnInvalidateNoise",
+      "file": "engine/src/commands/repair.ts",
+      "declFound": true,
+      "bodyLines": 1,
+      "commentChars": 6131,
+      "headerChars": 2244,
+      "source": {
+        "tokens": 2233,
+        "chars": 8929,
+        "present": 2,
+        "total": 2,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 1550,
+            "chars": 6199,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 2111,
+            "chars": 8444,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 17,
+            "chars": 67,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "un-invalidate-noise",
+              "mission,agent,skill"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1533,
+            "chars": 6131,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 561,
+            "chars": 2244,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 1550,
+            "chars": 6199,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 2111,
+            "chars": 8444,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 17,
+            "chars": 67,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "un-invalidate-noise",
+              "mission,agent,skill"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1533,
+            "chars": 6131,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 561,
+            "chars": 2244,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 1550,
+            "chars": 6199,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 2111,
+            "chars": 8444,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 17,
+            "chars": 67,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "un-invalidate-noise",
+              "mission,agent,skill"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1533,
+            "chars": 6131,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 561,
+            "chars": 2244,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 1550,
+            "chars": 6199,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 2111,
+            "chars": 8444,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 17,
+            "chars": 67,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "un-invalidate-noise",
+              "mission,agent,skill"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1533,
+            "chars": 6131,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 561,
+            "chars": 2244,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        }
+      }
+    },
+    {
+      "id": "q12",
+      "category": "structural",
+      "symbol": "mapLimit",
+      "file": "engine/src/util/concurrency.ts",
+      "declFound": false,
+      "bodyLines": 0,
+      "commentChars": 0,
+      "headerChars": 159,
+      "source": {
+        "tokens": 605,
+        "chars": 2419,
+        "present": 1,
+        "total": 2,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "input order"
+        ]
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "input order",
+              "chunk"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q13",
+      "category": "structural",
+      "symbol": "resolveConcurrencyEnv",
+      "file": "engine/src/util/concurrency.ts",
+      "declFound": true,
+      "bodyLines": 10,
+      "commentChars": 2106,
+      "headerChars": 159,
+      "source": {
+        "tokens": 605,
+        "chars": 2419,
+        "present": 4,
+        "total": 4,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 605,
+            "chars": 2418,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 645,
+            "chars": 2578,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 78,
+            "chars": 311,
+            "present": 3,
+            "total": 4,
+            "all": false,
+            "ratio": 0.75,
+            "missing": [
+              "clamp"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 527,
+            "chars": 2106,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 4,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "fallback",
+              "min",
+              "max",
+              "clamp"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 605,
+            "chars": 2418,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 645,
+            "chars": 2578,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 78,
+            "chars": 311,
+            "present": 3,
+            "total": 4,
+            "all": false,
+            "ratio": 0.75,
+            "missing": [
+              "clamp"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 527,
+            "chars": 2106,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 4,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "fallback",
+              "min",
+              "max",
+              "clamp"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 605,
+            "chars": 2418,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 645,
+            "chars": 2578,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 78,
+            "chars": 311,
+            "present": 3,
+            "total": 4,
+            "all": false,
+            "ratio": 0.75,
+            "missing": [
+              "clamp"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 527,
+            "chars": 2106,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 4,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "fallback",
+              "min",
+              "max",
+              "clamp"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 605,
+            "chars": 2418,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 645,
+            "chars": 2578,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 78,
+            "chars": 311,
+            "present": 3,
+            "total": 4,
+            "all": false,
+            "ratio": 0.75,
+            "missing": [
+              "clamp"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 527,
+            "chars": 2106,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 4,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "fallback",
+              "min",
+              "max",
+              "clamp"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q14",
+      "category": "structural",
+      "symbol": "resolveConcurrencyEnv",
+      "file": "engine/src/util/concurrency.ts",
+      "declFound": true,
+      "bodyLines": 10,
+      "commentChars": 2106,
+      "headerChars": 159,
+      "source": {
+        "tokens": 605,
+        "chars": 2419,
+        "present": 0,
+        "total": 3,
+        "all": false,
+        "ratio": 0,
+        "missing": [
+          "LAZYBRAIN_IMPORT_CONCURRENCY",
+          "5",
+          "12"
+        ]
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 605,
+            "chars": 2418,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 645,
+            "chars": 2578,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 78,
+            "chars": 311,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 527,
+            "chars": 2106,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 605,
+            "chars": 2418,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 645,
+            "chars": 2578,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 78,
+            "chars": 311,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 527,
+            "chars": 2106,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 605,
+            "chars": 2418,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 645,
+            "chars": 2578,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 78,
+            "chars": 311,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 527,
+            "chars": 2106,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 605,
+            "chars": 2418,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 645,
+            "chars": 2578,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 78,
+            "chars": 311,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 527,
+            "chars": 2106,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 40,
+            "chars": 159,
+            "present": 0,
+            "total": 3,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "LAZYBRAIN_IMPORT_CONCURRENCY",
+              "5",
+              "12"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q15",
+      "category": "structural",
+      "symbol": "pickLevel",
+      "file": "engine/src/retrieval/router.ts",
+      "declFound": true,
+      "bodyLines": 23,
+      "commentChars": 173,
+      "headerChars": 702,
+      "source": {
+        "tokens": 3888,
+        "chars": 15549,
+        "present": 2,
+        "total": 2,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 329,
+            "chars": 996,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 425,
+            "chars": 1699,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 206,
+            "chars": 822,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 173,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "5",
+              "2"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 380,
+            "chars": 1519,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 556,
+            "chars": 2222,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 337,
+            "chars": 1345,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 173,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "5",
+              "2"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 380,
+            "chars": 1519,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 556,
+            "chars": 2222,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 337,
+            "chars": 1345,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 173,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "5",
+              "2"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 380,
+            "chars": 1519,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 556,
+            "chars": 2222,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 337,
+            "chars": 1345,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 173,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "5",
+              "2"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        }
+      }
+    },
+    {
+      "id": "q16",
+      "category": "structural",
+      "symbol": "pickLevel",
+      "file": "engine/src/retrieval/router.ts",
+      "declFound": true,
+      "bodyLines": 23,
+      "commentChars": 173,
+      "headerChars": 702,
+      "source": {
+        "tokens": 3888,
+        "chars": 15549,
+        "present": 1,
+        "total": 1,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 329,
+            "chars": 996,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "6-15"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 425,
+            "chars": 1699,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "6-15"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 206,
+            "chars": 822,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "6-15"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 173,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "6-15"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "6-15"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 380,
+            "chars": 1519,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 556,
+            "chars": 2222,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 337,
+            "chars": 1345,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 173,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "6-15"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "6-15"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 380,
+            "chars": 1519,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 556,
+            "chars": 2222,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 337,
+            "chars": 1345,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 173,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "6-15"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "6-15"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 380,
+            "chars": 1519,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 556,
+            "chars": 2222,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 337,
+            "chars": 1345,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 173,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "6-15"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "6-15"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q17",
+      "category": "structural",
+      "symbol": "dispatchLevel",
+      "file": "engine/src/retrieval/router.ts",
+      "declFound": true,
+      "bodyLines": 9,
+      "commentChars": 6428,
+      "headerChars": 702,
+      "source": {
+        "tokens": 3888,
+        "chars": 15549,
+        "present": 5,
+        "total": 5,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 1704,
+            "chars": 6814,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 1880,
+            "chars": 7517,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 97,
+            "chars": 385,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "l1.ts",
+              "l2.ts",
+              "l3.ts",
+              "l4.ts",
+              "hybrid.ts"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1607,
+            "chars": 6428,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 1704,
+            "chars": 6814,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 1880,
+            "chars": 7517,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 97,
+            "chars": 385,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "l1.ts",
+              "l2.ts",
+              "l3.ts",
+              "l4.ts",
+              "hybrid.ts"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1607,
+            "chars": 6428,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 1704,
+            "chars": 6814,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 1880,
+            "chars": 7517,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 97,
+            "chars": 385,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "l1.ts",
+              "l2.ts",
+              "l3.ts",
+              "l4.ts",
+              "hybrid.ts"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1607,
+            "chars": 6428,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 1704,
+            "chars": 6814,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 1880,
+            "chars": 7517,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 97,
+            "chars": 385,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "l1.ts",
+              "l2.ts",
+              "l3.ts",
+              "l4.ts",
+              "hybrid.ts"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1607,
+            "chars": 6428,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "headerOnly": {
+            "tokens": 176,
+            "chars": 702,
+            "present": 5,
+            "total": 5,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        }
+      }
+    },
+    {
+      "id": "q18",
+      "category": "structural",
+      "symbol": "query",
+      "file": "engine/src/cli/register-core.ts",
+      "declFound": false,
+      "bodyLines": 0,
+      "commentChars": 0,
+      "headerChars": 217,
+      "source": {
+        "tokens": 3586,
+        "chars": 14342,
+        "present": 2,
+        "total": 2,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "L1",
+              "deterministic"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q19",
+      "category": "structural",
+      "symbol": "inject-context",
+      "file": "engine/src/cli/register-core.ts",
+      "declFound": false,
+      "bodyLines": 0,
+      "commentChars": 0,
+      "headerChars": 217,
+      "source": {
+        "tokens": 3586,
+        "chars": 14342,
+        "present": 5,
+        "total": 5,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 55,
+            "chars": 217,
+            "present": 0,
+            "total": 5,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "session",
+              "turn",
+              "marker",
+              "highlights",
+              "3000"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q20",
+      "category": "structural",
+      "symbol": "claudeCall",
+      "file": "src/cli/lib/agentLoop.ts",
+      "declFound": true,
+      "bodyLines": 47,
+      "commentChars": 9887,
+      "headerChars": 995,
+      "source": {
+        "tokens": 7711,
+        "chars": 30841,
+        "present": 2,
+        "total": 2,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 2594,
+            "chars": 10375,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "--output-format json"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 2843,
+            "chars": 11371,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "--output-format json"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 122,
+            "chars": 487,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "--output-format json"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 2472,
+            "chars": 9887,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "--output-format json",
+              "--safe-mode"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 249,
+            "chars": 995,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "--output-format json",
+              "--safe-mode"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 2695,
+            "chars": 10778,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "--output-format json"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 2944,
+            "chars": 11774,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "--output-format json"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 223,
+            "chars": 890,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "--output-format json"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 2472,
+            "chars": 9887,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "--output-format json",
+              "--safe-mode"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 249,
+            "chars": 995,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "--output-format json",
+              "--safe-mode"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 2871,
+            "chars": 11484,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 3120,
+            "chars": 12480,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 399,
+            "chars": 1596,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 2472,
+            "chars": 9887,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "--output-format json",
+              "--safe-mode"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 249,
+            "chars": 995,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "--output-format json",
+              "--safe-mode"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 2932,
+            "chars": 11728,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 3181,
+            "chars": 12724,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 460,
+            "chars": 1840,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 2472,
+            "chars": 9887,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "--output-format json",
+              "--safe-mode"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 249,
+            "chars": 995,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "--output-format json",
+              "--safe-mode"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q21",
+      "category": "structural",
+      "symbol": "API_KEY",
+      "file": "src/cli/lib/agentLoop.ts",
+      "declFound": true,
+      "bodyLines": 1,
+      "commentChars": 175,
+      "headerChars": 995,
+      "source": {
+        "tokens": 7711,
+        "chars": 30841,
+        "present": 2,
+        "total": 2,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 73,
+            "chars": 221,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 305,
+            "chars": 1217,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 12,
+            "chars": 45,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 175,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "DEEPSEEK_API_KEY",
+              "api.deepseek.com"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 249,
+            "chars": 995,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 73,
+            "chars": 221,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 305,
+            "chars": 1217,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 12,
+            "chars": 45,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 175,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "DEEPSEEK_API_KEY",
+              "api.deepseek.com"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 249,
+            "chars": 995,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 73,
+            "chars": 221,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 305,
+            "chars": 1217,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 12,
+            "chars": 45,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 175,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "DEEPSEEK_API_KEY",
+              "api.deepseek.com"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 249,
+            "chars": 995,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 73,
+            "chars": 221,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 305,
+            "chars": 1217,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 12,
+            "chars": 45,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 58,
+            "chars": 175,
+            "present": 0,
+            "total": 2,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "DEEPSEEK_API_KEY",
+              "api.deepseek.com"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 249,
+            "chars": 995,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "api.deepseek.com"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q22",
+      "category": "behavioral",
+      "symbol": "AgentLoopResult",
+      "file": "src/cli/lib/agentLoop.ts",
+      "declFound": true,
+      "bodyLines": 12,
+      "commentChars": 0,
+      "headerChars": 995,
+      "source": {
+        "tokens": 7711,
+        "chars": 30841,
+        "present": 1,
+        "total": 1,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 101,
+            "chars": 401,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 350,
+            "chars": 1397,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 101,
+            "chars": 401,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "finish"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 249,
+            "chars": 995,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 101,
+            "chars": 401,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 350,
+            "chars": 1397,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 101,
+            "chars": 401,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "finish"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 249,
+            "chars": 995,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 101,
+            "chars": 401,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 350,
+            "chars": 1397,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 101,
+            "chars": 401,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "finish"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 249,
+            "chars": 995,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 101,
+            "chars": 401,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 350,
+            "chars": 1397,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 101,
+            "chars": 401,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 0,
+            "chars": 0,
+            "present": 0,
+            "total": 1,
+            "all": false,
+            "ratio": 0,
+            "missing": [
+              "finish"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 249,
+            "chars": 995,
+            "present": 1,
+            "total": 1,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          }
+        }
+      }
+    },
+    {
+      "id": "q23",
+      "category": "structural",
+      "symbol": "TYPE_ICON",
+      "file": "engine/src/commands/inject-context/sections.ts",
+      "declFound": true,
+      "bodyLines": 7,
+      "commentChars": 181,
+      "headerChars": 336,
+      "source": {
+        "tokens": 10406,
+        "chars": 41623,
+        "present": 4,
+        "total": 4,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 104,
+            "chars": 315,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 216,
+            "chars": 652,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 34,
+            "chars": 133,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 60,
+            "chars": 181,
+            "present": 1,
+            "total": 4,
+            "all": false,
+            "ratio": 0.25,
+            "missing": [
+              "decision",
+              "D",
+              "episodic"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 84,
+            "chars": 336,
+            "present": 2,
+            "total": 4,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "decision",
+              "episodic"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 104,
+            "chars": 315,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 216,
+            "chars": 652,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 34,
+            "chars": 133,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 60,
+            "chars": 181,
+            "present": 1,
+            "total": 4,
+            "all": false,
+            "ratio": 0.25,
+            "missing": [
+              "decision",
+              "D",
+              "episodic"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 84,
+            "chars": 336,
+            "present": 2,
+            "total": 4,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "decision",
+              "episodic"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 104,
+            "chars": 315,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 216,
+            "chars": 652,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 34,
+            "chars": 133,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 60,
+            "chars": 181,
+            "present": 1,
+            "total": 4,
+            "all": false,
+            "ratio": 0.25,
+            "missing": [
+              "decision",
+              "D",
+              "episodic"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 84,
+            "chars": 336,
+            "present": 2,
+            "total": 4,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "decision",
+              "episodic"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 104,
+            "chars": 315,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 216,
+            "chars": 652,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 34,
+            "chars": 133,
+            "present": 4,
+            "total": 4,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 60,
+            "chars": 181,
+            "present": 1,
+            "total": 4,
+            "all": false,
+            "ratio": 0.25,
+            "missing": [
+              "decision",
+              "D",
+              "episodic"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 84,
+            "chars": 336,
+            "present": 2,
+            "total": 4,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "decision",
+              "episodic"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "q24",
+      "category": "structural",
+      "symbol": "buildMainPage",
+      "file": "engine/src/commands/inject-context/sections.ts",
+      "declFound": true,
+      "bodyLines": 39,
+      "commentChars": 7617,
+      "headerChars": 336,
+      "source": {
+        "tokens": 10406,
+        "chars": 41623,
+        "present": 2,
+        "total": 2,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "byCap": {
+        "cap12": {
+          "surgical": {
+            "tokens": 2008,
+            "chars": 8029,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "_general"
+            ]
+          },
+          "surgicalPlusHeader": {
+            "tokens": 2092,
+            "chars": 8366,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "_general"
+            ]
+          },
+          "bodyOnly": {
+            "tokens": 103,
+            "chars": 411,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "_general"
+            ]
+          },
+          "commentOnly": {
+            "tokens": 1905,
+            "chars": 7617,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "_general"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 84,
+            "chars": 336,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "_general"
+            ]
+          }
+        },
+        "cap24": {
+          "surgical": {
+            "tokens": 2116,
+            "chars": 8462,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 2200,
+            "chars": 8799,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 211,
+            "chars": 844,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 1905,
+            "chars": 7617,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "_general"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 84,
+            "chars": 336,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "_general"
+            ]
+          }
+        },
+        "cap40": {
+          "surgical": {
+            "tokens": 2241,
+            "chars": 8961,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 2325,
+            "chars": 9298,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 336,
+            "chars": 1343,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 1905,
+            "chars": 7617,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "_general"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 84,
+            "chars": 336,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "_general"
+            ]
+          }
+        },
+        "cap80": {
+          "surgical": {
+            "tokens": 2241,
+            "chars": 8961,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "surgicalPlusHeader": {
+            "tokens": 2325,
+            "chars": 9298,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "bodyOnly": {
+            "tokens": 336,
+            "chars": 1343,
+            "present": 2,
+            "total": 2,
+            "all": true,
+            "ratio": 1,
+            "missing": []
+          },
+          "commentOnly": {
+            "tokens": 1905,
+            "chars": 7617,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "_general"
+            ]
+          },
+          "headerOnly": {
+            "tokens": 84,
+            "chars": 336,
+            "present": 1,
+            "total": 2,
+            "all": false,
+            "ratio": 0.5,
+            "missing": [
+              "_general"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

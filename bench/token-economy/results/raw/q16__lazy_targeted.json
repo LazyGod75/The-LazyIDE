@@ -1,0 +1,34 @@
+{
+  "questionId": "q16",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 151,
+  "configMeta": {
+    "corpusDir": "engine/src/retrieval",
+    "siblingFileCount": 23,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 12229,
+  "answer": "I don't have access to file reading tools in this session. Could you provide the current implementation of `pickLevel()` in `engine/src/retrieval/router.ts`, or run `git log -p engine/src/retrieval/router.ts` to show the commit that changed this range? That would show me what the previous range was before it was widened to 3-15 tokens for L2_L3_HYBRID routing.",
+  "usage": {
+    "inputTokens": 34,
+    "outputTokens": 642,
+    "cacheReadInputTokens": 74297,
+    "cacheCreationInputTokens": 5624,
+    "costUsd": 0.0228997
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "6-15",
+        "present": false
+      }
+    ]
+  }
+}

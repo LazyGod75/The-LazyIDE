@@ -1,0 +1,37 @@
+{
+  "questionId": "q15",
+  "category": "structural",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 3954,
+  "configMeta": {
+    "corpusDir": "engine/src/retrieval",
+    "fileCount": 23
+  },
+  "latencyMs": 8277,
+  "answer": "I don't have that information in the provided context. The skeleton shows that `pickLevel()` exists in `router.ts` (line 8 of the function list), but the full file contents and implementation details—including any comments about threshold changes or regressions—are not included in the context dump.\n\nTo answer your question, I'd need to read the actual `router.ts` file to see the current threshold, any comments explaining the change, and potentially the git history of that function to understand what it was changed from and why.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 435,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10848,
+    "costUsd": 0.0321204
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "5",
+        "present": false
+      },
+      {
+        "term": "2",
+        "present": false
+      }
+    ]
+  }
+}

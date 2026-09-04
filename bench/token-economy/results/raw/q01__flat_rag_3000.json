@@ -1,0 +1,65 @@
+{
+  "questionId": "q01",
+  "category": "behavioral",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2998,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 6,
+    "queryTokens": [
+      "engine",
+      "src",
+      "graph",
+      "ast-parser.ts",
+      "parsefile",
+      "used",
+      "leak",
+      "web-tree-sitter",
+      "wasm",
+      "tree",
+      "every",
+      "parsed",
+      "file",
+      "spiking",
+      "ram",
+      "2.2gb",
+      "multi-project",
+      "scan.",
+      "specific",
+      "call",
+      "added",
+      "control-flow",
+      "construct",
+      "fix",
+      "leak"
+    ]
+  },
+  "latencyMs": 9994,
+  "answer": "The context provided does not contain the `parseFile()` function implementation or the specific memory leak fix. The excerpts from `engine/src/graph/ast-parser.ts` show the `LANGUAGE_TO_WASM` and `LANGUAGE_CONFIGS` mappings, but not the function body where the WASM Tree cleanup call would be located.\n\nTo answer this question accurately, I would need to see the actual implementation of `parseFile()` in that file, particularly the section that manages the WASM parser lifecycle and where the Tree cleanup was added.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 426,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8646,
+    "costUsd": 0.0255414
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "tree.delete",
+        "present": false
+      },
+      {
+        "term": "finally",
+        "present": false
+      }
+    ]
+  }
+}

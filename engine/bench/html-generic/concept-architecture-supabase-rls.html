@@ -1,0 +1,21 @@
+<article id="concept-architecture-supabase-rls">
+
+  <header>
+    <h1>Architecture: Supabase RLS for multi-tenant data isolation</h1>
+    <dl>
+      <dt>Kind</dt><dd>architecture</dd>
+      <dt>Confidence</dt><dd>0.9</dd>
+      <dt>Date</dt><dd>2026-05-05</dd>
+    </dl>
+  </header>
+
+  <div><a href="#/acme">Acme</a> / <a href="#/acme/concepts">Concepts</a></div>
+
+  <section>
+    <p>Supabase row-level security (RLS) policies enforce multi-tenant data isolation without application-layer filtering.</p>
+  </section>
+
+  <section>
+    <p>Architecture note recorded 2026-05-05. All tables with tenant data have RLS enabled. Policies use auth.uid() to scope queries. This ensures that even if the application layer has a bug, the database will not return another tenant's data. AdminPanel queries use a service-role key with explicit filters — RLS is bypassed intentionally for admin operations.</p>
+  </section>
+</article>

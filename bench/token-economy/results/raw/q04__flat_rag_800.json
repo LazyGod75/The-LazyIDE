@@ -1,0 +1,74 @@
+{
+  "questionId": "q04",
+  "category": "behavioral",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 785,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 2,
+    "queryTokens": [
+      "file-neuron",
+      "lookup",
+      "bug",
+      "meant",
+      "conversation-derived",
+      "decisions",
+      "bugs",
+      "never",
+      "attached",
+      "target",
+      "file-neuron.",
+      "root",
+      "cause",
+      "resolveexistinginbound",
+      "looked",
+      "file-neuron",
+      "logical",
+      "graph",
+      "file",
+      "relpath",
+      "while",
+      "fts",
+      "index",
+      "stores",
+      "different",
+      "persisted",
+      "id.",
+      "new",
+      "exported",
+      "function",
+      "engine",
+      "src",
+      "annotator",
+      "blocks",
+      "composers",
+      "file-neuron.ts",
+      "fixed",
+      "compute"
+    ]
+  },
+  "latencyMs": 7881,
+  "answer": "I can see from the context that you're referring to a file-neuron lookup bug related to the mismatch between the logical graph id (`file:<relPath>`) and the persisted id in the FTS index. However, the CONTEXT provided does not include the contents of `engine/src/annotator/blocks/composers/file-neuron.ts`, so I cannot identify the specific new exported function that was added to fix this issue or describe what it computes.\n\nTo answer your question accurately, I would need to examine that file directly. Would you like me to read `engine/src/annotator/blocks/composers/file-neuron.ts` to find the fix?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 438,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5865,
+    "costUsd": 0.0172304
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "fileNeuronArticleId",
+        "present": false
+      }
+    ]
+  }
+}

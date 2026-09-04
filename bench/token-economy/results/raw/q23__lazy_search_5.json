@@ -1,0 +1,45 @@
+{
+  "questionId": "q23",
+  "category": "structural",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 70,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 12025,
+  "answer": "I apologize, but I don't have access to file reading tools in this session (Read and Bash are both disabled). I cannot examine the `engine/src/commands/inject-context/sections.ts` file to tell you what single-letter icons the `compactLine()` function uses for the five note types (decision/episodic/reference/semantic/procedural).\n\nTo find this information, you would need to:\n1. Open the file directly in your editor\n2. Search for the `compactLine()` function\n3. Look for the icon mapping for each note type\n\nIf you can share the relevant portion of the code or enable file access tools, I'd be happy to help identify the icons.",
+  "usage": {
+    "inputTokens": 34,
+    "outputTokens": 571,
+    "cacheReadInputTokens": 73631,
+    "cacheCreationInputTokens": 5376,
+    "costUsd": 0.0218121
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 4,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "decision",
+        "present": true
+      },
+      {
+        "term": "D",
+        "present": true
+      },
+      {
+        "term": "episodic",
+        "present": true
+      },
+      {
+        "term": "E",
+        "present": true
+      }
+    ]
+  }
+}

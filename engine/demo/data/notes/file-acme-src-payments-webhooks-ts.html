@@ -1,0 +1,65 @@
+<article id="file-acme-src-payments-webhooks-ts" data-cerveau-version="0.2.0" data-cerveau-type="file-neuron" data-cerveau-created="2026-06-08T00:00:00Z" data-cerveau-tags="code typescript acme file-neuron" data-cerveau-topic="acme/code/typescript" data-cerveau-importance="0.5700">
+<nav class="breadcrumb"><a href="#/acme">acme</a> / <a href="#/acme/src">src</a> / <a href="#/acme/src/payments">payments</a> / <span aria-current="page">webhooks.ts</span></nav>
+<h1><a data-cerveau-link-auto="1" data-cerveau-link-type="mentions" href="#aggregate-acme-src-payments">src/payments</a>/webhooks.ts</h1>
+<aside class="infobox">
+  <dl>
+    <dt>Language</dt><dd><a data-cerveau-link-auto="1" data-cerveau-link-type="mentions" href="#file-acme-src-api-middleware-ts">typescript</a></dd>
+    <dt>Lines</dt><dd>163</dd>
+    <dt>Inbound</dt><dd>0</dd>
+    <dt>Exports</dt><dd>2</dd>
+  </dl>
+</aside>
+<section data-section="tldr">
+  <p><a data-cerveau-link-auto="1" data-cerveau-link-type="mentions" href="#file-acme-src-api-middleware-ts">typescript</a> file with 9 functions (163 lines)</p>
+</section>
+<nav class="toc" role="navigation">
+  <h2>Contents</h2>
+  <ol>
+    <li class="toclevel-1 tocsection-1"><a href="#architecture"><span class="tocnumber">1</span> <span class="toctext">Imports &amp; Exports</span></a></li>
+    <li class="toclevel-1 tocsection-2"><a href="#children"><span class="tocnumber">2</span> <span class="toctext">Symbols</span></a></li>
+    <li class="toclevel-2 tocsection-3"><a href="#fn-routewebhookevent"><span class="tocnumber">3</span> <span class="toctext">routeWebhookEvent</span></a></li>
+    <li class="toclevel-2 tocsection-4"><a href="#fn-handlesubscriptionchange"><span class="tocnumber">4</span> <span class="toctext">handleSubscriptionChange</span></a></li>
+    <li class="toclevel-2 tocsection-5"><a href="#fn-handleinvoicepaymentsucceeded"><span class="tocnumber">5</span> <span class="toctext">handleInvoicePaymentSucceeded</span></a></li>
+    <li class="toclevel-2 tocsection-6"><a href="#fn-handleinvoicepaymentfailed"><span class="tocnumber">6</span> <span class="toctext">handleInvoicePaymentFailed</span></a></li>
+    <li class="toclevel-2 tocsection-7"><a href="#fn-iseventprocessed"><span class="tocnumber">7</span> <span class="toctext">isEventProcessed</span></a></li>
+    <li class="toclevel-2 tocsection-8"><a href="#fn-recordevent"><span class="tocnumber">8</span> <span class="toctext">recordEvent</span></a></li>
+    <li class="toclevel-2 tocsection-9"><a href="#fn-markeventsucceeded"><span class="tocnumber">9</span> <span class="toctext">markEventSucceeded</span></a></li>
+    <li class="toclevel-2 tocsection-10"><a href="#fn-markeventfailed"><span class="tocnumber">10</span> <span class="toctext">markEventFailed</span></a></li>
+    <li class="toclevel-2 tocsection-11"><a href="#fn-handlestripewebhook"><span class="tocnumber">11</span> <span class="toctext">handleStripeWebhook</span></a></li>
+    <li class="toclevel-1 tocsection-12"><a href="#ideas"><span class="tocnumber">12</span> <span class="toctext">Ideas</span></a></li>
+  </ol>
+</nav>
+<section data-section="architecture">
+  <h3>Imports &amp; Exports</h3>
+  <h4>Imports</h4>
+  <ul>
+      <li><a href="#/file:../config.js"><code>../config.js</code></a></li>
+      <li><a href="#/file:../db/client.js"><code>../db/client.js</code></a></li>
+  </ul>
+  <h4>Exports</h4>
+  <ul>
+      <li><code>WebhookHandlerResult</code></li>
+      <li><code>handleStripeWebhook</code></li>
+  </ul>
+</section>
+<section data-section="children">
+  <h3>Symbols</h3>
+  <h3 id="fn-routewebhookevent"><code>routeWebhookEvent(event)</code></h3>
+  <h3 id="fn-handlesubscriptionchange"><code>handleSubscriptionChange(subscription)</code></h3>
+  <h3 id="fn-handleinvoicepaymentsucceeded"><code>handleInvoicePaymentSucceeded(invoice)</code></h3>
+  <h3 id="fn-handleinvoicepaymentfailed"><code>handleInvoicePaymentFailed(invoice)</code></h3>
+  <h3 id="fn-iseventprocessed"><code>isEventProcessed(eventId)</code></h3>
+  <h3 id="fn-recordevent"><code>recordEvent(eventId, eventType)</code></h3>
+  <h3 id="fn-markeventsucceeded"><code>markEventSucceeded(eventId)</code></h3>
+  <h3 id="fn-markeventfailed"><code>markEventFailed(eventId, error)</code></h3>
+  <h3 id="fn-handlestripewebhook"><span class="export-badge">export</span> <code>handleStripeWebhook(rawBody, signature)</code></h3>
+</section>
+<section data-section="ideas">
+  <h3>Ideas</h3>
+  <ul>
+    <li data-cerveau-confidence="1"><a data-cerveau-link-auto="1" data-cerveau-link-type="mentions" href="#concept-idea-should-also-add-a-cancellation-confirmation-email-that-clear">Idea</a>: we should add idempotency handling to the Stripe webhook processor in <a data-cerveau-link-auto="1" data-cerveau-link-type="mentions" href="#aggregate-acme-src-payments">src/payments</a>/webhooks <a href="#acme-conv-webhook-idempotency-idea-2026-05-12" class="conv-source">[source]</a></li>
+    <li data-cerveau-confidence="1">We should also improve the error recovery path: currently, if business logic throws after recording the event, the event is marked failed but never retried internally <a href="#acme-conv-webhook-idempotency-idea-2026-05-12" class="conv-source">[source]</a></li>
+    <li data-cerveau-confidence="1">Should add a dead-letter queue or manual retry mechanism for failed webhook events <a href="#acme-conv-webhook-idempotency-idea-2026-05-12" class="conv-source">[source]</a></li>
+  </ul>
+</section>
+</article>

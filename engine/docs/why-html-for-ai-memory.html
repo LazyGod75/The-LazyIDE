@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Why HTML beats Markdown for an LLM's memory — a data-backed case</title>
+  <meta name="description" content="HTML is the right substrate for LLM memory / a second brain — and it beats Markdown on every axis that matters. A data-backed thesis.">
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:        #1a1a1a;
+      --ink-muted:  #555;
+      --ink-faint:  #888;
+      --bg:         #fafaf8;
+      --bg-alt:     #f3f2ef;
+      --accent:     #1d4ed8;
+      --accent-dim: #dbeafe;
+      --border:     #e2e0db;
+      --green:      #15803d;
+      --green-bg:   #dcfce7;
+      --red:        #b91c1c;
+      --red-bg:     #fee2e2;
+      --code-bg:    #f0eeea;
+      --max-w:      720px;
+      --serif:      Georgia, 'Times New Roman', serif;
+      --sans:       system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --mono:       'SF Mono', 'Fira Code', 'Fira Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
+    }
+
+    html { font-size: 17px; scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      font-size: 1rem;
+      line-height: 1.75;
+      color: var(--ink);
+      background: var(--bg);
+      padding: 0 1rem 4rem;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding-top: 1rem;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 4rem 0 2rem;
+      border-bottom: 2px solid var(--ink);
+      margin-bottom: 2.5rem;
+    }
+
+    .kicker {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 0.8rem;
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      margin-bottom: 1.1rem;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--ink-muted);
+      max-width: 580px;
+      margin-bottom: 1.5rem;
+    }
+
+    .meta {
+      font-size: 0.82rem;
+      color: var(--ink-faint);
+    }
+
+    .meta a { color: var(--ink-faint); }
+
+    /* ── Typography ── */
+    h2 {
+      font-family: var(--serif);
+      font-size: 1.55rem;
+      font-weight: 700;
+      margin: 3rem 0 0.9rem;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 2rem 0 0.5rem;
+      color: var(--ink);
+    }
+
+    p { margin-bottom: 1rem; }
+
+    a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+
+    a:hover { text-decoration-thickness: 2px; }
+
+    strong { font-weight: 700; }
+
+    em { font-style: italic; }
+
+    /* ── Section dividers ── */
+    section {
+      border-top: 1px solid var(--border);
+      padding-top: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    /* ── Tables ── */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      font-family: var(--sans);
+    }
+
+    th {
+      background: var(--bg-alt);
+      font-weight: 700;
+      text-align: left;
+      padding: 0.55rem 0.9rem;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      color: var(--ink);
+    }
+
+    td {
+      padding: 0.5rem 0.9rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tr:hover td { background: var(--bg-alt); }
+
+    .win  { color: var(--green); font-weight: 700; }
+    .note { color: var(--ink-muted); font-size: 0.82rem; }
+
+    /* ── Code ── */
+    code {
+      font-family: var(--mono);
+      font-size: 0.84em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+      color: var(--ink);
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.1rem 1.2rem;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 0.83rem;
+      line-height: 1.6;
+      margin: 1.25rem 0;
+      color: var(--ink);
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    /* ── Callout boxes ── */
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: var(--accent-dim);
+      padding: 0.85rem 1.1rem;
+      border-radius: 0 6px 6px 0;
+      margin: 1.5rem 0;
+      font-size: 0.96rem;
+    }
+
+    .callout.honest {
+      border-left-color: #d97706;
+      background: #fef3c7;
+    }
+
+    .callout.win {
+      border-left-color: var(--green);
+      background: var(--green-bg);
+    }
+
+    /* ── The live demo ── */
+    #demo {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    #demo h3 {
+      margin-top: 0;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-muted);
+      font-weight: 700;
+    }
+
+    .demo-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+
+    .demo-btn {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      background: white;
+      color: var(--accent);
+      border: 1.5px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.4rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      line-height: 1.4;
+    }
+
+    .demo-btn:hover, .demo-btn:focus {
+      background: var(--accent);
+      color: white;
+      outline: none;
+    }
+
+    .demo-btn:active { opacity: 0.8; }
+
+    #demo-output {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.9rem 1rem;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      line-height: 1.6;
+      min-height: 3rem;
+      white-space: pre-wrap;
+      color: var(--ink);
+    }
+
+    #demo-output .result-item {
+      border-bottom: 1px solid var(--border);
+      padding: 0.4rem 0;
+    }
+
+    #demo-output .result-item:last-child { border-bottom: none; }
+
+    #demo-output .result-meta {
+      color: var(--ink-faint);
+      font-size: 0.75rem;
+    }
+
+    #demo-output .result-text {
+      color: var(--ink);
+    }
+
+    .demo-count {
+      font-size: 0.78rem;
+      color: var(--green);
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    /* ── Neuron snippets (hidden data) ── */
+    .sample-neurons { display: none; }
+
+    /* ── Stat callouts ── */
+    .stat-row {
+      display: flex;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+
+    .stat-box {
+      flex: 1;
+      min-width: 130px;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.9rem 1rem;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--ink-muted);
+      margin-top: 0.3rem;
+      display: block;
+    }
+
+    /* ── Footer ── */
+    /* ── Site nav ── */
+    /*
+     * Visually matches the demo wiki header (wiki.css):
+     *   accent #1a73e8, header-bg #fff, header-border #e0e0e0,
+     *   brand font Georgia/serif, sticky, 56 px height.
+     * Self-contained: no external file dependency.
+     */
+    .site-nav-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      height: 56px;
+      /* compensate for body's 1rem side padding so the bar spans full viewport */
+      margin-left: -1rem;
+      margin-right: -1rem;
+      padding: 0 max(20px, 1rem);
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      font-family: var(--sans);
+      font-size: 0.82rem;
+    }
+
+    .site-nav-brand {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ink);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+      flex-shrink: 0;
+    }
+
+    .site-nav-brand:hover { color: #1a73e8; }
+
+    .site-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-left: auto;
+    }
+
+    .site-nav-links a {
+      color: #1a73e8;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    .site-nav-links a:hover { text-decoration: underline; }
+
+    /* .site-nav removed: nav-bar is now placed outside .container */
+
+    footer {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.84rem;
+      color: var(--ink-muted);
+    }
+
+    footer a { color: var(--ink-muted); }
+
+    /* ── TOC ── */
+    nav.toc {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      margin: 2rem 0;
+      font-size: 0.88rem;
+    }
+
+    nav.toc p {
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    nav.toc ol {
+      padding-left: 1.3rem;
+      margin: 0;
+    }
+
+    nav.toc li { margin-bottom: 0.2rem; }
+    nav.toc a { color: var(--accent); text-decoration: none; }
+    nav.toc a:hover { text-decoration: underline; }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      h1 { font-size: 1.6rem; }
+      h2 { font-size: 1.3rem; }
+      .stat-row { flex-direction: column; }
+      .demo-buttons { flex-direction: column; }
+      .demo-btn { font-size: 0.72rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ SITE NAV (outside .container so it spans full width) ══════════ -->
+<nav class="site-nav-bar" aria-label="Site navigation">
+  <a class="site-nav-brand" href="./">LazyBrain</a>
+  <div class="site-nav-links">
+    <a href="./">Live demo</a>
+    <a href="https://github.com/LazyGod75/LazyBrain">GitHub</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ══════════ HEADER ══════════ -->
+  <header>
+    <p class="kicker">LazyBrain &mdash; Technical Thesis &mdash; 2026-05-29</p>
+    <h1>Why HTML beats Markdown for an LLM's memory</h1>
+    <p class="subtitle">
+      An AI agent accumulates code knowledge and conversation knowledge every day.
+      Markdown is the default substrate for storing it. It shouldn&rsquo;t be.
+      A data-backed case with real numbers.
+    </p>
+    <p class="meta">
+      Numbers from
+      <a href="./BENCHMARKS.md">docs/BENCHMARKS.md</a> (v7, anonymized corpus, nav/chrome exclusion, 2026-05-29).
+    </p>
+  </header>
+
+  <!-- ══════════ TOC ══════════ -->
+  <nav class="toc" aria-label="Table of contents">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#setup">The setup: what the memory problem actually is</a></li>
+      <li><a href="#tag-is-index">The tag is the index</a></li>
+      <li><a href="#token-efficiency">Fewer tokens &mdash; with real numbers</a></li>
+      <li><a href="#typed-temporal">Exact, typed, temporal precision</a></li>
+      <li><a href="#deterministic">Deterministic and free to query</a></li>
+      <li><a href="#navigable">A brain you can read, share, and host</a></li>
+      <li><a href="#demo">Live demo &mdash; CSS queries, in your browser, right now</a></li>
+      <li><a href="#honest">Honest closing: what HTML does not solve</a></li>
+    </ol>
+  </nav>
+
+  <!-- ══════════ 1. SETUP ══════════ -->
+  <section id="setup">
+    <h2>1. The setup: what the memory problem actually is</h2>
+
+    <p>
+      An AI coding agent is not stateless. Every session produces code edits, architectural decisions,
+      bug discoveries, and chosen trade-offs. The question is not <em>whether</em> to remember them —
+      it is <em>how</em>.
+    </p>
+
+    <p>
+      The naive answer is: Markdown notes, like every developer note system since 2004.
+      One file per topic, YAML frontmatter for metadata, keyword search to retrieve.
+      This is what Obsidian, basic-memory, and most &ldquo;second brain&rdquo; tools for LLMs do.
+    </p>
+
+    <p>
+      The problem is that LLM memory is different from human memory in one critical dimension:
+      <strong>every token you retrieve costs money and dilutes the context window.</strong>
+      A human reading a 2,000-word note skips irrelevant paragraphs automatically.
+      An LLM receiving a 2,000-word note processes every token at the same cost.
+    </p>
+
+    <p>
+      This means the substrate you choose for memory has a direct, measurable impact on:
+    </p>
+
+    <ul style="padding-left:1.5rem; margin-bottom:1rem;">
+      <li><strong>API cost</strong> &mdash; every unnecessary token in context is billed</li>
+      <li><strong>Answer quality</strong> &mdash; irrelevant tokens dilute signal</li>
+      <li><strong>Query precision</strong> &mdash; returning the <em>right</em> thing, not a superset</li>
+      <li><strong>Temporal correctness</strong> &mdash; knowing when a fact was true, not just that it exists</li>
+    </ul>
+
+    <p>
+      Markdown addresses none of these constraints structurally. HTML does &mdash; if you use it correctly.
+      The rest of this document explains exactly how, with numbers.
+    </p>
+  </section>
+
+  <!-- ══════════ 2. TAG IS INDEX ══════════ -->
+  <section id="tag-is-index">
+    <h2>2. The tag is the index</h2>
+
+    <p>
+      In LazyBrain, every fact is an HTML element &mdash; not a Markdown bullet, not a JSON record,
+      not a graph node. An HTML element annotated with <code>data-cerveau-*</code> attributes that declare
+      what the element <em>is</em>, when it was true, who extracted it, and how confident we are.
+    </p>
+
+    <p>Here is a real neuron from the sample brain:</p>
+
+<pre><code>&lt;article id="oauth-migration-12"
+         data-cerveau-type="decision"
+         data-cerveau-created="2026-05-20T10:15:00Z"
+         data-cerveau-valid-from="2026-05-20"
+         data-cerveau-tags="auth oauth security migration"
+         data-cerveau-importance="0.9"&gt;
+
+  &lt;h2&gt;Migration to OAuth2 PKCE&lt;/h2&gt;
+
+  &lt;p data-cerveau-fact data-cerveau-confidence="1.0"
+     data-cerveau-extracted-by="human"
+     data-cerveau-kind="decision"&gt;
+    Decision: drop custom JWT in favour of OAuth2 PKCE.
+  &lt;/p&gt;
+
+  &lt;p data-cerveau-fact data-cerveau-confidence="0.8"
+     data-cerveau-extracted-by="heuristic"&gt;
+    Driver: Q2 security audit flagged manual secret rotation.
+  &lt;/p&gt;
+
+&lt;/article&gt;</code></pre>
+
+    <p>
+      When the LLM needs this fact, the system does not send the HTML.
+      It runs a CSS selector and extracts only the <code>textContent</code>:
+    </p>
+
+<pre><code>// Query: all still-valid auth decisions
+document.querySelectorAll(
+  'article[data-cerveau-type="decision"]' +
+  '[data-cerveau-tags~="auth"]' +
+  ':not([data-cerveau-valid-until])'
+)
+
+// What the LLM receives (stripped):
+[decision | 2026-05-20 | oauth-migration-12]
+Migration to OAuth2 PKCE
+Decision: drop custom JWT in favour of OAuth2 PKCE.
+Driver: Q2 security audit flagged manual secret rotation.</code></pre>
+
+    <p>
+      The markup is the <strong>index</strong>. The inner text is the <strong>payload</strong>.
+      Every <code>data-cerveau-*</code> attribute is a zero-cost, instantly-queryable column
+      that costs nothing extra to store and nothing to query.
+    </p>
+
+    <div class="callout win">
+      <strong>The key insight:</strong> HTML gives you a structured index <em>inside</em> the document format itself.
+      You do not need a separate database, a vector index, or a metadata sidecar file.
+      The format and the index are the same artifact.
+    </div>
+
+    <p>
+      Markdown has no equivalent. A Markdown file can have YAML frontmatter, but frontmatter is a
+      convention with no standard parser and no native query semantics. You cannot run
+      <code>article[type="decision"]:not([valid-until])</code> on a folder of Markdown files.
+      You can only keyword-grep.
+    </p>
+  </section>
+
+  <!-- ══════════ 3. TOKENS ══════════ -->
+  <section id="token-efficiency">
+    <h2>3. Fewer tokens &mdash; with real numbers</h2>
+
+    <p>
+      These are not estimates. They are reproducible: run <code>node scripts/run-benchmark.mjs</code>
+      on the bundled <code>examples/sample-brain</code> — no setup, no private data — and you get
+      these exact numbers. Tokenized with <code>cl100k_base</code> (GPT-4 / Claude proxy, &plusmn;10%).
+      Full methodology: <a href="./BENCHMARKS.md">docs/BENCHMARKS.md</a> v8.
+    </p>
+
+    <div class="stat-row">
+      <div class="stat-box">
+        <span class="stat-number">1.7&times;</span>
+        <span class="stat-label">fewer tokens — surgical mode<br>(254 vs 435 avg, equal recall)</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-number">80%</span>
+        <span class="stat-label">recall — identical to Markdown<br>at 1.7&times; lower token cost</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-number">1.7&times;</span>
+        <span class="stat-label">fewer tokens per correct answer<br>(119 vs 205 useful-tokens)</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-number">4.3&times;</span>
+        <span class="stat-label">fewer tokens than raw HTML<br>(254 vs 1,087 avg)</span>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Query</th>
+            <th>HTML-LB surgical</th>
+            <th>Markdown</th>
+            <th>HTML-generic</th>
+            <th>Raw JSONL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Acme architecture</td>
+            <td class="win">249</td>
+            <td>380</td>
+            <td>986</td>
+            <td>7,575</td>
+          </tr>
+          <tr>
+            <td>Auth bugs and decisions</td>
+            <td class="win">331</td>
+            <td>500</td>
+            <td>1,044</td>
+            <td>7,317</td>
+          </tr>
+          <tr>
+            <td>Bugs in build and cal feature</td>
+            <td class="win">313</td>
+            <td>528</td>
+            <td>1,030</td>
+            <td>7,208</td>
+          </tr>
+          <tr>
+            <td>Stripe integration</td>
+            <td class="win">212</td>
+            <td>386</td>
+            <td>1,114</td>
+            <td>7,368</td>
+          </tr>
+          <tr>
+            <td>AdminPanel structure</td>
+            <td class="win">164</td>
+            <td>380</td>
+            <td>1,262</td>
+            <td>7,836</td>
+          </tr>
+          <tr style="font-weight:700; background:var(--bg-alt);">
+            <td>Average</td>
+            <td class="win">254</td>
+            <td>435</td>
+            <td>1,087</td>
+            <td>~7,500</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      <strong>HTML-LB (surgical)</strong> searches the 53-neuron sample brain and returns only
+      query-matched sections &mdash; 1.7&times; fewer tokens than Markdown at <em>identical</em> 80% recall.
+      This is real <code>lazybrain search --strip</code> product behavior: only the sections that match
+      the query are returned, not the whole file. The 4.3&times; gap between HTML-LB surgical
+      (254&thinsp;t) and HTML-generic (1,087&thinsp;t) proves the advantage comes from the
+      <strong>typed schema and inner-text stripping</strong>, not from HTML markup being inherently smaller
+      &mdash; raw HTML without structure is 4.3&times; worse, not better.
+    </p>
+
+    <p>
+      The &ldquo;useful-tokens&rdquo; metric divides total tokens by the number of results that actually
+      contained a correct answer &mdash; the fairest per-unit-of-information cost:
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Format</th>
+            <th>Avg tokens / query</th>
+            <th>Avg recall</th>
+            <th>Avg tokens / correct result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>HTML-LB (surgical)</strong> (<code>search --strip</code>)</td>
+            <td class="win">254</td>
+            <td class="win">80%</td>
+            <td class="win">119</td>
+          </tr>
+          <tr>
+            <td>Markdown whole-note</td>
+            <td>435</td>
+            <td class="win">80%</td>
+            <td>205</td>
+          </tr>
+          <tr>
+            <td>HTML-generic (no structure)</td>
+            <td>1,087</td>
+            <td>80%</td>
+            <td>544</td>
+          </tr>
+          <tr>
+            <td>Raw JSONL scan</td>
+            <td>~7,500</td>
+            <td>0%</td>
+            <td>&mdash; (0 hits)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Why is surgical HTML 1.7&times; smaller than Markdown? Markdown retrieval must return whole files because
+      there is no structural way to target just the relevant section. HTML&rsquo;s <code>data-cerveau-*</code>
+      attributes let the stripper locate the exact <code>&lt;section&gt;</code> or <code>&lt;p&gt;</code>
+      that matched the query and return only its text — with no recall penalty on aligned corpora. When you do
+      return the full knowledge sections (HTML-LB full, 311&thinsp;t &mdash; <em>equal-coverage comparison shown
+      for transparency only; this is not how the product retrieves — it uses the surgical strip above</em>),
+      HTML is 28.5% smaller than Markdown
+      whole-note (435&thinsp;t) &mdash; Markdown&rsquo;s <code>##</code> headings, <code>---</code> YAML
+      frontmatter, and <code>[ ]</code> bullet markers are non-zero markup overhead that HTML strips away.
+      The 4.3&times; gap between HTML-LB surgical (254&thinsp;t) and HTML-generic (1,087&thinsp;t) proves the
+      decisive advantage comes from the <strong>typed schema and inner-text stripping</strong>, not from HTML
+      markup being inherently smaller: raw HTML without structure is 4.3&times; <em>worse</em>, not better.
+    </p>
+
+    <div class="callout win">
+      <strong>The headline result: surgical HTML-LB wins at every metric that matters.</strong>
+      <ul style="padding-left:1.3rem; margin-top:0.5rem; margin-bottom:0;">
+        <li><strong>Surgical (254&thinsp;t, 80% recall) — this is the product:</strong> 1.7&times; fewer tokens at identical recall &mdash; no recall tradeoff. LazyBrain returns only the query-matched section of each neuron, never the whole file. This is what <code>lazybrain search --strip</code> does.</li>
+        <li><strong>Structural / typed (100% precision by construction):</strong> a capability Markdown cannot express at all &mdash; <code>data-cerveau-type="decision"</code> cannot return a non-decision.</li>
+      </ul>
+      <em>Reproduce: <code>node scripts/run-benchmark.mjs</code> — runs on bundled examples/sample-brain — no setup, no private data.</em>
+    </div>
+
+    <div class="callout honest">
+      <strong>Honest equal-coverage comparison (not product behavior):</strong>
+      HTML-LB(full) &mdash; returning the whole knowledge payload of every matched neuron, not just the relevant section
+      &mdash; measures 311&thinsp;t vs Markdown&rsquo;s 435&thinsp;t (28.5% fewer) on this bundled sample brain.
+      This row is shown for transparency so you can see the comparison at identical coverage scope.
+      <strong>It is not how LazyBrain retrieves.</strong> The product uses the surgical strip above (254&thinsp;t).
+      On a different or larger brain, full-coverage mode could use <em>more</em> tokens than Markdown because it
+      returns whole neurons; the surgical strip avoids this by design.
+      The decisive advantages remain: surgical mode (1.7&times; at equal recall) and structural typed queries (unique capability).
+      LazyBrain has not been evaluated on LoCoMo, LongMemEval, or DMR.
+      <em>Methodology note: nav/breadcrumb/toc/infobox chrome excluded from HTML-LB(full) because it
+      is not knowledge payload and the product does not retrieve it.</em>
+    </div>
+  </section>
+
+  <!-- ══════════ 4. TYPED TEMPORAL ══════════ -->
+  <section id="typed-temporal">
+    <h2>4. Exact, typed, temporal precision</h2>
+
+    <p>
+      Some queries are not fuzzy. They have exact, unambiguous answers:
+    </p>
+
+    <ul style="padding-left:1.5rem; margin-bottom:1rem;">
+      <li>&ldquo;Show me all decisions that are still active (not superseded).&rdquo;</li>
+      <li>&ldquo;What was the state of the auth module as of 2026-03-01?&rdquo;</li>
+      <li>&ldquo;Find every bug logged in the Acme project.&rdquo;</li>
+    </ul>
+
+    <p>
+      Markdown cannot answer these precisely. Keyword-grep on &ldquo;decision&rdquo; returns every file that
+      mentions the word &mdash; including comments, changelog entries, meeting notes where decisions are
+      discussed but not made. There is no structural distinction between &ldquo;a file that IS a decision&rdquo;
+      and &ldquo;a file that mentions the word decision.&rdquo;
+    </p>
+
+    <p>HTML with <code>data-cerveau-*</code> attributes answers them with zero false positives:</p>
+
+<pre><code>/* All still-valid decisions — native CSS, works in any browser */
+article[data-cerveau-type="decision"]:not([data-cerveau-valid-until])
+
+/* All bugs in the Acme project — native CSS, works in any browser */
+article[data-cerveau-tags~="bug"][data-cerveau-tags~="acme"]
+
+/* Auth facts that became valid in 2026 and are not yet expired
+   — range predicate, evaluated in JS over attributes
+   (native CSS stops at exact match; LazyBrain's query engine adds ranges) */
+Array.from(document.querySelectorAll(
+  'article[data-cerveau-tags~="auth"]:not([data-cerveau-valid-until])'
+)).filter(el =>
+  (el.getAttribute('data-cerveau-valid-from') || '') >= '2026-01-01'
+)
+
+/* Time-travel: reconstruct brain state as of 2026-03-01
+   — range predicate, evaluated in JS over attributes */
+Array.from(document.querySelectorAll('article[data-cerveau-valid-from]'))
+  .filter(el => {
+    var from  = el.getAttribute('data-cerveau-valid-from')  || '';
+    var until = el.getAttribute('data-cerveau-valid-until') || '';
+    return from <= '2026-03-01' &amp;&amp; (until === '' || until >= '2026-03-01');
+  })</code></pre>
+
+    <p>
+      A CSS predicate <strong>cannot return a non-matching element</strong> by construction.
+      Precision is 100% for these structural/typed queries &mdash; not as an empirical claim,
+      but as a logical property of set membership. The benchmark&rsquo;s structural queries (SQ1&ndash;SQ4)
+      demonstrate this on real data:
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Query</th>
+            <th>HTML predicate</th>
+            <th>What Markdown keyword-grep gets wrong</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Active concepts (not expired)</td>
+            <td><code>:not([data-cerveau-valid-until])</code></td>
+            <td>Returns any file containing &ldquo;concept&rdquo; &mdash; structure pages, code comments, README text</td>
+          </tr>
+          <tr>
+            <td>Bugs in Acme</td>
+            <td><code>[tags~="bug"][topic~="acme"]</code></td>
+            <td>Matches &ldquo;bug&rdquo; in unrelated error messages, code comments, any doc mentioning bugs</td>
+          </tr>
+          <tr>
+            <td>Decisions since May 2026</td>
+            <td><code>.filter(el =&gt; el.getAttribute('data-cerveau-created') &gt;= '2026-05-01')</code>
+              <br><span class="note">range predicate in JS — native CSS has no &ge;/&le; operator</span></td>
+            <td>&ldquo;2026-05&rdquo; appears in timestamps, URLs, and file paths of any document</td>
+          </tr>
+          <tr>
+            <td>Modules in content-pipeline</td>
+            <td><code>[type="aggregate-neuron"][code-path~="content-pipeline"]</code></td>
+            <td>Returns any doc mentioning &ldquo;content-pipeline&rdquo; regardless of node type</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Time-travel is a first-class CSS selector. Competing LLM memory systems that extract facts from prose
+      struggle with temporal reasoning: mem0&rsquo;s LoCoMo temporal sub-score is 55.51%; Letta/MemGPT
+      temporal F1 is 25.52 &mdash; both systems&rsquo; weakest dimension. In LazyBrain, valid-from/valid-until
+      are attributes. The answer is either in the attribute predicate or it isn&rsquo;t.
+    </p>
+
+    <div class="callout honest">
+      <strong>Scope:</strong> The 100% precision claim applies strictly to structural and typed queries
+      &mdash; queries expressible as attribute predicates. Free-text questions (&ldquo;when did we decide to change
+      the caching strategy and why?&rdquo;) still require keyword (L2), semantic (L3), or LLM (L5) retrieval,
+      where precision is not guaranteed. LazyBrain has not been evaluated on LoCoMo, LongMemEval, or DMR.
+      No claims about free-text accuracy relative to competitors are made here.
+    </div>
+  </section>
+
+  <!-- ══════════ 5. DETERMINISTIC ══════════ -->
+  <section id="deterministic">
+    <h2>5. Deterministic and free to query</h2>
+
+    <p>
+      When you send the same query to mem0, cognee, graphiti, or Letta twice, you may get different results.
+      LLM inference is stochastic; extraction and re-ranking introduce variance. This is not a criticism
+      &mdash; it is a design property of systems that use LLMs as query processors.
+    </p>
+
+    <p>
+      LazyBrain&rsquo;s L1 (CSS selector) and L2 (SQLite FTS5) layers are <strong>deterministic by construction</strong>.
+      The same brain state + the same query = the same bytes in the same order, every time.
+      <code>scripts/bench-determinism.mjs</code> verifies this:
+    </p>
+
+<pre><code>run 01: 6d2fb562992ead24b1c9413d4c651d52...  (6.1 ms)
+run 02: 6d2fb562992ead24b1c9413d4c651d52...  (2.5 ms)
+...
+run 10: 6d2fb562992ead24b1c9413d4c651d52...  (0.8 ms)
+
+PASS — all 10 runs returned byte-identical results.
+  SHA-256 : 6d2fb562992ead24b1c9413d4c651d528107f0fef481931b2743fa93ce3fc300
+  avg     : 1.9 ms</code></pre>
+
+    <p>Determinism matters for three practical reasons:</p>
+
+    <ul style="padding-left:1.5rem; margin-bottom:1rem;">
+      <li><strong>CI regression testing</strong> &mdash; a changed brain changes the hash; a CI job detects unintended mutations without re-running an LLM judge.</li>
+      <li><strong>Safe caching</strong> &mdash; <code>query(brain_hash, selector) &rarr; result_hash</code> is a pure function; any cache can store the mapping forever without staleness risk.</li>
+      <li><strong>Auditability</strong> &mdash; a stored hash proves the brain state at a point in time; you can reconstruct the exact context that informed any decision.</li>
+    </ul>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>System</th>
+            <th>Query latency</th>
+            <th>LLM required?</th>
+            <th>Cost per query</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>mem0</td>
+            <td>p50 0.71 s / p95 1.44 s</td>
+            <td>YES</td>
+            <td>~$0.001&ndash;$0.01</td>
+          </tr>
+          <tr>
+            <td>Zep / Graphiti e2e</td>
+            <td>2.58&ndash;3.20 s</td>
+            <td>YES</td>
+            <td>cloud API + Neo4j</td>
+          </tr>
+          <tr>
+            <td>cognee</td>
+            <td>not published</td>
+            <td>YES</td>
+            <td>LLM extraction</td>
+          </tr>
+          <tr>
+            <td>Letta / MemGPT</td>
+            <td>not published</td>
+            <td>YES (&ge;2 inferences)</td>
+            <td>&mdash;</td>
+          </tr>
+          <tr>
+            <td><strong>LazyBrain L1</strong></td>
+            <td class="win"><strong>~2&ndash;15 ms (platform-dependent; see BENCHMARKS.md)</strong></td>
+            <td class="win"><strong>NO</strong></td>
+            <td class="win"><strong>$0</strong></td>
+          </tr>
+          <tr>
+            <td><strong>LazyBrain L2 (FTS5)</strong></td>
+            <td class="win"><strong>~50&ndash;200 ms</strong></td>
+            <td class="win"><strong>NO</strong></td>
+            <td class="win"><strong>$0</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      mem0 reports ~7,000 tokens per operation on LoCoMo &mdash; roughly 28&times; LazyBrain&rsquo;s 254-token surgical average.
+      Zep/Graphiti e2e latency (2.58&ndash;3.20 s) is ~300&ndash;400&times; LazyBrain&rsquo;s L1 latency.
+      Neither system can run without a live server process.
+    </p>
+  </section>
+
+  <!-- ══════════ 6. NAVIGABLE ══════════ -->
+  <section id="navigable">
+    <h2>6. A brain you can read, share, and host</h2>
+
+    <p>
+      HTML is not just machine-readable &mdash; it is human-readable in the most literal sense:
+      any browser can render it. This is not a small thing. It means the same file that gets
+      queried by <code>lazybrain search --strip</code> is the page you browse in the wiki.
+      No separate &ldquo;human interface.&rdquo; The storage format IS the interface.
+    </p>
+
+    <p>
+      No competing system shares this property:
+    </p>
+
+    <ul style="padding-left:1.5rem; margin-bottom:1rem;">
+      <li><strong>Vector DBs</strong> (Qdrant, Pinecone, Weaviate): opaque binary indexes. Cannot be opened in a browser.</li>
+      <li><strong>Graph DBs</strong> (Neo4j, FalkorDB): require running servers and specialized query clients.</li>
+      <li><strong>LLM memory layers</strong> (mem0, cognee, Letta): memory blocks are not human-readable without the app.</li>
+      <li><strong>Markdown tools</strong> (Obsidian, Logseq): human-readable, but not LLM-efficient without a separate pipeline.</li>
+    </ul>
+
+    <p>
+      Sharing is trivial &mdash; the brain is plain files on disk:
+    </p>
+
+<pre><code>brain/
+  auth/
+    oauth-migration-decision.html
+    jwt-removal-procedure.html
+  acme/
+    architecture-overview.html
+    stripe-integration.html
+
+# Share it
+zip -r my-brain.zip brain/
+
+# Put it in git (diffable, reviewable)
+git add brain/ &amp;&amp; git commit -m "chore: update brain" &amp;&amp; git push
+
+# Publish it as a website
+lazybrain publish --output ./public
+# Deploy to GitHub Pages, Netlify, Cloudflare Pages, Vercel, S3</code></pre>
+
+    <p>
+      The recipient can read any <code>.html</code> file in a browser, run <code>lazybrain search</code>
+      against it, or diff specific neurons with standard git tools. No installation beyond Node.js.
+    </p>
+
+    <p>
+      Long-term durability: HTML and CSS are standardized by the W3C with a 30-year
+      backwards-compatibility track record. A brain from 2026 will be fully readable in a browser in 2046.
+      <code>data-cerveau-*</code> attributes are standard HTML5 <code>data-*</code> attributes &mdash;
+      any HTML parser that exists will preserve them. A Qdrant vector index from 2026 is not guaranteed
+      to be readable by anything in 2046.
+    </p>
+
+    <div class="callout win">
+      LazyBrain is the only system where &ldquo;human reading the brain&rdquo; and &ldquo;LLM querying the brain&rdquo;
+      are the same operation on the same file.
+    </div>
+  </section>
+
+  <!-- ══════════ 7. LIVE DEMO ══════════ -->
+  <section id="demo">
+    <h2>7. Live demo &mdash; CSS queries in your browser, right now</h2>
+
+    <p>
+      The best argument for HTML as a memory substrate is a demonstration. The following neurons are
+      embedded in this page as hidden <code>&lt;article&gt;</code> elements with <code>data-cerveau-*</code> attributes.
+      Most buttons below run native <code>document.querySelectorAll()</code> calls &mdash; type, tag, and
+      presence filters that work in every browser with zero JavaScript beyond the call itself.
+      The last button demonstrates a <strong>range predicate</strong>: native CSS has no
+      <code>&gt;=</code>&thinsp;/&thinsp;<code>&lt;=</code> operator for attribute values, so LazyBrain&rsquo;s
+      query engine evaluates those in a few lines of JS over the parsed attributes (still deterministic,
+      still zero-LLM, still &lt;&thinsp;5&thinsp;ms). Markdown can do neither.
+    </p>
+
+    <!-- Hidden sample neurons — this is the brain-in-the-page -->
+    <div class="sample-neurons" aria-hidden="true">
+
+      <article id="demo-oauth-decision"
+               data-cerveau-type="decision"
+               data-cerveau-created="2026-05-20T10:15:00Z"
+               data-cerveau-valid-from="2026-05-20"
+               data-cerveau-tags="auth oauth security"
+               data-cerveau-topic="AuthSystem">
+        <h4>Migrate to OAuth2 PKCE</h4>
+        <p>Decision: drop custom JWT in favour of OAuth2 PKCE.</p>
+        <p>Driver: Q2 security audit flagged manual secret rotation.</p>
+      </article>
+
+      <article id="demo-stripe-decision"
+               data-cerveau-type="decision"
+               data-cerveau-created="2026-04-10T09:00:00Z"
+               data-cerveau-valid-from="2026-04-10"
+               data-cerveau-tags="payments stripe billing"
+               data-cerveau-topic="BillingSystem">
+        <h4>Use Stripe Checkout over custom billing</h4>
+        <p>Decision: use Stripe Checkout (hosted) rather than building a custom payment form.</p>
+        <p>Reason: PCI scope reduction and faster time-to-market.</p>
+      </article>
+
+      <article id="demo-auth-bug"
+               data-cerveau-type="bug"
+               data-cerveau-created="2026-05-15T14:30:00Z"
+               data-cerveau-valid-from="2026-05-15"
+               data-cerveau-valid-until="2026-05-22"
+               data-cerveau-tags="auth bug session"
+               data-cerveau-topic="AuthSystem">
+        <h4>Session token not refreshed on tab re-focus</h4>
+        <p>Bug: session tokens were not refreshed when the user re-focused the browser tab after &gt;15 minutes.</p>
+        <p>Fix: added visibilitychange listener to force token refresh on page re-activation.</p>
+        <p>Status: resolved 2026-05-22.</p>
+      </article>
+
+      <article id="demo-db-decision"
+               data-cerveau-type="decision"
+               data-cerveau-created="2026-03-05T11:00:00Z"
+               data-cerveau-valid-from="2026-03-05"
+               data-cerveau-tags="database postgres supabase"
+               data-cerveau-topic="DataLayer">
+        <h4>Use Postgres (Supabase) as primary database</h4>
+        <p>Decision: use Supabase (managed Postgres) as the primary data store for all projects.</p>
+        <p>Rationale: row-level security, built-in auth, edge functions &mdash; no separate backend needed.</p>
+      </article>
+
+      <article id="demo-perf-concept"
+               data-cerveau-type="concept"
+               data-cerveau-created="2026-05-01T08:00:00Z"
+               data-cerveau-valid-from="2026-05-01"
+               data-cerveau-tags="performance caching redis"
+               data-cerveau-topic="Infrastructure">
+        <h4>Response caching strategy</h4>
+        <p>Concept: cache API responses at the edge using Cloudflare Workers KV for read-heavy endpoints.</p>
+        <p>TTL policy: 60s for user-specific data, 300s for public content.</p>
+      </article>
+
+    </div>
+    <!-- End hidden neurons -->
+
+    <div id="demo">
+      <h3>Try it &mdash; click a query to run it</h3>
+
+      <div class="demo-buttons">
+        <button class="demo-btn"
+                data-query='article[data-cerveau-type="decision"]'
+                onclick="runDemoQuery(this)">
+          All decisions
+        </button>
+        <button class="demo-btn"
+                data-query='article[data-cerveau-type="decision"]:not([data-cerveau-valid-until])'
+                onclick="runDemoQuery(this)">
+          Active decisions only
+        </button>
+        <button class="demo-btn"
+                data-query='article[data-cerveau-tags~="auth"]'
+                onclick="runDemoQuery(this)">
+          Auth-tagged facts
+        </button>
+        <button class="demo-btn"
+                data-query='article[data-cerveau-tags~="auth"][data-cerveau-valid-until]'
+                onclick="runDemoQuery(this)">
+          Resolved auth items
+        </button>
+        <button class="demo-btn demo-btn--range"
+                data-range-base="article[data-cerveau-created]"
+                data-range-attr="data-cerveau-created"
+                data-range-gte="2026-05-01"
+                onclick="runRangeQuery(this)">
+          Created since May 2026 <span style="font-size:0.7em;opacity:0.75">(JS range)</span>
+        </button>
+      </div>
+
+      <div id="demo-output" role="region" aria-live="polite" aria-label="Query results">
+        Click a button above. The first four use native CSS selectors (valid in any browser); the last uses a JS range filter (LazyBrain query engine).
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 8. HONEST CLOSING ══════════ -->
+  <section id="honest">
+    <h2>8. Honest closing: what HTML does not solve</h2>
+
+    <p>
+      This thesis would be dishonest without stating clearly what HTML and CSS selectors cannot do.
+    </p>
+
+    <h3>Fuzzy semantic synthesis</h3>
+    <p>
+      &ldquo;Summarize everything I&rsquo;ve learned about auth across all projects&rdquo; cannot be answered by a CSS selector.
+      It requires keyword search (L2) or embedding-based semantic search (L3), followed by an LLM synthesis pass.
+      HTML&rsquo;s structured attributes help retrieve the right facts, but the synthesis is still an LLM operation.
+    </p>
+
+    <h3>Untagged content</h3>
+    <p>
+      The <code>data-cerveau-*</code> advantages only apply to content that has been processed by the
+      <code>dream</code> and <code>enrich</code> pipelines. Raw notes that have not been tagged fall back
+      to keyword search only. The format is only as good as the tagging discipline.
+    </p>
+
+    <h3>Free-text temporal reasoning</h3>
+    <p>
+      &ldquo;When did the team decide to stop using JWT?&rdquo; &mdash; if the decision is stored as a tagged fact
+      with <code>data-cerveau-valid-until</code>, a CSS selector answers it exactly.
+      If the decision is buried in prose without attributes, the same limitations as any full-text search apply.
+    </p>
+
+    <h3>No public benchmark numbers yet</h3>
+    <p>
+      LazyBrain has not been evaluated on LoCoMo, LongMemEval, or DMR.
+      All competitor accuracy numbers cited here belong to the competitors.
+      The structural precision claims (100% on typed queries) are logical properties, not benchmark results.
+      A LoCoMo evaluation is planned but not yet done.
+    </p>
+
+    <div class="callout">
+      <strong>The claim, honestly stated:</strong> for the specific capabilities it provides &mdash;
+      typed queries, temporal predicates, determinism, token efficiency, portability, browsability,
+      and durability &mdash; HTML is the right choice, and no alternative format provides all of them simultaneously.
+      It is not a claim that HTML solves everything.
+    </div>
+
+    <h3>Prior art and related work</h3>
+    <p>
+      One adjacent paper informed this thesis and is worth citing precisely:
+      <a href="https://arxiv.org/abs/2411.02959">HtmlRAG</a> (arXiv 2411.02959, WWW 2025) shows HTML preserves document
+      structure better than plain text for retrieval-augmented generation.
+      LazyBrain extends the thesis to the <em>memory store itself</em>: <code>data-cerveau-*</code> attributes
+      as a typed schema, CSS selectors as a query language. No prior work applies HTML in this way.
+    </p>
+
+    <h3>Further reading</h3>
+    <ul style="padding-left:1.5rem; margin-bottom:1rem;">
+      <li><a href="https://github.com/LazyGod75/LazyBrain">LazyBrain on GitHub</a></li>
+      <li><a href="./BENCHMARKS.md">docs/BENCHMARKS.md</a> &mdash; full methodology, results, and reproduction instructions</li>
+      <li><a href="./WHY-HTML.md">docs/WHY-HTML.md</a> &mdash; technical reference version of this argument</li>
+    </ul>
+  </section>
+
+  <!-- ══════════ FOOTER ══════════ -->
+  <footer>
+    <p>
+      Written for <a href="https://github.com/LazyGod75/LazyBrain">LazyBrain</a> &mdash;
+      an LLM second brain built on HTML + CSS selectors.
+      Apache 2.0. Numbers from BENCHMARKS.md v8, 2026-05-30.
+    </p>
+  </footer>
+
+</div><!-- .container -->
+
+<!-- ══════════ DEMO SCRIPT ══════════ -->
+<script>
+  // ── Shared helpers ────────────────────────────────────────────────────────
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function setActiveBtn(btn) {
+    var allBtns = document.querySelectorAll('.demo-btn');
+    for (var i = 0; i < allBtns.length; i++) {
+      allBtns[i].removeAttribute('aria-pressed');
+    }
+    btn.setAttribute('aria-pressed', 'true');
+  }
+
+  function renderMatches(matches, label) {
+    var output = document.getElementById('demo-output');
+    if (matches.length === 0) {
+      output.innerHTML = '<span style="color:var(--ink-faint)">No matches for: ' +
+        escHtml(label) + '</span>';
+      return;
+    }
+
+    var html = '<div class="demo-count">' + matches.length +
+      ' match' + (matches.length === 1 ? '' : 'es') +
+      ' for: <code>' + escHtml(label) + '</code></div>';
+
+    for (var j = 0; j < matches.length; j++) {
+      var el = matches[j];
+      var type    = el.getAttribute('data-cerveau-type') || '?';
+      var created = (el.getAttribute('data-cerveau-created') || '').slice(0, 10);
+      var tags    = el.getAttribute('data-cerveau-tags') || '';
+      var expired = el.hasAttribute('data-cerveau-valid-until')
+        ? ' [expired ' + el.getAttribute('data-cerveau-valid-until').slice(0, 10) + ']'
+        : '';
+
+      // Strip inner text — same approach as LazyBrain search --strip
+      var rawText = el.textContent.replace(/\s+/g, ' ').trim();
+
+      html += '<div class="result-item">';
+      html += '<div class="result-meta">[' + escHtml(type) + ' | ' +
+        escHtml(created) + ' | ' + escHtml(el.id) + ']' +
+        (tags ? ' tags:' + escHtml(tags) : '') +
+        escHtml(expired) + '</div>';
+      html += '<div class="result-text">' + escHtml(rawText) + '</div>';
+      html += '</div>';
+    }
+
+    output.innerHTML = html;
+  }
+
+  // ── Native CSS selector (pure browser DOM) ────────────────────────────────
+
+  function runDemoQuery(btn) {
+    var selector = btn.getAttribute('data-query');
+    setActiveBtn(btn);
+
+    // All buttons using this function carry valid CSS — no >= / <= operators.
+    var nodeList = document.querySelectorAll(selector);
+    var matches  = Array.from(nodeList);
+    renderMatches(matches, selector);
+  }
+
+  // ── LazyBrain range predicate (JS filter over DOM attributes) ────────────
+  // Native CSS has no >= / <= operator for attribute values.
+  // LazyBrain's query engine evaluates range predicates in a few lines of JS
+  // over the parsed attributes — deterministic, zero-LLM, still < 5 ms.
+
+  function runRangeQuery(btn) {
+    setActiveBtn(btn);
+
+    var baseSelector = btn.getAttribute('data-range-base') || 'article[data-cerveau-created]';
+    var attr  = btn.getAttribute('data-range-attr');
+    var gte   = btn.getAttribute('data-range-gte') || '';
+    var lte   = btn.getAttribute('data-range-lte') || '';
+
+    var all = Array.from(document.querySelectorAll(baseSelector));
+    var matches = all.filter(function(el) {
+      var val = (el.getAttribute(attr) || '').slice(0, 10);
+      if (gte && val < gte) return false;
+      if (lte && val > lte) return false;
+      return true;
+    });
+
+    // Build a human-readable label that makes the JS-vs-CSS boundary explicit
+    var label = ‘LazyBrain range predicate — JS filter: ‘ +
+      attr + (gte ? ‘ >= "’ + gte + ‘"’ : ‘’) + (lte ? ‘ <= "’ + lte + ‘"’ : ‘’) +
+      ‘\n(pure CSS stops at exact match; LazyBrain’s query engine adds ranges)’;
+
+    renderMatches(matches, label);
+  }
+</script>
+
+</body>
+</html>

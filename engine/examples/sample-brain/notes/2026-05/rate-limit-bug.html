@@ -1,0 +1,27 @@
+<article id="rate-limit-bug-7"
+         data-cerveau-version="0.1.0"
+         data-cerveau-created="2026-05-18T16:42:00Z"
+         data-cerveau-type="episodic"
+         data-cerveau-source="session:sample#002"
+         data-cerveau-tier="working"
+         data-cerveau-importance="0.65"
+         data-cerveau-tags="bug api performance rate-limit"
+         data-cerveau-valid-from="2026-05-18">
+
+  <h2>Bug rate-limit 429 sous charge</h2>
+
+  <p data-cerveau-fact data-cerveau-confidence="0.9" data-cerveau-extracted-by="heuristic"
+     data-cerveau-kind="error">
+    Erreur 429 retournée par /api/sync au-delà de 80 req/s sur l'instance Europe-west1.
+  </p>
+
+  <p data-cerveau-fact data-cerveau-confidence="0.85" data-cerveau-extracted-by="heuristic"
+     data-cerveau-kind="fact">
+    Cause racine : limite côté gateway était fixée à 100 req/s mais comptabilisait aussi les redirects.
+  </p>
+
+  <p data-cerveau-fact data-cerveau-confidence="0.95" data-cerveau-extracted-by="human"
+     data-cerveau-kind="decision">
+    Décision : exclure les 3xx du compteur rate-limit côté gateway, déployé en commit 9d3ab4.
+  </p>
+</article>

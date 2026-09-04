@@ -1,0 +1,43 @@
+{
+  "questionId": "q20",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 4550,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "agentLoop",
+      "claudeCall",
+      "spawnSync"
+    ],
+    "filesMatched": 4,
+    "filesPicked": 1
+  },
+  "latencyMs": 8384,
+  "answer": "In the `claudeCall` function (around line 240-250), the Claude CLI is invoked with these exact flags:\n\n```typescript\n['-p', prompt, '--model', model, '--output-format', 'json', '--safe-mode']\n```\n\nBreaking it down:\n- `-p <prompt>` — passes the formatted conversation as a prompt string\n- `--model <model>` — specifies the model to use\n- `--output-format json` — requests JSON output format\n- `--safe-mode` — enables safe mode\n\nThe command is executed via `spawnSync` with a 300-second timeout and a 64MB buffer limit.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 580,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10335,
+    "costUsd": 0.0312954
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "--output-format json",
+        "present": true
+      },
+      {
+        "term": "--safe-mode",
+        "present": true
+      }
+    ]
+  }
+}

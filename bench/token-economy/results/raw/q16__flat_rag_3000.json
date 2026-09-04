@@ -1,0 +1,48 @@
+{
+  "questionId": "q16",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2944,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 5,
+    "queryTokens": [
+      "engine",
+      "src",
+      "retrieval",
+      "router.ts",
+      "picklevel",
+      "routes",
+      "queries",
+      "3-15",
+      "tokens",
+      "l2_l3_hybrid.",
+      "range",
+      "widened"
+    ]
+  },
+  "latencyMs": 12332,
+  "answer": "According to the comment in `engine/src/retrieval/router.ts:375-382`, the 3-15 token range was **widened from 6-15**.\n\nThe comment explains the reason:\n\n> Widened from 6-15 so short natural-language questions get semantic recall (via RRF fusion with keyword search) instead of being stuck keyword-only.\n\nThis change ensures that queries with 3-5 tokens (like \"how does auth work\") now reach semantic search via L2_L3_HYBRID instead of being stuck in keyword-only L2 routing.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 749,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8642,
+    "costUsd": 0.027074400000000002
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 1,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "6-15",
+        "present": true
+      }
+    ]
+  }
+}

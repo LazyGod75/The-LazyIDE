@@ -1,0 +1,43 @@
+{
+  "questionId": "q21",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 4550,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "agentLoop",
+      "DeepSeek",
+      "DEEPSEEK_API_URL"
+    ],
+    "filesMatched": 2,
+    "filesPicked": 1
+  },
+  "latencyMs": 7366,
+  "answer": "Based on the context provided from `src/cli/lib/agentLoop.ts`:\n\n1. **API Key Environment Variable**: `DEEPSEEK_API_KEY`\n   - Defined at line: `const API_KEY = process.env.DEEPSEEK_API_KEY;`\n\n2. **Default DeepSeek API URL**: `https://api.deepseek.com/chat/completions`\n   - Defined at line: `const API_URL = process.env.DEEPSEEK_API_URL ?? 'https://api.deepseek.com/chat/completions';`\n   - This means if the `DEEPSEEK_API_URL` environment variable is not set, it defaults to that URL.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 399,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10344,
+    "costUsd": 0.0304244
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "DEEPSEEK_API_KEY",
+        "present": true
+      },
+      {
+        "term": "api.deepseek.com",
+        "present": true
+      }
+    ]
+  }
+}

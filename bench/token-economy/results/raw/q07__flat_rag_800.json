@@ -1,0 +1,67 @@
+{
+  "questionId": "q07",
+  "category": "behavioral",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 889,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 1,
+    "queryTokens": [
+      "commands",
+      "inject-context",
+      "mode",
+      "turn",
+      "had",
+      "been",
+      "replaced",
+      "ide",
+      "raw",
+      "search",
+      "--strip",
+      "--top",
+      "call",
+      "because",
+      "stale",
+      "rust",
+      "comment",
+      "claiming",
+      "mode",
+      "turn",
+      "returns",
+      "empty",
+      "bundled",
+      "sidecar",
+      "real",
+      "underlying",
+      "bug",
+      "workaround",
+      "hiding",
+      "where",
+      "live"
+    ]
+  },
+  "latencyMs": 14218,
+  "answer": "The context provided does not contain the specific answer to what the real underlying bug was that caused mode=turn to return empty in the bundled sidecar.\n\nThe context shows that commit b0fef98 (\"fix(engine): budget-gate the always-on startup-context prefix and fix a false brain_search nudge\") fixed an inaccuracy where nudge text was naming tools that the caller didn't actually have — and that this same inaccuracy was missed in `markerNudge` at that time. However, the context does not explain the original bug that caused mode=turn to appear broken or to actually return empty values.\n\nYou'd need to look at:\n1. The Rust code in `src-tauri/src/commands/brain/` (likely in the search.rs or similar file mentioned in the comments)\n2. The git history around the commit that introduced the stale Rust comment claiming mode=turn returns empty\n3. The fix commit (likely dfe20c9: \"fix: reconcile disk-vs-index drift and stop silent structural-query degradation\") that may have resolved the actual bug\n\nto understand what the real issue was.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 1257,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5881,
+    "costUsd": 0.0213694
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "pickLevel",
+        "present": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "questionId": "q19",
+  "category": "structural",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 277,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 7289,
+  "answer": "I can see from the context that there is a `inject-context` module (#aggregate-commands-inject-context) with 4 files and 1537 lines of TypeScript code, which would contain the command definition for `lazybrain inject-context`. However, the context provided only includes metadata about these files—it doesn't show the actual code content.\n\nTo answer your specific questions about:\n1. The four values accepted by `--mode`\n2. The default `--max-tokens` budget\n\nI would need to read the actual implementation of the inject-context command. Would you like me to explore the codebase to find these details?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 381,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5105,
+    "costUsd": 0.0146544
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 5,
+    "hits": [
+      {
+        "term": "session",
+        "present": false
+      },
+      {
+        "term": "turn",
+        "present": false
+      },
+      {
+        "term": "marker",
+        "present": false
+      },
+      {
+        "term": "highlights",
+        "present": false
+      },
+      {
+        "term": "3000",
+        "present": false
+      }
+    ]
+  }
+}

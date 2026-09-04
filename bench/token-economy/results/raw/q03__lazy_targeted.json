@@ -1,0 +1,38 @@
+{
+  "questionId": "q03",
+  "category": "behavioral",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 188,
+  "configMeta": {
+    "corpusDir": "engine/src/graph",
+    "siblingFileCount": 27,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 23432,
+  "answer": "I don't have access to file reading tools (Read and Bash are disabled for this session), so I can't examine the actual `parseTargetId` function in `engine/src/graph/backlinks.ts` directly.\n\nHowever, based on your question, you're describing a bug fix where:\n- **Before**: bare `#<id>` hrefs (the auto-linker's dominant format) were being silently dropped, resulting in 0 edges in backlinks.json\n- **After**: the function now accepts additional href formats\n\nTo answer your questions about:\n1. **What href formats does parseTargetId accept after the fix?**\n2. **How many edges did the fix add on a real sample?**\n\nI'd need to either:\n- Read the actual function code to see what formats it handles (e.g., does it now support `#<id>`, `file#<id>`, full URLs with anchors, etc.?)\n- Check test files or recent commit messages that document the fix\n- Look at git history/diffs to see what changed\n\nCan you share the relevant code snippet from `parseTargetId`, or point me to a commit message/PR that describes this fix? Alternatively, if you have access to run tools, you could show me the output of `grep -A 20 \"function parseTargetId\" engine/src/graph/backlinks.ts` or similar.",
+  "usage": {
+    "inputTokens": 52,
+    "outputTokens": 1485,
+    "cacheReadInputTokens": 137132,
+    "cacheCreationInputTokens": 13429,
+    "costUsd": 0.049093200000000004
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "1658",
+        "present": false
+      },
+      {
+        "term": "wiki",
+        "present": false
+      }
+    ]
+  }
+}

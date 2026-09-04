@@ -1,0 +1,13 @@
+{
+  "name": "lazygod75",
+  "owner": { "name": "LazyGod75" },
+  "description": "Plugins by LazyGod75 — HTML-first persistent memory for Claude Code",
+  "plugins": [
+    {
+      "name": "lazybrain",
+      "version": "0.2.0",
+      "source": "./plugins/lazybrain",
+      "description": "HTML-first persistent memory — CLI-driven, queryable without LLM calls, local-first."
+    }
+  ]
+}

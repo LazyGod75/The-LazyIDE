@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; base-uri 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LazyBrain</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles/wiki.css">
+  <link rel="stylesheet" href="styles/features.css">
+</head>
+<body>
+  <a href="#content" class="skip-link">Skip to main content</a>
+  <header id="site-header" role="banner">
+    <div class="branding">
+      <a href="#/" id="brand-link" aria-label="LazyBrain home">
+        <span class="brand-name">LazyBrain</span>
+      </a>
+    </div>
+
+    <div class="search-wrap" role="search">
+      <label for="search-input" class="sr-only">Search the brain</label>
+      <input
+        type="search"
+        id="search-input"
+        name="q"
+        placeholder="Search the brain..."
+        autocomplete="off"
+        aria-label="Search notes"
+      >
+      <button type="button" id="search-btn" aria-label="Run search">Search</button>
+    </div>
+
+    <nav class="top-nav" aria-label="Site navigation">
+      <a href="#/" id="nav-home">Home</a>
+      <a href="#/stats" id="nav-stats">Stats</a>
+      <a href="#/timeline" id="nav-timeline">Timeline</a>
+      <a href="graph.html" id="nav-graph">Graph</a>
+    </nav>
+
+    <button
+      type="button"
+      id="cmd-palette-trigger"
+      class="cmd-palette-trigger"
+      aria-label="Open command palette (Ctrl+K)"
+      title="Command palette (Ctrl+K / Cmd+K)"
+    >
+      <span aria-hidden="true">&#8984;</span>
+      <kbd>K</kbd>
+    </button>
+
+    <button
+      type="button"
+      id="sidebar-toggle"
+      aria-label="Toggle sidebar"
+      aria-expanded="false"
+      aria-controls="sidebar"
+    >&#9776;</button>
+  </header>
+
+  <!-- Command palette: overlay injected/removed dynamically by command-palette.js -->
+  <div id="cp-mount" aria-live="assertive"></div>
+
+  <div id="layout">
+    <aside
+      id="sidebar"
+      role="complementary"
+      aria-label="Project navigation"
+    >
+      <div id="sidebar-inner">
+        <h2 id="sidebar-heading">Projects</h2>
+        <div id="project-tree" role="tree" aria-label="Project tree">
+          <p class="sidebar-loading" aria-live="polite">Loading...</p>
+        </div>
+      </div>
+    </aside>
+
+    <div id="content-wrap">
+      <nav id="breadcrumb" aria-label="Breadcrumb">
+        <!-- populated by router -->
+      </nav>
+
+      <main id="content" role="main" aria-live="polite">
+        <div class="loading loading--initial" role="status" aria-live="polite">
+          <span class="loading-spinner" aria-hidden="true"></span>
+          Loading brain&hellip;
+        </div>
+      </main>
+    </div>
+
+    <aside id="meta" role="complementary" aria-label="Page metadata">
+      <!-- TOC + infobox injected per page -->
+    </aside>
+  </div>
+
+  <footer id="site-footer" role="contentinfo">
+    <p>
+      LazyBrain &mdash; HTML-first second brain
+      &nbsp;<span id="footer-stats" aria-live="polite"></span>
+    </p>
+  </footer>
+
+  <!-- vis-network: loaded before module scripts so window.vis is available to home-graph.js -->
+  <script src="lib/vendor/vis-network.min.js"></script>
+  <script type="module" src="lib/main.js"></script>
+</body>
+</html>

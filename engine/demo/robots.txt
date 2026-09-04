@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lazygod75.github.io/LazyBrain/sitemap.xml

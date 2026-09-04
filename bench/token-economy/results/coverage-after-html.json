@@ -1,0 +1,488 @@
+{
+  "generatedAt": "2026-08-16T11:32:45.595Z",
+  "summary": {
+    "css_fn_or_bind": {
+      "full": 14,
+      "ceil": 0.5833,
+      "struct": 0.5294,
+      "behav": 0.7143,
+      "meanTokens": 287,
+      "meanRecall": 0.7292
+    },
+    "source": {
+      "full": 21,
+      "ceil": 0.875
+    }
+  },
+  "rows": [
+    {
+      "id": "q01",
+      "category": "behavioral",
+      "selector": "#fn-parsefile",
+      "found": true,
+      "css": {
+        "tokens": 361,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 9766,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q02",
+      "category": "behavioral",
+      "selector": "#fn-getconfig",
+      "found": true,
+      "css": {
+        "tokens": 289,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 2271,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q03",
+      "category": "behavioral",
+      "selector": "#fn-parsetargetid",
+      "found": true,
+      "css": {
+        "tokens": 547,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "1658"
+        ]
+      },
+      "source": {
+        "tokens": 2298,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "1658"
+        ]
+      }
+    },
+    {
+      "id": "q04",
+      "category": "behavioral",
+      "selector": "#fn-fileneuronarticleid",
+      "found": true,
+      "css": {
+        "tokens": 286,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 7463,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q05",
+      "category": "structural",
+      "selector": "#fn-toanchorid",
+      "found": true,
+      "css": {
+        "tokens": 333,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "hyphen"
+        ]
+      },
+      "source": {
+        "tokens": 7463,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q06",
+      "category": "structural",
+      "selector": "#bind-max-file-neurons-per-project",
+      "found": true,
+      "css": {
+        "tokens": 254,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 7884,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q07",
+      "category": "behavioral",
+      "selector": "#fn-picklevel",
+      "found": true,
+      "css": {
+        "tokens": 331,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 3888,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q08",
+      "category": "structural",
+      "selector": "#bind-nudgestyle",
+      "found": true,
+      "css": {
+        "tokens": 220,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 2024,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q09",
+      "category": "structural",
+      "selector": "#fn-isricherbody",
+      "found": true,
+      "css": {
+        "tokens": 335,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "mergeUpsertHtml"
+        ]
+      },
+      "source": {
+        "tokens": 1137,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q10",
+      "category": "behavioral",
+      "selector": "#fn-hasnoiseexempttag",
+      "found": true,
+      "css": {
+        "tokens": 297,
+        "all": false,
+        "ratio": 0.25,
+        "missing": [
+          "mission",
+          "agent",
+          "skill"
+        ]
+      },
+      "source": {
+        "tokens": 10823,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q11",
+      "category": "structural",
+      "selector": "#fn-runrepairuninvalidatenoise",
+      "found": true,
+      "css": {
+        "tokens": 295,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 2233,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q12",
+      "category": "structural",
+      "selector": "#fn-maplimit",
+      "found": true,
+      "css": {
+        "tokens": 368,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "input order"
+        ]
+      },
+      "source": {
+        "tokens": 605,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "input order"
+        ]
+      }
+    },
+    {
+      "id": "q13",
+      "category": "structural",
+      "selector": "#fn-resolveconcurrencyenv",
+      "found": true,
+      "css": {
+        "tokens": 323,
+        "all": false,
+        "ratio": 0.75,
+        "missing": [
+          "clamp"
+        ]
+      },
+      "source": {
+        "tokens": 605,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q14",
+      "category": "structural",
+      "selector": "#fn-resolveconcurrencyenv",
+      "found": true,
+      "css": {
+        "tokens": 323,
+        "all": false,
+        "ratio": 0,
+        "missing": [
+          "LAZYBRAIN_IMPORT_CONCURRENCY",
+          "5",
+          "12"
+        ]
+      },
+      "source": {
+        "tokens": 605,
+        "all": false,
+        "ratio": 0,
+        "missing": [
+          "LAZYBRAIN_IMPORT_CONCURRENCY",
+          "5",
+          "12"
+        ]
+      }
+    },
+    {
+      "id": "q15",
+      "category": "structural",
+      "selector": "#fn-picklevel",
+      "found": true,
+      "css": {
+        "tokens": 331,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 3888,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q16",
+      "category": "structural",
+      "selector": "#fn-picklevel",
+      "found": true,
+      "css": {
+        "tokens": 331,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 3888,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q17",
+      "category": "structural",
+      "selector": "#fn-dispatchlevel",
+      "found": true,
+      "css": {
+        "tokens": 310,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 3888,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q18",
+      "category": "structural",
+      "selector": "#fn-query",
+      "found": true,
+      "css": {
+        "tokens": 4,
+        "all": false,
+        "ratio": 0,
+        "missing": [
+          "L1",
+          "deterministic"
+        ]
+      },
+      "source": {
+        "tokens": 3586,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q19",
+      "category": "structural",
+      "selector": "#fn-inject-context",
+      "found": true,
+      "css": {
+        "tokens": 6,
+        "all": false,
+        "ratio": 0,
+        "missing": [
+          "session",
+          "turn",
+          "marker",
+          "highlights",
+          "3000"
+        ]
+      },
+      "source": {
+        "tokens": 3586,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q20",
+      "category": "structural",
+      "selector": "#fn-claudecall",
+      "found": true,
+      "css": {
+        "tokens": 674,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 7711,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q21",
+      "category": "structural",
+      "selector": "#bind-api-key",
+      "found": true,
+      "css": {
+        "tokens": 16,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "api.deepseek.com"
+        ]
+      },
+      "source": {
+        "tokens": 7711,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q22",
+      "category": "behavioral",
+      "selector": "#bind-agentloopresult",
+      "found": true,
+      "css": {
+        "tokens": 102,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 7711,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q23",
+      "category": "structural",
+      "selector": "#bind-type-icon",
+      "found": true,
+      "css": {
+        "tokens": 36,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 10406,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q24",
+      "category": "structural",
+      "selector": "#fn-buildmainpage",
+      "found": true,
+      "css": {
+        "tokens": 508,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "source": {
+        "tokens": 10406,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    }
+  ]
+}

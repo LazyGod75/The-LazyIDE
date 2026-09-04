@@ -1,0 +1,56 @@
+{
+  "questionId": "q12",
+  "category": "structural",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 790,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 2,
+    "queryTokens": [
+      "engine",
+      "src",
+      "util",
+      "concurrency.ts",
+      "maplimit",
+      "return",
+      "results",
+      "input",
+      "order",
+      "completion",
+      "order",
+      "bounded",
+      "concurrency",
+      "implemented",
+      "chunking",
+      "strategy"
+    ]
+  },
+  "latencyMs": 11213,
+  "answer": "Based on the test file in the context, I can answer the first part directly, but not the second:\n\n**Return order:** `mapLimit()` returns results in **input order**, not completion order. The first test explicitly verifies this:\n\n```javascript\nit('returns results in input order regardless of completion order', async () => {\n    const delays = [50, 40, 30, 20, 10];\n    // ...\n    expect(results).toEqual([0, 1, 2, 3, 4]);\n```\n\nEven though item 4 completes fastest (10ms delay) and item 0 completes slowest (50ms delay), the output is still `[0, 1, 2, 3, 4]` in input order.\n\n**Bounded concurrency:** The test at lines 24-39 confirms that mapLimit respects the concurrency limit (never more than 3 concurrent calls with 11 items and limit=3), but the **actual implementation and chunking strategy are not in the provided context**. I would need to see the actual `engine/src/util/concurrency.ts` file to tell you whether it uses queue-based scheduling, batching, or another approach.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 830,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5813,
+    "costUsd": 0.018990399999999998
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "input order",
+        "present": true
+      },
+      {
+        "term": "chunk",
+        "present": true
+      }
+    ]
+  }
+}

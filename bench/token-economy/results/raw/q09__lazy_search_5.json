@@ -1,0 +1,37 @@
+{
+  "questionId": "q09",
+  "category": "structural",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 352,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 8725,
+  "answer": "I don't have enough information in the provided context to answer this question. The context shows that `engine/src/store/upsert.ts` exists (84 lines, 2 exports) and mentions `toPlainText` as one function, but the symbol list is incomplete (it cuts off at \"[4\") and doesn't describe what the functions do or confirm which two were added for the `upsertIfRicher` write path.\n\nTo answer this accurately, I would need to read the actual file. Would you like me to read `engine/src/store/upsert.ts` to find these two functions and their purposes?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 463,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5272,
+    "costUsd": 0.015576399999999999
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "isRicherBody",
+        "present": false
+      },
+      {
+        "term": "mergeUpsertHtml",
+        "present": false
+      }
+    ]
+  }
+}

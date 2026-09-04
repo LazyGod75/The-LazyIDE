@@ -1,0 +1,38 @@
+{
+  "questionId": "q05",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 85,
+  "configMeta": {
+    "corpusDir": "engine/src/annotator/blocks/composers",
+    "siblingFileCount": 9,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 42481,
+  "answer": "I'm unable to read the file directly due to permission restrictions on file access commands in this session. However, based on the context you've provided, I can tell you:\n\n**From your question:** The `toAnchorId()` function at `engine/src/annotator/blocks/composers/file-neuron.ts#toAnchorId` transforms a symbol name into an HTML id fragment used for anchors like `#fn-<name>` and `#cls-<name>`.\n\nTo give you the specific transformation details, I would need to see the actual implementation. Could you either:\n\n1. Open the file and share the implementation of `toAnchorId()`, or\n2. Use a command like `head -n 50 \"engine/src/annotator/blocks/composers/file-neuron.ts\" | grep -A 5 toAnchorId` to extract it yourself and share the output?\n\nThis will let me answer your question precisely about what transformation it applies.",
+  "usage": {
+    "inputTokens": 120,
+    "outputTokens": 2826,
+    "cacheReadInputTokens": 386230,
+    "cacheCreationInputTokens": 24018,
+    "costUsd": 0.10176999999999999
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "lowercase",
+        "present": false
+      },
+      {
+        "term": "hyphen",
+        "present": false
+      }
+    ]
+  }
+}

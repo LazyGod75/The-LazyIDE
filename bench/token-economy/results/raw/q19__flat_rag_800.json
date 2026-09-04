@@ -1,0 +1,63 @@
+{
+  "questionId": "q19",
+  "category": "structural",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 706,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 2,
+    "queryTokens": [
+      "are",
+      "four",
+      "values",
+      "accepted",
+      "--mode",
+      "option",
+      "lazybrain",
+      "inject-context",
+      "default",
+      "--max-tokens",
+      "budget"
+    ]
+  },
+  "latencyMs": 8451,
+  "answer": "I don't see this information in the provided context. The code excerpt from `sections.ts` mentions `mode: 'highlights'` and `mode: 'marker'` in a comment, but it doesn't show:\n\n1. All four accepted values for the `--mode` option\n2. The default `--max-tokens` budget value\n\nTo answer your question accurately, I'd need to see the CLI argument definitions for the `inject-context` command (likely in a file that parses command-line arguments or defines the command interface). Would you like me to search for those definitions in the codebase?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 423,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5651,
+    "costUsd": 0.016471399999999997
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 2,
+    "totalTerms": 5,
+    "hits": [
+      {
+        "term": "session",
+        "present": false
+      },
+      {
+        "term": "turn",
+        "present": false
+      },
+      {
+        "term": "marker",
+        "present": true
+      },
+      {
+        "term": "highlights",
+        "present": true
+      },
+      {
+        "term": "3000",
+        "present": false
+      }
+    ]
+  }
+}

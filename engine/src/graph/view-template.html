@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Brain Graph</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0a;color:#e6e8ee;font:13px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+canvas{display:block;cursor:grab;position:fixed;top:0;left:0}
+canvas.panning{cursor:grabbing}
+
+/* ─── Top-left info panel ─── */
+#panel-info{
+  position:fixed;top:14px;left:14px;z-index:20;
+  background:rgba(16,18,24,0.92);border:1px solid #1e2230;border-radius:10px;
+  padding:12px 16px;min-width:180px;pointer-events:none;
+  backdrop-filter:blur(4px);
+}
+#panel-info h2{font-size:14px;font-weight:600;color:#7dd3fc;letter-spacing:0.02em;margin-bottom:4px}
+#panel-info p{font-size:11px;color:#8a93a6;line-height:1.6}
+
+/* ─── Top-right search ─── */
+#panel-search{
+  position:fixed;top:14px;right:14px;z-index:20;
+  background:rgba(16,18,24,0.92);border:1px solid #1e2230;border-radius:10px;
+  padding:8px 12px;display:flex;align-items:center;gap:8px;
+  backdrop-filter:blur(4px);
+}
+#search-input{
+  background:transparent;border:none;outline:none;color:#e6e8ee;
+  font:13px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  width:200px;caret-color:#7dd3fc;
+}
+#search-input::placeholder{color:#4a5268}
+#search-clear{
+  background:none;border:none;color:#4a5268;cursor:pointer;font-size:14px;
+  line-height:1;padding:0 2px;transition:color 0.15s;
+}
+#search-clear:hover{color:#e6e8ee}
+
+/* ─── Bottom-left cluster legend ─── */
+#panel-legend{
+  position:fixed;bottom:14px;left:14px;z-index:20;
+  background:rgba(16,18,24,0.92);border:1px solid #1e2230;border-radius:10px;
+  padding:10px 14px;max-height:calc(100vh - 120px);overflow-y:auto;
+  backdrop-filter:blur(4px);max-width:220px;
+}
+#panel-legend h3{font-size:11px;font-weight:600;color:#4a5268;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+.legend-item{
+  display:flex;align-items:center;gap:8px;padding:3px 0;
+  cursor:pointer;transition:opacity 0.15s;user-select:none;
+}
+.legend-item:hover{opacity:0.8}
+.legend-item.hidden{opacity:0.35}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-label{font-size:11px;color:#c8d0e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.legend-count{font-size:10px;color:#4a5268;margin-left:auto;flex-shrink:0}
+
+/* ─── Controls strip ─── */
+#panel-controls{
+  position:fixed;bottom:14px;right:14px;z-index:20;
+  background:rgba(16,18,24,0.92);border:1px solid #1e2230;border-radius:10px;
+  padding:6px 10px;display:flex;gap:8px;align-items:center;
+  backdrop-filter:blur(4px);
+}
+.ctrl-btn{
+  background:#1e2230;border:1px solid #2a3048;border-radius:6px;
+  color:#8a93a6;font-size:11px;padding:4px 10px;cursor:pointer;
+  transition:background 0.15s,color 0.15s;white-space:nowrap;
+}
+.ctrl-btn:hover{background:#2a3048;color:#e6e8ee}
+
+/* ─── Right sidebar (node detail) ─── */
+#panel-detail{
+  position:fixed;top:0;right:0;bottom:0;z-index:30;
+  width:300px;background:rgba(12,14,20,0.97);border-left:1px solid #1e2230;
+  display:none;flex-direction:column;overflow:hidden;
+  backdrop-filter:blur(8px);
+}
+#panel-detail.visible{display:flex}
+#detail-header{
+  padding:16px 16px 0;display:flex;justify-content:space-between;align-items:flex-start;
+}
+#detail-title{font-size:14px;font-weight:600;color:#e6e8ee;line-height:1.4;padding-right:8px}
+#detail-close{
+  background:none;border:none;color:#4a5268;font-size:18px;cursor:pointer;
+  flex-shrink:0;line-height:1;transition:color 0.15s;padding:0;
+}
+#detail-close:hover{color:#e6e8ee}
+#detail-body{padding:14px 16px;overflow-y:auto;flex:1}
+.detail-sep{height:1px;background:#1e2230;margin:10px 0}
+.detail-row{display:flex;gap:6px;margin-bottom:4px;font-size:11px}
+.detail-key{color:#4a5268;min-width:70px;flex-shrink:0}
+.detail-val{color:#c8d0e0;word-break:break-word}
+.detail-badge{
+  display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;
+  background:#1e2230;color:#8a93a6;margin:1px 2px 1px 0;
+}
+#detail-edges{margin-top:4px}
+.detail-edge{
+  font-size:11px;color:#8a93a6;padding:3px 0;
+  display:flex;align-items:flex-start;gap:6px;
+  border-bottom:1px solid #12141a;
+}
+.detail-edge:last-child{border-bottom:none}
+.edge-dir{color:#4a5268;flex-shrink:0;font-size:10px;padding-top:1px}
+.edge-target{color:#c8d0e0;word-break:break-word;line-height:1.4}
+.edge-type{color:#4a5268;font-size:10px;margin-left:auto;flex-shrink:0;padding-top:1px}
+
+/* ─── Scrollbar styling ─── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2a3048;border-radius:2px}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<!-- Top-left info -->
+<div id="panel-info">
+  <h2>Brain Graph</h2>
+  <p id="info-stats">Loading...</p>
+</div>
+
+<!-- Top-right search -->
+<div id="panel-search">
+  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="flex-shrink:0">
+    <circle cx="6.5" cy="6.5" r="5" stroke="#4a5268" stroke-width="1.5"/>
+    <path d="M10.5 10.5L14 14" stroke="#4a5268" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+  <input id="search-input" type="text" placeholder="Search nodes..." autocomplete="off" spellcheck="false">
+  <button id="search-clear" title="Clear">&#x2715;</button>
+</div>
+
+<!-- Bottom-left cluster legend -->
+<div id="panel-legend">
+  <h3>Clusters</h3>
+  <div id="legend-items"></div>
+</div>
+
+<!-- Bottom-right controls -->
+<div id="panel-controls">
+  <button class="ctrl-btn" id="btn-step">Step</button>
+  <button class="ctrl-btn" id="btn-resume">Resume</button>
+  <button class="ctrl-btn" id="btn-reset">Reset view</button>
+</div>
+
+<!-- Right detail sidebar -->
+<div id="panel-detail">
+  <div id="detail-header">
+    <span id="detail-title"></span>
+    <button id="detail-close">&#x2715;</button>
+  </div>
+  <div id="detail-body">
+    <div id="detail-meta"></div>
+    <div class="detail-sep"></div>
+    <div id="detail-edges"></div>
+  </div>
+</div>
+
+<script>
+const data = "__DATA__";
+
+// ─── Palette ───────────────────────────────────────────────────────────────
+const PALETTE = [
+  '#7dd3fc','#86efac','#fbbf24','#f87171',
+  '#c084fc','#fb923c','#2dd4bf','#f472b6'
+];
+
+// ─── Normalize data to internal format ─────────────────────────────────────
+// Handles both the "full" BrainKnowledgeGraph format and the simpler graph.ts format.
+function normalizeData(raw) {
+  // BrainKnowledgeGraph uses nodes[].title + edges[].source/target
+  // graph.ts renderGraphView uses nodes[].label + edges[].from/to
+  const nodes = (raw.nodes || []).map(n => ({
+    id: String(n.id || ''),
+    label: String(n.label || n.title || n.id || ''),
+    tags: n.tags || '',
+    type: n.type || 'unknown',
+    topic: n.topic || '',
+    importance: typeof n.importance === 'number' ? n.importance : 0,
+    cluster: n.cluster || n.topic || '',
+    pagerank: typeof n.pagerank === 'number' ? n.pagerank : 0,
+  }));
+  const edges = (raw.edges || []).map(e => ({
+    from: String(e.from || e.source || ''),
+    to: String(e.to || e.target || ''),
+    type: String(e.type || ''),
+    auto: Boolean(e.auto),
+    strength: typeof e.strength === 'number' ? e.strength : (e.auto ? 0.5 : 1),
+  }));
+  return { nodes, edges };
+}
+
+const { nodes: rawNodes, edges: rawEdges } = normalizeData(data);
+
+// ─── Build connection maps ───────────────────────────────────────────────
+const nodeMap = new Map(rawNodes.map(n => [n.id, n]));
+const inbound = new Map();   // id -> [{from, type}]
+const outbound = new Map();  // id -> [{to, type}]
+for (const e of rawEdges) {
+  if (!nodeMap.has(e.from) || !nodeMap.has(e.to)) continue;
+  if (!outbound.has(e.from)) outbound.set(e.from, []);
+  outbound.get(e.from).push({ to: e.to, type: e.type });
+  if (!inbound.has(e.to)) inbound.set(e.to, []);
+  inbound.get(e.to).push({ from: e.from, type: e.type });
+}
+
+const edges = rawEdges.filter(e => nodeMap.has(e.from) && nodeMap.has(e.to));
+
+// ─── Cluster assignment ──────────────────────────────────────────────────
+// Build cluster list sorted by node count desc
+const clusterCount = new Map();
+for (const n of rawNodes) {
+  const c = n.cluster || 'unknown';
+  clusterCount.set(c, (clusterCount.get(c) || 0) + 1);
+}
+const clusterList = [...clusterCount.entries()]
+  .sort((a, b) => b[1] - a[1])
+  .map(([id, count], i) => ({
+    id, count,
+    color: PALETTE[i % PALETTE.length],
+  }));
+const clusterColorMap = new Map(clusterList.map(c => [c.id, c.color]));
+
+// ─── Physics nodes ───────────────────────────────────────────────────────
+const W = window.innerWidth, H = window.innerHeight;
+const CX = W / 2, CY = H / 2;
+
+// Arrange cluster centers in a circle
+const clusterCenters = new Map();
+const nClusters = clusterList.length;
+const centerR = Math.min(W, H) * 0.28;
+clusterList.forEach((cl, i) => {
+  const angle = (2 * Math.PI * i) / nClusters - Math.PI / 2;
+  clusterCenters.set(cl.id, {
+    x: CX + (nClusters > 1 ? Math.cos(angle) * centerR : 0),
+    y: CY + (nClusters > 1 ? Math.sin(angle) * centerR : 0),
+  });
+});
+
+// Connection count for node size
+const connCount = new Map();
+for (const n of rawNodes) {
+  connCount.set(n.id, (inbound.get(n.id) || []).length + (outbound.get(n.id) || []).length);
+}
+const maxConn = Math.max(1, ...connCount.values());
+
+function nodeRadius(id) {
+  const c = connCount.get(id) || 0;
+  const t = c === 0 ? 0 : Math.log(c + 1) / Math.log(maxConn + 1);
+  return 4 + t * 10;
+}
+
+// Build simulation nodes with initial positions near their cluster center
+const simNodes = rawNodes.map(n => {
+  const center = clusterCenters.get(n.cluster) || { x: CX, y: CY };
+  const r = 60 + Math.random() * 80;
+  const a = Math.random() * 2 * Math.PI;
+  return {
+    ...n,
+    x: center.x + Math.cos(a) * r,
+    y: center.y + Math.sin(a) * r,
+    vx: 0, vy: 0,
+    radius: nodeRadius(n.id),
+    isHub: (inbound.get(n.id) || []).length >= 5,
+  };
+});
+const simMap = new Map(simNodes.map(n => [n.id, n]));
+
+// Top 5 hubs by inbound (always show label)
+const hubTopIds = new Set(
+  [...simNodes]
+    .sort((a, b) => (inbound.get(b.id) || []).length - (inbound.get(a.id) || []).length)
+    .slice(0, 5)
+    .map(n => n.id)
+);
+
+// ─── State ───────────────────────────────────────────────────────────────
+let zoom = 1, panX = 0, panY = 0;
+let hoveredNode = null;
+let selectedNode = null;
+let searchQuery = '';
+let simulationRunning = false;
+let simStep = 0;
+const SIM_STEPS = 200;
+const hiddenClusters = new Set();
+let isPanning = false, panStartX = 0, panStartY = 0, panStartPanX = 0, panStartPanY = 0;
+
+// ─── Canvas setup ────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  draw();
+}
+window.addEventListener('resize', resize);
+canvas.width = W; canvas.height = H;
+
+// ─── Physics step ────────────────────────────────────────────────────────
+function physicsStep() {
+  const REP = 800;
+  const SPRING = 0.018;
+  const REST = 90;
+  const DAMP = 0.82;
+  const CENTER_PULL = 0.003;
+  const CLUSTER_PULL = 0.012;
+
+  // Repulsion (O(n²) — acceptable for < 500 nodes; can use grid for larger)
+  const len = simNodes.length;
+  for (let i = 0; i < len; i++) {
+    const a = simNodes[i];
+    for (let j = i + 1; j < len; j++) {
+      const b = simNodes[j];
+      let dx = a.x - b.x, dy = a.y - b.y;
+      const d2 = dx * dx + dy * dy || 0.01;
+      const d = Math.sqrt(d2);
+      const f = REP / d2;
+      dx /= d; dy /= d;
+      a.vx += dx * f; a.vy += dy * f;
+      b.vx -= dx * f; b.vy -= dy * f;
+    }
+  }
+
+  // Spring attraction along edges
+  for (const e of edges) {
+    const a = simMap.get(e.from), b = simMap.get(e.to);
+    if (!a || !b) continue;
+    let dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+    const f = (d - REST) * SPRING * e.strength;
+    dx /= d; dy /= d;
+    a.vx += dx * f; a.vy += dy * f;
+    b.vx -= dx * f; b.vy -= dy * f;
+  }
+
+  // Cluster pull toward cluster center
+  for (const n of simNodes) {
+    const center = clusterCenters.get(n.cluster);
+    if (center) {
+      n.vx += (center.x - n.x) * CLUSTER_PULL;
+      n.vy += (center.y - n.y) * CLUSTER_PULL;
+    }
+  }
+
+  // Integrate, damp, center pull
+  for (const n of simNodes) {
+    n.vx *= DAMP; n.vy *= DAMP;
+    n.x += n.vx; n.y += n.vy;
+    n.vx += (CX - n.x) * CENTER_PULL;
+    n.vy += (CY - n.y) * CENTER_PULL;
+  }
+}
+
+// ─── Run initial simulation (200 steps off-screen) ───────────────────────
+for (let i = 0; i < SIM_STEPS; i++) physicsStep();
+
+// ─── Coordinate helpers ──────────────────────────────────────────────────
+function toScreen(wx, wy) {
+  return {
+    x: wx * zoom + panX + canvas.width / 2,
+    y: wy * zoom + panY + canvas.height / 2,
+  };
+}
+function toWorld(sx, sy) {
+  return {
+    x: (sx - canvas.width / 2 - panX) / zoom,
+    y: (sy - canvas.height / 2 - panY) / zoom,
+  };
+}
+
+// Re-center world coordinates so the graph center of mass is at (0,0)
+function recenterNodes() {
+  const mx = simNodes.reduce((s, n) => s + n.x, 0) / simNodes.length;
+  const my = simNodes.reduce((s, n) => s + n.y, 0) / simNodes.length;
+  for (const n of simNodes) { n.x -= mx; n.y -= my; }
+  // Update cluster centers too
+  clusterCenters.forEach((v, k) => { clusterCenters.set(k, { x: v.x - mx, y: v.y - my }); });
+}
+recenterNodes();
+
+// ─── Draw ─────────────────────────────────────────────────────────────────
+function isVisible(n) {
+  return !hiddenClusters.has(n.cluster || 'unknown');
+}
+
+function matchesSearch(n) {
+  if (!searchQuery) return true;
+  const q = searchQuery.toLowerCase();
+  return (
+    n.label.toLowerCase().includes(q) ||
+    n.id.toLowerCase().includes(q) ||
+    (typeof n.tags === 'string' ? n.tags : '').toLowerCase().includes(q)
+  );
+}
+
+function draw() {
+  const cw = canvas.width, ch = canvas.height;
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, cw, ch);
+
+  // Connected node set for hover highlighting
+  const connectedIds = new Set();
+  const hoveredEdgeSet = new Set();
+  if (hoveredNode) {
+    for (const e of edges) {
+      if (e.from === hoveredNode.id || e.to === hoveredNode.id) {
+        connectedIds.add(e.from);
+        connectedIds.add(e.to);
+        hoveredEdgeSet.add(e);
+      }
+    }
+  }
+
+  // ── Draw edges ──────────────────────────────────────────────────────
+  for (const e of edges) {
+    const a = simMap.get(e.from), b = simMap.get(e.to);
+    if (!a || !b || !isVisible(a) || !isVisible(b)) continue;
+    const sa = toScreen(a.x, a.y), sb = toScreen(b.x, b.y);
+
+    const isHovered = hoveredEdgeSet.has(e);
+    const isSearchDimmed = searchQuery && (!matchesSearch(a) && !matchesSearch(b));
+    if (isSearchDimmed) continue;
+
+    ctx.beginPath();
+    ctx.moveTo(sa.x, sa.y);
+    ctx.lineTo(sb.x, sb.y);
+
+    if (isHovered) {
+      const color = clusterColorMap.get(a.cluster) || PALETTE[0];
+      ctx.strokeStyle = color + 'cc';
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.9;
+    } else {
+      ctx.strokeStyle = '#1a1a2e';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = hoveredNode ? 0.25 : 0.7;
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // ── Draw nodes ──────────────────────────────────────────────────────
+  for (const n of simNodes) {
+    if (!isVisible(n)) continue;
+    const s = toScreen(n.x, n.y);
+    const r = n.radius * zoom;
+    if (r < 0.5) continue;
+
+    const color = clusterColorMap.get(n.cluster) || '#7dd3fc';
+    const matched = matchesSearch(n);
+    const dimmed = (searchQuery && !matched) || (hoveredNode && !connectedIds.has(n.id));
+
+    ctx.globalAlpha = dimmed ? 0.12 : (n === hoveredNode || n === selectedNode ? 1 : 0.85);
+
+    // Hub ring glow
+    if (n.isHub && !dimmed) {
+      ctx.save();
+      ctx.shadowColor = color;
+      ctx.shadowBlur = Math.max(6, r * 1.2);
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r + 2.5, 0, Math.PI * 2);
+      ctx.strokeStyle = color + '88';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Node fill
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+    if (n === selectedNode) {
+      ctx.fillStyle = '#fff';
+    } else if (n === hoveredNode) {
+      ctx.fillStyle = '#ffffff';
+    } else {
+      ctx.fillStyle = color;
+    }
+    ctx.fill();
+
+    // Selection ring
+    if (n === selectedNode) {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r + 3, 0, Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    ctx.globalAlpha = 1;
+
+    // Labels
+    const showLabel = (hubTopIds.has(n.id) || n === hoveredNode) && !dimmed;
+    if (showLabel && zoom > 0.3) {
+      const label = n.label.length > 28 ? n.label.slice(0, 26) + '…' : n.label;
+      ctx.font = `${Math.max(10, 12 * Math.min(zoom, 1.5))}px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif`;
+      const tw = ctx.measureText(label).width;
+      const lx = s.x + r + 4, ly = s.y + 4;
+      // Shadow for readability
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(lx - 2, ly - 12, tw + 4, 16);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(label, lx, ly);
+
+      // Type badge if hovered
+      if (n === hoveredNode && n.type && n.type !== 'unknown') {
+        const typeColor = clusterColorMap.get(n.cluster) || '#7dd3fc';
+        ctx.font = `10px -apple-system,sans-serif`;
+        const tw2 = ctx.measureText(n.type).width;
+        ctx.fillStyle = typeColor + '33';
+        ctx.fillRect(lx - 2, ly + 4, tw2 + 4, 14);
+        ctx.fillStyle = typeColor;
+        ctx.fillText(n.type, lx, ly + 14);
+      }
+    }
+  }
+}
+
+// ─── Animation loop ──────────────────────────────────────────────────────
+let rafId = null;
+function animate() {
+  if (simulationRunning) {
+    physicsStep();
+    simStep++;
+    if (simStep > 2000) { simulationRunning = false; updateControls(); }
+  }
+  draw();
+  rafId = requestAnimationFrame(animate);
+}
+animate();
+
+function updateControls() {
+  document.getElementById('btn-resume').textContent = simulationRunning ? 'Pause' : 'Resume';
+}
+
+// ─── Info panel ──────────────────────────────────────────────────────────
+const nNodes = rawNodes.length;
+const nEdges = edges.length;
+const nClusters = clusterList.length;
+document.getElementById('info-stats').textContent =
+  `${nNodes} nodes · ${nEdges} edges · ${nClusters} clusters`;
+
+// ─── Cluster legend ──────────────────────────────────────────────────────
+const legendEl = document.getElementById('legend-items');
+for (const cl of clusterList) {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.dataset.cluster = cl.id;
+  item.innerHTML = `
+    <span class="legend-dot" style="background:${cl.color}"></span>
+    <span class="legend-label" title="${cl.id}">${cl.id}</span>
+    <span class="legend-count">${cl.count}</span>
+  `;
+  item.addEventListener('click', () => {
+    if (hiddenClusters.has(cl.id)) hiddenClusters.delete(cl.id);
+    else hiddenClusters.add(cl.id);
+    item.classList.toggle('hidden', hiddenClusters.has(cl.id));
+  });
+  legendEl.appendChild(item);
+}
+
+// ─── Search ──────────────────────────────────────────────────────────────
+const searchInput = document.getElementById('search-input');
+const searchClear = document.getElementById('search-clear');
+searchInput.addEventListener('input', () => {
+  searchQuery = searchInput.value.trim();
+  searchClear.style.opacity = searchQuery ? '1' : '0';
+});
+searchClear.style.opacity = '0';
+searchClear.addEventListener('click', () => {
+  searchInput.value = ''; searchQuery = '';
+  searchClear.style.opacity = '0';
+  searchInput.focus();
+});
+
+// ─── Node detail panel ───────────────────────────────────────────────────
+function showDetail(n) {
+  selectedNode = n;
+  document.getElementById('panel-detail').classList.add('visible');
+  document.getElementById('detail-title').textContent = n.label;
+
+  const color = clusterColorMap.get(n.cluster) || '#7dd3fc';
+  document.getElementById('detail-title').style.color = color;
+
+  const inArr = inbound.get(n.id) || [];
+  const outArr = outbound.get(n.id) || [];
+  const tags = typeof n.tags === 'string'
+    ? n.tags.split(/\s+/).filter(Boolean)
+    : (Array.isArray(n.tags) ? n.tags : []);
+
+  let metaHtml = '';
+  if (n.type && n.type !== 'unknown') {
+    metaHtml += `<div class="detail-row"><span class="detail-key">Type</span><span class="detail-val">${esc(n.type)}</span></div>`;
+  }
+  if (n.topic) {
+    metaHtml += `<div class="detail-row"><span class="detail-key">Topic</span><span class="detail-val">${esc(n.topic)}</span></div>`;
+  }
+  if (n.cluster) {
+    metaHtml += `<div class="detail-row"><span class="detail-key">Cluster</span><span class="detail-val" style="color:${color}">${esc(n.cluster)}</span></div>`;
+  }
+  if (tags.length > 0) {
+    metaHtml += `<div class="detail-row"><span class="detail-key">Tags</span><span class="detail-val">${tags.map(t => `<span class="detail-badge">${esc(t)}</span>`).join('')}</span></div>`;
+  }
+  metaHtml += `<div class="detail-row"><span class="detail-key">Connections</span><span class="detail-val">${inArr.length}&#8595; ${outArr.length}&#8593;</span></div>`;
+  if (n.pagerank && n.pagerank > 0) {
+    metaHtml += `<div class="detail-row"><span class="detail-key">PageRank</span><span class="detail-val">${n.pagerank.toFixed(4)}</span></div>`;
+  }
+
+  document.getElementById('detail-meta').innerHTML = metaHtml;
+
+  let edgesHtml = '';
+  const allOut = outArr.slice(0, 20);
+  const allIn = inArr.slice(0, 20);
+  for (const e of allOut) {
+    const target = nodeMap.get(e.to);
+    const lbl = target ? target.label : e.to;
+    edgesHtml += `<div class="detail-edge">
+      <span class="edge-dir">&#8594;</span>
+      <span class="edge-target">${esc(lbl)}</span>
+      <span class="edge-type">${esc(e.type)}</span>
+    </div>`;
+  }
+  for (const e of allIn) {
+    const src = nodeMap.get(e.from);
+    const lbl = src ? src.label : e.from;
+    edgesHtml += `<div class="detail-edge">
+      <span class="edge-dir" style="color:#4a5268">&#8592;</span>
+      <span class="edge-target" style="color:#8a93a6">${esc(lbl)}</span>
+      <span class="edge-type">${esc(e.type)}</span>
+    </div>`;
+  }
+  if (outArr.length > 20 || inArr.length > 20) {
+    edgesHtml += `<div style="font-size:10px;color:#4a5268;padding-top:6px">+ more connections not shown</div>`;
+  }
+  document.getElementById('detail-edges').innerHTML = edgesHtml || '<span style="font-size:11px;color:#4a5268">No connections</span>';
+}
+
+function hideDetail() {
+  selectedNode = null;
+  document.getElementById('panel-detail').classList.remove('visible');
+}
+document.getElementById('detail-close').addEventListener('click', hideDetail);
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── Mouse events ─────────────────────────────────────────────────────────
+function getNodeAt(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = clientX - rect.left, sy = clientY - rect.top;
+  const world = toWorld(sx, sy);
+  let best = null, bestD = Infinity;
+  for (const n of simNodes) {
+    if (!isVisible(n)) continue;
+    const dx = n.x - world.x, dy = n.y - world.y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    const hitR = (n.radius + 4) / zoom;
+    if (d < hitR && d < bestD) { bestD = d; best = n; }
+  }
+  return best;
+}
+
+canvas.addEventListener('mousemove', ev => {
+  if (isPanning) {
+    panX = panStartPanX + ev.clientX - panStartX;
+    panY = panStartPanY + ev.clientY - panStartY;
+    return;
+  }
+  hoveredNode = getNodeAt(ev.clientX, ev.clientY);
+  canvas.style.cursor = hoveredNode ? 'pointer' : 'grab';
+});
+
+canvas.addEventListener('mousedown', ev => {
+  if (ev.button !== 0) return;
+  const hit = getNodeAt(ev.clientX, ev.clientY);
+  if (hit) {
+    showDetail(hit);
+  } else {
+    isPanning = true;
+    panStartX = ev.clientX; panStartY = ev.clientY;
+    panStartPanX = panX; panStartPanY = panY;
+    canvas.classList.add('panning');
+  }
+});
+
+window.addEventListener('mouseup', () => {
+  isPanning = false;
+  canvas.classList.remove('panning');
+});
+
+canvas.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const sx = ev.clientX - rect.left, sy = ev.clientY - rect.top;
+  const wBefore = toWorld(sx, sy);
+  const factor = ev.deltaY < 0 ? 1.12 : 1 / 1.12;
+  zoom = Math.max(0.2, Math.min(5, zoom * factor));
+  // Zoom toward mouse position
+  const sAfter = toScreen(wBefore.x, wBefore.y);
+  panX += sx - sAfter.x;
+  panY += sy - sAfter.y;
+}, { passive: false });
+
+// ─── Control buttons ──────────────────────────────────────────────────────
+document.getElementById('btn-step').addEventListener('click', () => {
+  for (let i = 0; i < 10; i++) physicsStep();
+});
+
+document.getElementById('btn-resume').addEventListener('click', () => {
+  simulationRunning = !simulationRunning;
+  simStep = 0;
+  updateControls();
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  zoom = 1; panX = 0; panY = 0;
+  recenterNodes();
+});
+
+// ─── Keyboard shortcuts ───────────────────────────────────────────────────
+window.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape') { hideDetail(); searchInput.value = ''; searchQuery = ''; }
+  if ((ev.key === 'f' || ev.key === '/') && document.activeElement !== searchInput) {
+    ev.preventDefault();
+    searchInput.focus();
+  }
+});
+</script>
+</body>
+</html>

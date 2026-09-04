@@ -1,0 +1,60 @@
+{
+  "questionId": "q02",
+  "category": "behavioral",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2952,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 6,
+    "queryTokens": [
+      "engine",
+      "src",
+      "util",
+      "config.ts",
+      "mechanism",
+      "stops",
+      "legacy",
+      "dirname",
+      "brain",
+      "_cache",
+      "migration",
+      "re-running",
+      "re-polluting",
+      "fresh",
+      "brain",
+      "every",
+      "time",
+      "brain",
+      "_cache",
+      "deleted"
+    ]
+  },
+  "latencyMs": 13494,
+  "answer": "Based on the context in `engine/src/util/config.ts`, the mechanism is a **marker file called `CACHE_MIGRATION_MARKER`** (value: `'.cache-migrated'`).\n\nAs documented in lines 15-22:\n\n> Marker file written at the BRAIN ROOT (never inside cachePath) once the legacy-cache migration decision has been made for that brain. Its presence — not whether brain/_cache currently exists — is what makes the migration truly one-way.\n\nThe key points:\n\n1. **Location**: The marker is written at the **brain root directory** (inside the brain directory itself), NOT inside `cachePath` or the legacy sibling cache directory.\n\n2. **Logic**: The migration is guarded by checking for this marker's presence. Once written, the marker prevents the migration from re-running, even if `brain/_cache` is deleted.\n\n3. **Why it works**: Since the marker lives at the brain root while the cache lives in `brain/_cache`, deleting the cache directory won't delete the marker. The marker's *presence* (not the cache's existence) controls whether migration runs.\n\nAs the code comment explains (lines 145-150):\n\n> Without this guard, a \"fresh\" brain [created by deleting brain/_cache] silently gets [re-polluted by the legacy cache copy].",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 807,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8531,
+    "costUsd": 0.0270744
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "cache-migrated",
+        "present": true
+      },
+      {
+        "term": "marker",
+        "present": true
+      }
+    ]
+  }
+}

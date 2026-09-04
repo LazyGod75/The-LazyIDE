@@ -1,0 +1,72 @@
+{
+  "questionId": "q03",
+  "category": "behavioral",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 3000,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 5,
+    "queryTokens": [
+      "engine",
+      "src",
+      "graph",
+      "backlinks.ts",
+      "auto-linker",
+      "dominant",
+      "real-world",
+      "link",
+      "format",
+      "bare",
+      "href",
+      "being",
+      "silently",
+      "dropped",
+      "parsetargetid",
+      "backlinks.json",
+      "always",
+      "came",
+      "out",
+      "edges.",
+      "href",
+      "formats",
+      "parsetargetid",
+      "accept",
+      "fix",
+      "roughly",
+      "many",
+      "edges",
+      "fix",
+      "add",
+      "real",
+      "sample"
+    ]
+  },
+  "latencyMs": 15398,
+  "answer": "Based on the context provided:\n\n**After the fix, parseTargetId accepts three href formats:**\n\n1. `#/note/<id>` — explicit SPA-routable format\n2. `#/wiki/<id>` — explicit SPA-routable format (frontend rewrites legacy `#/note/` to this on render)\n3. **Bare `#<id>`** — the fix that was missing before (emitted by the auto-linker in `entities.ts` via `applyAutoLinks` and by enrichment \"[source]\" provenance links in `file-neuron.ts`)\n\n**About the real-world impact:**\n\nThe context shows the fix was critical but **does not provide specific numbers on how many edges were added**. However, it documents the severity:\n\n- The bare `#<id>` format is the **DOMINANT link format across the corpus (~97% of notes)** according to the comment at line 151\n- Before the fix, `backlinks.json` came out **completely empty** (`backlinks_total: 0`) because the previous \"#/note/\"-only rule ignored almost every real link in production\n- The regression test at `backlinks.test.ts:143-160` specifically guards against \"backlinks_total was always 0 in production\"\n\nSo while the context doesn't give a specific edge count from a real sample, it's clear the fix transformed the backlinks graph from empty (0 edges) to populated with the vast majority of the corpus's actual inter-note links.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 992,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8526,
+    "costUsd": 0.0279854
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "1658",
+        "present": false
+      },
+      {
+        "term": "wiki",
+        "present": true
+      }
+    ]
+  }
+}

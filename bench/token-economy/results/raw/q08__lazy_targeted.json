@@ -1,0 +1,42 @@
+{
+  "questionId": "q08",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 393,
+  "configMeta": {
+    "corpusDir": "engine/src/commands",
+    "siblingFileCount": 64,
+    "leafKind": "tldr-fallback"
+  },
+  "latencyMs": 11181,
+  "answer": "I don't have access to read the file—all file-reading tools are disabled in this session. To answer your question about the `NudgeStyle` type values and the default, I would need to view the contents of `engine/src/commands/inject-context/markers.ts`.\n\nCould you either enable file-reading tools or share the relevant section of that file?",
+  "usage": {
+    "inputTokens": 42,
+    "outputTokens": 631,
+    "cacheReadInputTokens": 95840,
+    "cacheCreationInputTokens": 6106,
+    "costUsd": 0.026304000000000004
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 3,
+    "hits": [
+      {
+        "term": "skill",
+        "present": false
+      },
+      {
+        "term": "tool",
+        "present": true
+      },
+      {
+        "term": "none",
+        "present": false
+      }
+    ]
+  }
+}

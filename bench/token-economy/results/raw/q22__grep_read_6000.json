@@ -1,0 +1,39 @@
+{
+  "questionId": "q22",
+  "category": "behavioral",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 4550,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "s",
+      "agentLoop",
+      "LazyIDE"
+    ],
+    "filesMatched": 3,
+    "filesPicked": 1
+  },
+  "latencyMs": 12236,
+  "answer": "Per the header comment in src/cli/lib/agentLoop.ts, the agent can only claim completion via the **`finish` action** (also called the `finish` tool).\n\nThe comment explicitly states:\n\n> the SAME honesty contract as the manager: a tool reports what it really did, and the agent can only claim completion via the `finish` action\n\nThis is also reflected in the protocol description: every agent turn is either a tool call or a completion via `{\"finish\":\"summary\"}`. The `finish` tool definition confirms this: \"Call ONLY when the task is fully done; summarize what you did.\"",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 703,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10341,
+    "costUsd": 0.031913399999999995
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 1,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "finish",
+        "present": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "questionId": "q07",
+  "category": "behavioral",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 151,
+  "configMeta": {
+    "corpusDir": "engine/src/retrieval",
+    "siblingFileCount": 23,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 9716,
+  "answer": "The context provided doesn't contain enough information to answer this question. While I can see the retrieval system structure (including `router.ts` and the `pickLevel` function), there's no detail about:\n\n1. The `commands/inject-context` implementation or its mode handling\n2. The stale Rust comment or what the bundled sidecar behavior actually was\n3. The underlying bug that caused mode=turn to fail\n4. The commit history or fix that addressed this\n\nTo find the real bug, I'd need to:\n- Read `engine/src/commands/` to see the inject-context command\n- Check the git history for the commit that replaced mode=turn with the workaround\n- Look at commits that later fixed the underlying issue\n- Possibly check the Rust sidecar code to understand what was actually happening\n\nWould you like me to investigate the actual codebase files to trace this down?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 564,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5071,
+    "costUsd": 0.0154454
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 1,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "pickLevel",
+        "present": true
+      }
+    ]
+  }
+}

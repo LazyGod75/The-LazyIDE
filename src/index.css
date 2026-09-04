@@ -1,0 +1,23 @@
+/* Entry point — imports the full design system */
+@import './styles/design-system.css';
+
+
+/* 2026-08-06 (founder: "le texte dans la chip est illisible, c'est gris sur
+   gris") — the plan-step model chips are light-on-dark (GraphProposalCard);
+   the native <option> popup inherits that on some platforms and reads as
+   grey-on-grey. Force dark-on-light inside the popup only — the chip
+   itself keeps its own inline light-on-dark style. */
+select[data-testid^="graph-proposal-step-model-"] option {
+  color: #14141f;
+  background: #f6f4ff;
+}
+
+select[data-testid^="graph-proposal-step-model-"] optgroup {
+  color: #1a1a26;
+  background: #e9e4ff;
+  font-weight: 700;
+  font-style: normal;
+}
+select[data-testid^="graph-proposal-step-model-"] optgroup option {
+  font-weight: 400;
+}

@@ -1,0 +1,58 @@
+{
+  "questionId": "q13",
+  "category": "structural",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 790,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 3,
+    "queryTokens": [
+      "are",
+      "four",
+      "parameters",
+      "resolveconcurrencyenv",
+      "engine",
+      "src",
+      "util",
+      "concurrency.ts",
+      "out-of-range",
+      "value"
+    ]
+  },
+  "latencyMs": 7840,
+  "answer": "The context provided does not contain `engine/src/util/concurrency.ts` or any information about the `resolveConcurrencyEnv()` function. I can only answer based on the specific files shown in the context (composers.test.ts, backlinks.ts, and canonical-merge.ts).\n\nTo answer your question, I would need to read that file directly. Would you like me to look it up?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 319,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5797,
+    "costUsd": 0.0164254
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "fallback",
+        "present": false
+      },
+      {
+        "term": "min",
+        "present": false
+      },
+      {
+        "term": "max",
+        "present": false
+      },
+      {
+        "term": "clamp",
+        "present": false
+      }
+    ]
+  }
+}

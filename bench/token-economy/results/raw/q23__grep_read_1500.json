@@ -1,0 +1,49 @@
+{
+  "questionId": "q23",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "compactLine"
+    ],
+    "filesMatched": 4,
+    "filesPicked": 1
+  },
+  "latencyMs": 5408,
+  "answer": "Based on the `TYPE_ICON` object defined in engine/src/commands/inject-context/sections.ts, the single-letter icons are:\n\n- **decision**: `D`\n- **episodic**: `E`\n- **reference**: `R`\n- **semantic**: `S`\n- **procedural**: `P`\n\nThese are defined in the `TYPE_ICON` map (lines 37–43) and used in `compactLine()` at line 98.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 330,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6431,
+    "costUsd": 0.0183414
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 4,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "decision",
+        "present": true
+      },
+      {
+        "term": "D",
+        "present": true
+      },
+      {
+        "term": "episodic",
+        "present": true
+      },
+      {
+        "term": "E",
+        "present": true
+      }
+    ]
+  }
+}

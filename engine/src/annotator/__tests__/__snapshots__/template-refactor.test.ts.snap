@@ -1,0 +1,114 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`emitWikipediaNote regression > snapshot matches 1`] = `
+"<meta charset="utf-8">
+<meta name="aliases" content="risk-note">
+<article id="test-regression-001"
+         class="type-decision"
+         data-cerveau-version="0.2.0"
+         data-cerveau-created="2026-01-15T10:00:00Z"
+         data-cerveau-type="decision"
+         data-cerveau-source="claude-code"
+         data-cerveau-tier="working"
+         data-cerveau-importance="0.85"
+         data-cerveau-tags="tradelab risk"
+         data-cerveau-topic="tradelab/risk"
+         aria-current="page"
+         data-cerveau-valid-from="2026-01-15T10:00:00Z"
+         data-cerveau-replaces="old-note-001"
+         data-cerveau-entities="Tradebot: tradelab bot,SENTINEL: backtest framework"
+         data-cerveau-tool="Bash"
+         data-cerveau-files-modified="/src/risk.ts"
+         data-cerveau-files-read="/src/config.ts"
+>
+  <header>
+    <h2><time datetime="2026-01-15T10:00:00Z">2026-01-15</time> Regression Test Note</h2>
+    <aside class="infobox">
+      <dl>
+        <dt>Type</dt><dd>decision</dd>
+        <dt>Status</dt><dd>active</dd>
+        <dt>Tags</dt><dd>tradelab, risk</dd>
+        <dt>Source</dt><dd>claude-code</dd>
+        <dt>Replaces</dt><dd><a href="#/note/old-note-001" rel="prev" data-cerveau-link-type="replaces">old-note-001</a></dd>
+        <dt>Tool</dt><dd>Bash</dd>
+      </dl>
+    </aside>
+  </header>
+  <aside class="glossary">
+    <dl>
+    <dt><dfn id=" tradelab bot"> tradelab bot</dfn></dt>    <dd>Tradebot</dd>
+    <dt><dfn id=" backtest framework"> backtest framework</dfn></dt>    <dd>SENTINEL</dd>
+    </dl>
+  </aside>
+  <section data-section="qa">
+    <details data-q="what-q:?" aria-expanded="false">
+      <summary>What q:?</summary>
+      <p>Q: What is the max position size? A: 0.1 lots.</p>
+    </details>
+  </section>
+  <section data-section="tldr">
+    <p>Max drawdown is 2%, position size capped at 0.1 lots.</p>
+  </section>
+  <section data-section="summary">
+    <details open data-primary aria-expanded="true">
+      <summary>The system uses a 2% max drawdown limit.</summary>
+      <div id="fact-0" data-cerveau-fact data-cerveau-confidence="0.90" data-cerveau-kind="assertion"><p>The system uses a 2% max drawdown limit.</p></div>
+    </details>
+  </section>
+  <section data-section="facts">
+    <details aria-expanded="false">
+      <summary>Q: What is the max position size? A: 0.1 lots.</summary>
+      <div id="fact-1" data-cerveau-fact data-cerveau-confidence="0.85" data-cerveau-kind="qa"><p>Q: What is the max position size? A: 0.1 lots.</p></div>
+    </details>
+    <details aria-expanded="false">
+      <summary>Error: connection timeout after 30s</summary>
+      <div id="fact-2" data-cerveau-fact data-cerveau-confidence="0.70" data-cerveau-kind="error"><p>Error: connection timeout after 30s</p></div>
+    </details>
+  </section>
+  <section data-section="tool_trace">
+    <p>Bash run recorded.</p>
+  </section>
+  <section data-section="errors">
+    <details data-error="error: connection timeout after 30s" aria-expanded="false">
+      <summary>Error: Error: connection timeout after 30s...</summary>
+      <p role="doc-warning">Error: connection timeout after 30s</p>
+    </details>
+  </section>
+  <aside role="doc-note" data-section="outcome">
+    <p>This note supersedes: old-note-001</p>
+  </aside>
+  <aside role="doc-warning" data-section="antipatterns">
+    <strong>Anti-patterns (don't redo):</strong>
+    <p role="doc-warning">Error: connection timeout after 30s</p>
+  </aside>
+  <section data-section="references">
+    <data value="/src/risk.ts">risk.ts</data>, <data value="/src/config.ts">config.ts</data>
+  </section>
+  <footer>
+    <nav class="categories">Categories: <a href="#/search/decision" class="section-link">decision</a> · <a href="#/search/tradelab" class="section-link">tradelab</a> · <a href="#/search/risk" class="section-link">risk</a></nav>
+  </footer>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "@id": "memory://test-regression-001",
+    "name": "Regression Test Note",
+    "dateCreated": "2026-01-15T10:00:00Z",
+    "keywords": "tradelab,risk",
+    "about": [
+      {
+        "@id": "memory://Tradebot: tradelab bot"
+      },
+      {
+        "@id": "memory://SENTINEL: backtest framework"
+      }
+    ],
+    "supersedes": [
+      {
+        "@id": "memory://old-note-001"
+      }
+    ]
+  }
+  </script>
+</article>"
+`;

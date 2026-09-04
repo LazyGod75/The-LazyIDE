@@ -1,0 +1,24 @@
+<article id="concept-decision-render-deploy-strategy">
+
+  <header>
+    <h1>Decision: Deploy content-pipeline on render-kit</h1>
+    <dl>
+      <dt>Kind</dt><dd>decision</dd>
+      <dt>Confidence</dt><dd>0.88</dd>
+      <dt>Date</dt><dd>2026-05-12</dd>
+    </dl>
+  </header>
+
+  <div><a href="#/content-pipeline">content-pipeline</a> / <a href="#/content-pipeline/concepts">Concepts</a></div>
+
+  <section>
+    <p>Chose render-kit as the deployment target for the content-pipeline service over self-hosted VPS.</p>
+  </section>
+
+  <section>
+    <p>Decision recorded 2026-05-12. render-kit provides auto-scaling, zero-config SSL, and managed PostgreSQL. The content-pipeline runs scheduled cron jobs (daily publish, weekly drift, monthly performance) which map cleanly to render-kit background workers. Cost is predictable at current scale.</p>
+    <dl>
+      <dt>Kind</dt><dd>decision</dd>
+    </dl>
+  </section>
+</article>

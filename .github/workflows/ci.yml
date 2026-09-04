@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # Optional Cloud client config for tests that exercise auth/billing.
+    # Anon/publishable key is public by design (RLS). Service-role and Stripe
+    # secrets must never appear in this file.
+    env:
+      VITE_SUPABASE_URL: https://afjrltfwhksdipchwqsf.supabase.co
+      VITE_SUPABASE_ANON_KEY: sb_publishable_5fcQFK8vEQzled0QZ2aR4g_PfA8VvBI
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Secret scan
+        run: npm run secrets:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: TypeScript check
+        run: npx tsc -b --noEmit
+
+      - name: Unit tests (vitest)
+        run: npx vitest run
+
+      - name: Vite build
+        run: npm run build

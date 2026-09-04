@@ -1,0 +1,74 @@
+{
+  "questionId": "q04",
+  "category": "behavioral",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2995,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 5,
+    "queryTokens": [
+      "file-neuron",
+      "lookup",
+      "bug",
+      "meant",
+      "conversation-derived",
+      "decisions",
+      "bugs",
+      "never",
+      "attached",
+      "target",
+      "file-neuron.",
+      "root",
+      "cause",
+      "resolveexistinginbound",
+      "looked",
+      "file-neuron",
+      "logical",
+      "graph",
+      "file",
+      "relpath",
+      "while",
+      "fts",
+      "index",
+      "stores",
+      "different",
+      "persisted",
+      "id.",
+      "new",
+      "exported",
+      "function",
+      "engine",
+      "src",
+      "annotator",
+      "blocks",
+      "composers",
+      "file-neuron.ts",
+      "fixed",
+      "compute"
+    ]
+  },
+  "latencyMs": 8063,
+  "answer": "The context provided does not contain information about this bug fix or a new exported function in `engine/src/annotator/blocks/composers/file-neuron.ts` that resolves the file-neuron lookup issue.\n\nTo answer your question, I would need to see:\n- The changes to `engine/src/annotator/blocks/composers/file-neuron.ts` \n- Details about how `resolveExistingInbound` was modified or what new function replaced its lookup logic\n- How the persisted id vs. logical graph id mapping is now handled\n\nCould you share the relevant code from that file or point me to the commit/PR that contains this fix?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 537,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8551,
+    "costUsd": 0.025765399999999997
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "fileNeuronArticleId",
+        "present": false
+      }
+    ]
+  }
+}

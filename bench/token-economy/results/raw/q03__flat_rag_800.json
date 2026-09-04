@@ -1,0 +1,72 @@
+{
+  "questionId": "q03",
+  "category": "behavioral",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 806,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 1,
+    "queryTokens": [
+      "engine",
+      "src",
+      "graph",
+      "backlinks.ts",
+      "auto-linker",
+      "dominant",
+      "real-world",
+      "link",
+      "format",
+      "bare",
+      "href",
+      "being",
+      "silently",
+      "dropped",
+      "parsetargetid",
+      "backlinks.json",
+      "always",
+      "came",
+      "out",
+      "edges.",
+      "href",
+      "formats",
+      "parsetargetid",
+      "accept",
+      "fix",
+      "roughly",
+      "many",
+      "edges",
+      "fix",
+      "add",
+      "real",
+      "sample"
+    ]
+  },
+  "latencyMs": 9625,
+  "answer": "Based on the context provided, after the fix `parseTargetId` accepts the following href formats:\n\n1. **\"#/note/<id>\" and \"#/wiki/<id>\"** — explicit SPA-routable formats\n2. **Bare \"#<id>\"** — the auto-linker's dominant format (with exclusions for in-page anchors like \"#fn-*\" and \"#cls-*\" symbol links, and heading anchors)\n\nThe fix added support for the bare \"#<id>\" format, which the previous \"#/note/\"-only rule was silently dropping.\n\n**Regarding the number of edges added:** The context does not provide a specific number. It only mentions that:\n- The bare format represents **~97% of notes** in the corpus\n- **Before the fix: backlinks_total was 0** (the function was rejecting almost every real link)\n- The fix resolved the silent failure\n\nTo find the exact number of edges added on a real sample, you'd need to check test files, commit messages, or benchmark results that compare before/after backlinks.json output.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 767,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5802,
+    "costUsd": 0.0186814
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "1658",
+        "present": false
+      },
+      {
+        "term": "wiki",
+        "present": true
+      }
+    ]
+  }
+}

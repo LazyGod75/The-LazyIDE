@@ -1,0 +1,50 @@
+{
+  "questionId": "q17",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 156,
+  "configMeta": {
+    "corpusDir": "engine/src/retrieval",
+    "siblingFileCount": 23,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 25260,
+  "answer": "I apologize for the confusion. The `run` skill is for launching apps, not reading files. Let me use bash to read the router.ts file directly.\n\nSince I don't have access to direct file reading tools in this context, let me check the file through the working directory. Based on the CONTEXT provided, the file is at `engine/src/retrieval/router.ts`. Let me search for the header comment that describes the five phases:\n\nUnfortunately, I cannot directly read the file from the CONTEXT skeleton provided—it only shows the file structure and one leaf node (`dispatchLevel`), but doesn't include the header comment contents.\n\nTo answer your question accurately, I would need to read the beginning of `engine/src/retrieval/router.ts` to see the comment block that describes the five phases (L1, L2, L3, L4, and presumably hybrid or another level based on the skeleton structure). \n\nCould you either:\n1. Share the header comment from router.ts, or\n2. Allow me to read the file directly from your system?\n\nAlternatively, based on the skeleton showing `levels/l1.ts`, `levels/l2.ts`, `levels/l3.ts`, and `levels/l4.ts`, I can infer these are likely the five phases, but I cannot provide the exact descriptions without seeing the actual comment.",
+  "usage": {
+    "inputTokens": 62,
+    "outputTokens": 1552,
+    "cacheReadInputTokens": 137224,
+    "cacheCreationInputTokens": 8292,
+    "costUsd": 0.0390764
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 4,
+    "totalTerms": 5,
+    "hits": [
+      {
+        "term": "l1.ts",
+        "present": true
+      },
+      {
+        "term": "l2.ts",
+        "present": true
+      },
+      {
+        "term": "l3.ts",
+        "present": true
+      },
+      {
+        "term": "l4.ts",
+        "present": true
+      },
+      {
+        "term": "hybrid.ts",
+        "present": false
+      }
+    ]
+  }
+}

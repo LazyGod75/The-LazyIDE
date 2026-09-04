@@ -1,0 +1,45 @@
+{
+  "questionId": "q08",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 5929,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "NudgeStyle"
+    ],
+    "filesMatched": 3,
+    "filesPicked": 3
+  },
+  "latencyMs": 11851,
+  "answer": "Based on the context provided, the three values of the `NudgeStyle` type in `engine/src/commands/inject-context/markers.ts` are:\n\n1. **`'skill'`** (default)\n2. **`'tool'`**\n3. **`'none'`**\n\nThe default is **`'skill'`**, as defined by:\n```typescript\nexport const DEFAULT_NUDGE_STYLE: NudgeStyle = 'skill';\n```\n\nThis default is intentionally preserved to maintain byte-identical output for existing callers (Claude Code hooks) that never pass the `--nudge` flag.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 634,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 12087,
+    "costUsd": 0.0368734
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 3,
+    "totalTerms": 3,
+    "hits": [
+      {
+        "term": "skill",
+        "present": true
+      },
+      {
+        "term": "tool",
+        "present": true
+      },
+      {
+        "term": "none",
+        "present": true
+      }
+    ]
+  }
+}

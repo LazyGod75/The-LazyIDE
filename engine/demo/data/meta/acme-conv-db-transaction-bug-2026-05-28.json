@@ -1,0 +1,1 @@
+{"id":"acme-conv-db-transaction-bug-2026-05-28","path":"notes/acme-conv-db-transaction-bug-2026-05-28.html","type":"episodic","title":"Bug: Database Transaction Not Rolling Back on Partial Failure","topic":"acme","tags":"","importance":0.5,"created":"2026-05-28"}

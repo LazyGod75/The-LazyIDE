@@ -1,0 +1,287 @@
+{
+  "generated": "2026-08-16",
+  "repo": "C:\\Users\\user\\Documents\\cerveau\\Lazy",
+  "repoBranch": "feat/auto-updater",
+  "notes": [
+    "Every question is drawn from this repo's own git history or from code read directly (cited below), never from reading the brain fixture first.",
+    "corpusDirs: the fixed set of repo directories the flat-RAG and grep baselines are allowed to search, and that the LazyBrain fixture brain was code-scanned from. Keeping this identical across configs is what makes the comparison fair.",
+    "category 'structural': answerable from file/function layout, signatures, imports/exports, CLI flags — the kind of thing a skeleton or file-neuron table of contents captures.",
+    "category 'behavioral': requires the actual logic/diff content (why something was broken, what line fixed it) — the kind of thing a signature-only skeleton is NOT expected to capture. Included on purpose so the harness can show LazyBrain losing."
+  ],
+  "corpusDirs": [
+    "engine/src/retrieval",
+    "engine/src/graph",
+    "engine/src/commands",
+    "engine/src/util",
+    "engine/src/store",
+    "engine/src/annotator/blocks/composers",
+    "engine/src/cli",
+    "src/cli/lib"
+  ],
+  "questions": [
+    {
+      "id": "q01",
+      "category": "behavioral",
+      "question": "In engine/src/graph/ast-parser.ts, parseFile() used to leak a web-tree-sitter WASM Tree on every parsed file, spiking RAM to ~2.2GB on a multi-project scan. What specific call was added, and in what control-flow construct, to fix the leak?",
+      "groundTruth": {
+        "answer": "tree.delete() is now called inside a finally block wrapped around the extraction logic in parseFile().",
+        "requiredTerms": ["tree.delete", "finally"]
+      },
+      "citation": { "commit": "45e65e9", "file": "engine/src/graph/ast-parser.ts" },
+      "lazyTarget": { "file": "engine/src/graph/ast-parser.ts", "symbol": "parseFile" }
+    },
+    {
+      "id": "q02",
+      "category": "behavioral",
+      "question": "In engine/src/util/config.ts, what mechanism stops the legacy dirname(brain)/_cache migration from re-running (and re-polluting a fresh brain) every time brain/_cache is deleted?",
+      "groundTruth": {
+        "answer": "A one-way marker file named .cache-migrated (CACHE_MIGRATION_MARKER) is written at the brain root once the migration decision has been made; its presence, not whether brain/_cache exists, gates the migration.",
+        "requiredTerms": ["cache-migrated", "marker"]
+      },
+      "citation": { "commit": "45e65e9", "file": "engine/src/util/config.ts" },
+      "lazyTarget": { "file": "engine/src/util/config.ts", "symbol": "getConfig" }
+    },
+    {
+      "id": "q03",
+      "category": "behavioral",
+      "question": "In engine/src/graph/backlinks.ts, the auto-linker's dominant real-world link format (bare '#<id>' href) was being silently dropped by parseTargetId, so backlinks.json always came out with 0 edges. What href formats does parseTargetId accept after the fix, and roughly how many edges did the fix add on a real sample?",
+      "groundTruth": {
+        "answer": "parseTargetId now accepts '#/note/<id>', '#/wiki/<id>', and bare '#<id>' (rejecting in-page/file anchors via the known-id guard); on a real sample the edge count went from 0 to 1658.",
+        "requiredTerms": ["1658", "wiki"]
+      },
+      "citation": { "commit": "af728a3", "file": "engine/src/graph/backlinks.ts" },
+      "lazyTarget": { "file": "engine/src/graph/backlinks.ts", "symbol": "parseTargetId" }
+    },
+    {
+      "id": "q04",
+      "category": "behavioral",
+      "question": "A file-neuron lookup bug meant conversation-derived decisions/bugs never attached to the target file-neuron. The root cause was that resolveExistingInbound looked the file-neuron up by its logical graph id (file:<relPath>) while the FTS index stores a different persisted id. What new exported function in engine/src/annotator/blocks/composers/file-neuron.ts fixed this, and what does it compute?",
+      "groundTruth": {
+        "answer": "fileNeuronArticleId(node) — it computes the SAME persisted note id (slug) that composeFileNeuron assigns to the rendered <article>, so lookups use the same id namespace instead of the internal CodeNode graph id.",
+        "requiredTerms": ["fileNeuronArticleId"]
+      },
+      "citation": { "commit": "106f871", "file": "engine/src/annotator/blocks/composers/file-neuron.ts" },
+      "lazyTarget": { "file": "engine/src/annotator/blocks/composers/file-neuron.ts", "symbol": "fileNeuronArticleId" }
+    },
+    {
+      "id": "q05",
+      "category": "structural",
+      "question": "In engine/src/annotator/blocks/composers/file-neuron.ts, the toAnchorId() helper turns a symbol name into an HTML id fragment (used for '#fn-<name>' / '#cls-<name>' anchors). What transformation does it apply to the name?",
+      "groundTruth": {
+        "answer": "It lowercases the name, replaces any run of non-alphanumeric characters with a single hyphen, and trims leading/trailing hyphens.",
+        "requiredTerms": ["lowercase", "hyphen"]
+      },
+      "citation": { "commit": "HEAD", "file": "engine/src/annotator/blocks/composers/file-neuron.ts" },
+      "lazyTarget": { "file": "engine/src/annotator/blocks/composers/file-neuron.ts", "symbol": "toAnchorId" }
+    },
+    {
+      "id": "q06",
+      "category": "structural",
+      "question": "In engine/src/graph/code-scanner.ts, how many file-neuron notes can be written per project by default, and which environment variable overrides that cap?",
+      "groundTruth": {
+        "answer": "400 file-neurons per project by default, overridable via LAZYBRAIN_MAX_FILE_NEURONS.",
+        "requiredTerms": ["400", "LAZYBRAIN_MAX_FILE_NEURONS"]
+      },
+      "citation": { "commit": "HEAD", "file": "engine/src/graph/code-scanner.ts" },
+      "lazyTarget": { "file": "engine/src/graph/code-scanner.ts", "symbol": "MAX_FILE_NEURONS_PER_PROJECT" }
+    },
+    {
+      "id": "q07",
+      "category": "behavioral",
+      "question": "commands/inject-context (mode=turn) had been replaced in the IDE by a raw 'search --strip --top 6' call because of a stale Rust comment claiming mode=turn 'returns empty in the bundled sidecar'. What was the REAL underlying bug that this workaround was hiding, and where did it live?",
+      "groundTruth": {
+        "answer": "The real bug was pickLevel() in engine/src/retrieval/router.ts routing short natural-language queries to keyword-only L2 instead of a hybrid/semantic level; it was already fixed (hybrid range widened to 3-15 tokens) by the time the stale workaround was removed.",
+        "requiredTerms": ["pickLevel"]
+      },
+      "citation": { "commit": "923a11b", "file": "engine/src/commands/inject-context/sections.ts" },
+      "lazyTarget": { "file": "engine/src/retrieval/router.ts", "symbol": "pickLevel" }
+    },
+    {
+      "id": "q08",
+      "category": "structural",
+      "question": "In engine/src/commands/inject-context/markers.ts, what are the three values of the NudgeStyle type, and which one is the default?",
+      "groundTruth": {
+        "answer": "'skill' | 'tool' | 'none'; the default is 'skill' (DEFAULT_NUDGE_STYLE).",
+        "requiredTerms": ["skill", "tool", "none"]
+      },
+      "citation": { "commit": "923a11b", "file": "engine/src/commands/inject-context/markers.ts" },
+      "lazyTarget": { "file": "engine/src/commands/inject-context/markers.ts", "symbol": "NudgeStyle" }
+    },
+    {
+      "id": "q09",
+      "category": "structural",
+      "question": "In engine/src/store/upsert.ts, what two functions were added to support the 'upsertIfRicher' write path, and what do they do (one line each)?",
+      "groundTruth": {
+        "answer": "isRicherBody(existing, candidate) — true only when the candidate has strictly more content/words than the note on disk (ties never replace, shorter never replaces). mergeUpsertHtml(existing, candidate, updatedIso) — merges the candidate body in while preserving the existing note's data-cerveau-created and refreshing data-cerveau-updated.",
+        "requiredTerms": ["isRicherBody", "mergeUpsertHtml"]
+      },
+      "citation": { "commit": "384305f", "file": "engine/src/store/upsert.ts" },
+      "lazyTarget": { "file": "engine/src/store/upsert.ts", "symbol": "isRicherBody" }
+    },
+    {
+      "id": "q10",
+      "category": "behavioral",
+      "question": "In engine/src/commands/dream.ts, which three tags exempt a note from noise-based invalidation during runNoiseCleanup, and what is the exported helper function called?",
+      "groundTruth": {
+        "answer": "mission, agent, skill (NOISE_EXEMPT_TAGS); the exported helper is hasNoiseExemptTag(tags).",
+        "requiredTerms": ["mission", "agent", "skill", "hasNoiseExemptTag"]
+      },
+      "citation": { "commit": "384305f", "file": "engine/src/commands/dream.ts" },
+      "lazyTarget": { "file": "engine/src/commands/dream.ts", "symbol": "hasNoiseExemptTag" }
+    },
+    {
+      "id": "q11",
+      "category": "structural",
+      "question": "What CLI command and flags were added in engine/src/commands/repair.ts to undo notes wrongly invalidated by the dream-noise-cleanup bug, and what is the default value of its --tags flag?",
+      "groundTruth": {
+        "answer": "`lazybrain repair --un-invalidate-noise --tags <tags> [--dry-run]`; the default tags are mission,agent,skill.",
+        "requiredTerms": ["un-invalidate-noise", "mission,agent,skill"]
+      },
+      "citation": { "commit": "384305f", "file": "engine/src/commands/repair.ts" },
+      "lazyTarget": { "file": "engine/src/commands/repair.ts", "symbol": "runRepairUnInvalidateNoise" }
+    },
+    {
+      "id": "q12",
+      "category": "structural",
+      "question": "In engine/src/util/concurrency.ts, does mapLimit() return results in input order or in completion order, and how is the bounded concurrency implemented (what's the chunking strategy)?",
+      "groundTruth": {
+        "answer": "Input order, independent of completion order. It processes items in fixed-size chunks of `limit` items, awaiting each chunk (Promise.all) fully before starting the next chunk.",
+        "requiredTerms": ["input order", "chunk"]
+      },
+      "citation": { "commit": "038c6af", "file": "engine/src/util/concurrency.ts" },
+      "lazyTarget": { "file": "engine/src/util/concurrency.ts", "symbol": "mapLimit" }
+    },
+    {
+      "id": "q13",
+      "category": "structural",
+      "question": "What are the four parameters of resolveConcurrencyEnv() in engine/src/util/concurrency.ts, and what does it do with an out-of-range value?",
+      "groundTruth": {
+        "answer": "rawValue, fallback, min, max. It parses rawValue as an int (falling back to `fallback` if unset/blank/non-numeric), then clamps the result to [min, max].",
+        "requiredTerms": ["fallback", "min", "max", "clamp"]
+      },
+      "citation": { "commit": "038c6af", "file": "engine/src/util/concurrency.ts" },
+      "lazyTarget": { "file": "engine/src/util/concurrency.ts", "symbol": "resolveConcurrencyEnv" }
+    },
+    {
+      "id": "q14",
+      "category": "structural",
+      "question": "Import annotation concurrency (the 6.4x-faster-import fix) is bounded by an environment variable. What is it called, and what is its default and its clamp range?",
+      "groundTruth": {
+        "answer": "LAZYBRAIN_IMPORT_CONCURRENCY, default 5, clamped to the range 1..12.",
+        "requiredTerms": ["LAZYBRAIN_IMPORT_CONCURRENCY", "5", "12"]
+      },
+      "citation": { "commit": "038c6af", "file": "engine/src/util" },
+      "lazyTarget": { "file": "engine/src/util/concurrency.ts", "symbol": "resolveConcurrencyEnv" }
+    },
+    {
+      "id": "q15",
+      "category": "structural",
+      "question": "In engine/src/retrieval/router.ts, pickLevel() routes very short natural-language queries (<=2 tokens, no phrase) straight to pure L2. What was that threshold narrowed FROM, and why (what regression did the narrower threshold fix)?",
+      "groundTruth": {
+        "answer": "Narrowed from <=5 tokens to <=2 tokens, because short natural-language queries of 3-5 tokens (e.g. \"how does auth work\") were being routed to keyword-only L2 and never reaching semantic search.",
+        "requiredTerms": ["5", "2"]
+      },
+      "citation": { "commit": "HEAD", "file": "engine/src/retrieval/router.ts" },
+      "lazyTarget": { "file": "engine/src/retrieval/router.ts", "symbol": "pickLevel" }
+    },
+    {
+      "id": "q16",
+      "category": "structural",
+      "question": "In engine/src/retrieval/router.ts, pickLevel() routes queries of 3-15 tokens to L2_L3_HYBRID. What range was this widened FROM?",
+      "groundTruth": {
+        "answer": "Widened from 6-15 tokens to 3-15 tokens.",
+        "requiredTerms": ["6-15"]
+      },
+      "citation": { "commit": "HEAD", "file": "engine/src/retrieval/router.ts" },
+      "lazyTarget": { "file": "engine/src/retrieval/router.ts", "symbol": "pickLevel" }
+    },
+    {
+      "id": "q17",
+      "category": "structural",
+      "question": "What are the five phases (level implementation modules) listed in the header comment of engine/src/retrieval/router.ts, and what does each one do in one phrase?",
+      "groundTruth": {
+        "answer": "l1.ts (CSS structural lookup), l2.ts (FTS5/BM25 + structural field boost), l3.ts (bi-encoder cosine, bge-base WASM), l4.ts (cross-encoder re-rank, ms-marco WASM), hybrid.ts (RRF fusion of L2 + L3).",
+        "requiredTerms": ["l1.ts", "l2.ts", "l3.ts", "l4.ts", "hybrid.ts"]
+      },
+      "citation": { "commit": "HEAD", "file": "engine/src/retrieval/router.ts" },
+      "lazyTarget": { "file": "engine/src/retrieval/router.ts", "symbol": "dispatchLevel" }
+    },
+    {
+      "id": "q18",
+      "category": "structural",
+      "question": "The `lazybrain query <selector>` CLI command (engine/src/cli/register-core.ts) is described with a specific latency and determinism claim. What is it, and which router level does it correspond to?",
+      "groundTruth": {
+        "answer": "\"CSS selector query (L1, deterministic, < 5ms)\" — it corresponds to router level L1.",
+        "requiredTerms": ["L1", "deterministic"]
+      },
+      "citation": { "commit": "HEAD", "file": "engine/src/cli/register-core.ts" },
+      "lazyTarget": { "file": "engine/src/cli/register-core.ts", "symbol": "query" }
+    },
+    {
+      "id": "q19",
+      "category": "structural",
+      "question": "What are the four values accepted by the `--mode` option of `lazybrain inject-context`, and what is the default `--max-tokens` budget?",
+      "groundTruth": {
+        "answer": "session | turn | marker | highlights; default --max-tokens is 3000.",
+        "requiredTerms": ["session", "turn", "marker", "highlights", "3000"]
+      },
+      "citation": { "commit": "HEAD", "file": "engine/src/cli/register-core.ts" },
+      "lazyTarget": { "file": "engine/src/cli/register-core.ts", "symbol": "inject-context" }
+    },
+    {
+      "id": "q20",
+      "category": "structural",
+      "question": "In src/cli/lib/agentLoop.ts, the claude-backend fallback (claudeCall) shells out to the Claude CLI via spawnSync. What exact CLI flags does it pass?",
+      "groundTruth": {
+        "answer": "-p <prompt> --model <model> --output-format json --safe-mode",
+        "requiredTerms": ["--output-format json", "--safe-mode"]
+      },
+      "citation": { "commit": "HEAD", "file": "src/cli/lib/agentLoop.ts" },
+      "lazyTarget": { "file": "src/cli/lib/agentLoop.ts", "symbol": "claudeCall" }
+    },
+    {
+      "id": "q21",
+      "category": "structural",
+      "question": "In src/cli/lib/agentLoop.ts, which environment variable supplies the DeepSeek API key, and what is the default DeepSeek API URL if DEEPSEEK_API_URL is unset?",
+      "groundTruth": {
+        "answer": "DEEPSEEK_API_KEY; default URL is https://api.deepseek.com/chat/completions.",
+        "requiredTerms": ["DEEPSEEK_API_KEY", "api.deepseek.com"]
+      },
+      "citation": { "commit": "HEAD", "file": "src/cli/lib/agentLoop.ts" },
+      "lazyTarget": { "file": "src/cli/lib/agentLoop.ts", "symbol": "API_KEY" }
+    },
+    {
+      "id": "q22",
+      "category": "behavioral",
+      "question": "src/cli/lib/agentLoop.ts's tool loop honesty contract mirrors the desktop LazyIDE's managed agent. Per its header comment, through what action can the agent ONLY claim completion?",
+      "groundTruth": {
+        "answer": "Only via the `finish` action (finish action/JSON field) — a tool reports what it really did, and completion can only be claimed by emitting {\"finish\": \"summary\"}.",
+        "requiredTerms": ["finish"]
+      },
+      "citation": { "commit": "d0f52e1", "file": "src/cli/lib/agentLoop.ts" },
+      "lazyTarget": { "file": "src/cli/lib/agentLoop.ts", "symbol": "AgentLoopResult" }
+    },
+    {
+      "id": "q23",
+      "category": "structural",
+      "question": "In engine/src/commands/inject-context/sections.ts, what single-letter icon does compactLine() use for each of the five note types (decision/episodic/reference/semantic/procedural)?",
+      "groundTruth": {
+        "answer": "decision=D, episodic=E, reference=R, semantic=S, procedural=P.",
+        "requiredTerms": ["decision", "D", "episodic", "E"]
+      },
+      "citation": { "commit": "HEAD", "file": "engine/src/commands/inject-context/sections.ts" },
+      "lazyTarget": { "file": "engine/src/commands/inject-context/sections.ts", "symbol": "TYPE_ICON" }
+    },
+    {
+      "id": "q24",
+      "category": "structural",
+      "question": "In engine/src/commands/inject-context/sections.ts, buildMainPage() groups notes into a project/feature tree. What field of a note does it split (on '/') to derive the project and feature segments?",
+      "groundTruth": {
+        "answer": "n.topic — split on '/', the first segment is the project, the second is the feature (falling back to '_general').",
+        "requiredTerms": ["topic", "_general"]
+      },
+      "citation": { "commit": "HEAD", "file": "engine/src/commands/inject-context/sections.ts" },
+      "lazyTarget": { "file": "engine/src/commands/inject-context/sections.ts", "symbol": "buildMainPage" }
+    }
+  ]
+}

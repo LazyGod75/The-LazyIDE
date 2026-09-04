@@ -1,0 +1,49 @@
+{
+  "questionId": "q13",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1353,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "resolveConcurrencyEnv"
+    ],
+    "filesMatched": 3,
+    "filesPicked": 2
+  },
+  "latencyMs": 10939,
+  "answer": "Based on the test file, the four parameters of `resolveConcurrencyEnv()` are:\n\n1. **env value** (string | undefined): the environment variable value to parse\n2. **fallback** (number): the default value to use if env is undefined, blank, or non-numeric\n3. **minimum** (number): the lower bound for clamping\n4. **maximum** (number): the upper bound for clamping\n\n**Behavior with out-of-range values:**\n- If the parsed env value is **below the minimum**, it clamps to the minimum (e.g., `resolveConcurrencyEnv('0', 5, 1, 12)` returns `1`)\n- If the parsed env value is **above the maximum**, it clamps to the maximum (e.g., `resolveConcurrencyEnv('999', 5, 1, 12)` returns `12`)\n- If the env value is invalid (undefined, blank, or non-numeric), it returns the fallback value instead",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 879,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6502,
+    "costUsd": 0.0212894
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 4,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "fallback",
+        "present": true
+      },
+      {
+        "term": "min",
+        "present": true
+      },
+      {
+        "term": "max",
+        "present": true
+      },
+      {
+        "term": "clamp",
+        "present": true
+      }
+    ]
+  }
+}

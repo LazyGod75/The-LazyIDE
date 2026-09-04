@@ -1,0 +1,30 @@
+<article id="concept-bug-bug-critique-le-template-a-invent-un-url-scheduler-cal">
+
+  <header>
+    <h1>Bug critique: le template a invent&#233; un URL Scheduler `scheduler</h1>
+    <dl>
+      <dt>Kind</dt><dd>bug</dd>
+      <dt>Confidence</dt><dd>0.05</dd>
+      <dt>Date</dt><dd>2026-05-22</dd>
+    </dl>
+  </header>
+
+  <div><a href="#/marketing">marketing</a> / <a href="#/marketing/concepts">Concepts</a></div>
+
+  <section>
+    <p>bug concept — Bug critique: le template a invent&#233; un URL Scheduler</p>
+  </section>
+
+  <section>
+    <p>Bug critique: the LLM template invented a non-existent Scheduler URL in outreach emails. Emails sent to leads contained a broken booking link pointing to scheduler.acme-app.com/cal/add which does not exist. The Scheduler integration was planned but never shipped.</p>
+    <p>Root cause: the prompt template for outreach generation included a placeholder for the Scheduler booking URL that was never replaced with a real value or removed when Scheduler feature was deprioritized.</p>
+  </section>
+
+  <section>
+    <h3>Related neurons</h3>
+    <ul>
+      <li><a href="#/file:outreach/templates/v8.py">outreach/templates/v8.py</a></li>
+      <li><a href="#/file:acme-app/app/details/cal/add.jsx">acme-app/app/details/cal/add.jsx</a></li>
+    </ul>
+  </section>
+</article>

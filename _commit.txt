@@ -1,0 +1,5 @@
+fix(export): exclude catalogParity and pricing tests from public repo
+
+These tests import from supabase/functions/ai-proxy/pricing which is
+excluded from the public tree (private prefix). Excluding them fixes
+the CI tsc failure.

@@ -1,0 +1,41 @@
+{
+  "questionId": "q18",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "lazybrain"
+    ],
+    "filesMatched": 75,
+    "filesPicked": 1
+  },
+  "latencyMs": 7026,
+  "answer": "The context provided (config.test.ts) doesn't contain information about the `lazybrain query <selector>` CLI command, its latency/determinism claims, or router level correspondences. That information would be in `engine/src/cli/register-core.ts`, which isn't included in the provided context.\n\nTo answer your question, I'd need to examine that file directly. Would you like me to read `engine/src/cli/register-core.ts` to find the command description?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 294,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6127,
+    "costUsd": 0.0172584
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "L1",
+        "present": false
+      },
+      {
+        "term": "deterministic",
+        "present": false
+      }
+    ]
+  }
+}

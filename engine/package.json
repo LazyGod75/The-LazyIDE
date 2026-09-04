@@ -1,0 +1,85 @@
+{
+  "name": "lazybrain",
+  "version": "0.2.0",
+  "description": "HTML-first persistent memory for LLM agents — CLI-driven, queryable without LLM calls, local-first with optional public publishing.",
+  "type": "module",
+  "bin": {
+    "lazybrain": "./dist/bin/lazybrain.js"
+  },
+  "files": [
+    "dist/",
+    "examples/brain-ui/",
+    "plugins/",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "esbuild bin/lazybrain.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/bin/lazybrain.js --packages=external --banner:js=\"#!/usr/bin/env node\"",
+    "dev": "tsx bin/lazybrain.ts",
+    "test": "vitest run --exclude tests/e2e/**",
+    "test:watch": "vitest --exclude tests/e2e/**",
+    "test:coverage": "vitest run --exclude tests/e2e/** --coverage",
+    "lint": "biome check src bin tests",
+    "format": "biome format --write src bin tests",
+    "typecheck": "tsc --noEmit",
+    "download-models": "tsx scripts/download-models.ts",
+    "install:lazybrain": "tsx scripts/install.ts",
+    "prepublishOnly": "npm run build",
+    "test:e2e": "playwright test"
+  },
+  "keywords": [
+    "llm",
+    "memory",
+    "claude-code",
+    "mistral",
+    "vibe",
+    "mistral-vibe",
+    "multi-agent",
+    "html",
+    "cli",
+    "persistent-memory",
+    "second-brain",
+    "rag",
+    "knowledge-graph"
+  ],
+  "author": "LazyGod75",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/LazyGod75/LazyBrain#readme",
+  "bugs": {
+    "url": "https://github.com/LazyGod75/LazyBrain/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LazyGod75/LazyBrain.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
+    "better-sqlite3": "^11.7.0",
+    "chokidar": "^4.0.1",
+    "commander": "^12.1.0",
+    "linkedom": "^0.18.5",
+    "pino": "^9.5.0",
+    "smol-toml": "^1.6.1",
+    "tree-sitter-wasms": "^0.1.13",
+    "web-tree-sitter": "^0.22.6"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@playwright/test": "^1.60.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^3.2.6",
+    "esbuild": "^0.25.12",
+    "pino-pretty": "^13.0.0",
+    "tiktoken": "^1.0.22",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.6"
+  }
+}

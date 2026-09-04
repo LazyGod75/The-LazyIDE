@@ -1,0 +1,37 @@
+{
+  "questionId": "q21",
+  "category": "structural",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 1535,
+  "configMeta": {
+    "corpusDir": "src/cli/lib",
+    "fileCount": 7
+  },
+  "latencyMs": 10196,
+  "answer": "The context provided contains only a skeleton summary of `agentLoop.ts` (function names and structure), not the actual implementation code. While it shows there's a `deepseekCall` function defined in the file, it doesn't include the actual source code that would reveal:\n\n1. Which environment variable supplies the DeepSeek API key\n2. The default DeepSeek API URL value\n\nTo answer your question, I would need to read the full source code of `agentLoop.ts` to see the implementation of the `deepseekCall` function and any environment variable references. Would you like me to read that file?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 552,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 7150,
+    "costUsd": 0.0216024
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "DEEPSEEK_API_KEY",
+        "present": false
+      },
+      {
+        "term": "api.deepseek.com",
+        "present": false
+      }
+    ]
+  }
+}

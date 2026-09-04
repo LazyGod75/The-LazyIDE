@@ -1,0 +1,39 @@
+{
+  "questionId": "q02",
+  "category": "behavioral",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 0,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [],
+    "filesMatched": 0,
+    "filesPicked": 0
+  },
+  "latencyMs": 44368,
+  "answer": "I'm unable to access the file due to working directory restrictions—the current session is limited to `C:\\Users\\user\\Documents\\cerveau\\Lazy\\bench\\token-economy`, but `engine/src/util/config.ts` is outside that directory.\n\nCould you either:\n1. Share the relevant section of `engine/src/util/config.ts` that handles the `dirname(brain)/_cache` migration, or\n2. Navigate to the engine directory and ask the question again from there?",
+  "usage": {
+    "inputTokens": 112,
+    "outputTokens": 3110,
+    "cacheReadInputTokens": 324620,
+    "cacheCreationInputTokens": 25919,
+    "costUsd": 0.100687
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "cache-migrated",
+        "present": false
+      },
+      {
+        "term": "marker",
+        "present": false
+      }
+    ]
+  }
+}

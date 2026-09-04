@@ -1,0 +1,37 @@
+{
+  "questionId": "q02",
+  "category": "behavioral",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 3367,
+  "configMeta": {
+    "corpusDir": "engine/src/util",
+    "fileCount": 21
+  },
+  "latencyMs": 11689,
+  "answer": "Based on the provided context, I can see that `config.ts` includes a function called `writeMigrationMarker(markerPath)`, which is almost certainly the mechanism that prevents re-running the legacy cache migration.\n\nHowever, **the context provided only shows the file structure and function names—it does not include the actual implementation details**. To give you the precise answer about exactly what the marker file is, where it's stored, and how it's checked, I would need to read the actual source code of `engine/src/util/config.ts`.\n\nThe pattern is clearly:\n1. `migrateLegacyCache(legacyDir, newDir)` performs the migration\n2. `writeMigrationMarker(markerPath)` writes a marker (likely a sentinel file) after migration completes\n3. On subsequent runs, the code likely checks for this marker before attempting the migration again\n\nWould you like me to read the actual `config.ts` file to show you the exact implementation?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 622,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 9716,
+    "costUsd": 0.029646400000000003
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "cache-migrated",
+        "present": false
+      },
+      {
+        "term": "marker",
+        "present": true
+      }
+    ]
+  }
+}

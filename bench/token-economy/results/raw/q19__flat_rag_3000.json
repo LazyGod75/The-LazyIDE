@@ -1,0 +1,63 @@
+{
+  "questionId": "q19",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2987,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 5,
+    "queryTokens": [
+      "are",
+      "four",
+      "values",
+      "accepted",
+      "--mode",
+      "option",
+      "lazybrain",
+      "inject-context",
+      "default",
+      "--max-tokens",
+      "budget"
+    ]
+  },
+  "latencyMs": 11202,
+  "answer": "The context provided does not contain the information needed to fully answer your question.\n\nFrom the code shown, I can identify only **two** `--mode` values mentioned:\n1. `'highlights'` — LazyManager's startup context mode\n2. `'marker'` — Claude Code hooks mode\n\nThe context does not describe four different `--mode` values, nor does it specify a default `--max-tokens` budget. The code discusses how `maxTokens` is used as a **soft ceiling** when provided, but no default value is defined in these excerpts.\n\nTo answer your question completely, I would need to see:\n- The command-line argument parser/help text for `inject-context`\n- The function signatures showing the default parameters\n- Or documentation for this command",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 577,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8449,
+    "costUsd": 0.0256514
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 2,
+    "totalTerms": 5,
+    "hits": [
+      {
+        "term": "session",
+        "present": false
+      },
+      {
+        "term": "turn",
+        "present": false
+      },
+      {
+        "term": "marker",
+        "present": true
+      },
+      {
+        "term": "highlights",
+        "present": true
+      },
+      {
+        "term": "3000",
+        "present": false
+      }
+    ]
+  }
+}

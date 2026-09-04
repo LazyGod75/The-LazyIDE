@@ -1,0 +1,42 @@
+{
+  "questionId": "q14",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 141,
+  "configMeta": {
+    "corpusDir": "engine/src/util",
+    "siblingFileCount": 21,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 18020,
+  "answer": "I cannot answer this question based on the context provided. While the context shows that `resolveConcurrencyEnv(rawValue, fallback, min, max)` exists in `engine/src/util/concurrency.ts`, the context is attribute-filtered and doesn't include the actual implementation details.\n\nTo answer your question about the environment variable name, its default value, and clamp range, I would need to see the full implementation of `concurrency.ts`, which is not available in the provided context.",
+  "usage": {
+    "inputTokens": 50,
+    "outputTokens": 967,
+    "cacheReadInputTokens": 114867,
+    "cacheCreationInputTokens": 5949,
+    "costUsd": 0.0291947
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 3,
+    "hits": [
+      {
+        "term": "LAZYBRAIN_IMPORT_CONCURRENCY",
+        "present": false
+      },
+      {
+        "term": "5",
+        "present": false
+      },
+      {
+        "term": "12",
+        "present": false
+      }
+    ]
+  }
+}

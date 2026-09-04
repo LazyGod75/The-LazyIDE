@@ -1,0 +1,41 @@
+{
+  "questionId": "q24",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "buildMainPage"
+    ],
+    "filesMatched": 2,
+    "filesPicked": 1
+  },
+  "latencyMs": 8713,
+  "answer": "The context provided doesn't include the implementation of `buildMainPage()` — the excerpt is truncated after the file header and other helper functions. To answer your question about which field is split on '/' to derive project and feature segments, I'd need to see the actual `buildMainPage()` function code.\n\nWould you like me to read the full file to find that information?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 374,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6431,
+    "costUsd": 0.0185624
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "topic",
+        "present": false
+      },
+      {
+        "term": "_general",
+        "present": false
+      }
+    ]
+  }
+}

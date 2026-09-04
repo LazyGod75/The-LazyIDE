@@ -1,0 +1,59 @@
+{
+  "questionId": "q22",
+  "category": "behavioral",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2918,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 4,
+    "queryTokens": [
+      "src",
+      "cli",
+      "lib",
+      "agentloop.ts",
+      "tool",
+      "loop",
+      "honesty",
+      "contract",
+      "mirrors",
+      "desktop",
+      "lazyide",
+      "managed",
+      "agent.",
+      "per",
+      "header",
+      "comment",
+      "through",
+      "action",
+      "can",
+      "agent",
+      "only",
+      "claim",
+      "completion"
+    ]
+  },
+  "latencyMs": 10946,
+  "answer": "Per the header comment in src/cli/lib/agentLoop.ts (lines 8-9):\n\n> the SAME honesty contract as the manager: a tool reports what it really did, and the agent can only claim completion via the **`finish` action**\n\nThis is reinforced in the protocol description (lines 18-20), which states that every agent turn is either a tool call `{\"tool\":..., \"args\":{...}}` or a completion `{\"finish\":\"summary\"}`.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 597,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8385,
+    "costUsd": 0.0255264
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 1,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "finish",
+        "present": true
+      }
+    ]
+  }
+}

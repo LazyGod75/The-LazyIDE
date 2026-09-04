@@ -1,0 +1,41 @@
+{
+  "questionId": "q09",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 4268,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "upsertIfRicher"
+    ],
+    "filesMatched": 3,
+    "filesPicked": 3
+  },
+  "latencyMs": 8544,
+  "answer": "Based on the context provided, the two functions added to support the 'upsertIfRicher' write path are:\n\n1. **`isRicherBody`** — Compares two note HTML bodies and returns true only if the candidate has strictly more alphanumeric words than the existing note.\n\n2. **`mergeUpsertHtml`** — Merges two note HTMLs by taking the candidate's body content while preserving the existing note's `data-cerveau-created` timestamp and refreshing `data-cerveau-updated` to the provided timestamp.\n\nThese are imported and used in `engine/src/store/writer.ts` in the `upsertExisting()` function to implement the smart upsert logic described in the `WriteOptions.upsertIfRicher` interface.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 618,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10320,
+    "costUsd": 0.0314914
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "isRicherBody",
+        "present": true
+      },
+      {
+        "term": "mergeUpsertHtml",
+        "present": true
+      }
+    ]
+  }
+}

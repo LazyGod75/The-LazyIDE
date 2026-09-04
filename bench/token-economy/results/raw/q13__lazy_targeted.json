@@ -1,0 +1,46 @@
+{
+  "questionId": "q13",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 141,
+  "configMeta": {
+    "corpusDir": "engine/src/util",
+    "siblingFileCount": 21,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 13253,
+  "answer": "Based on the context provided, the four parameters of `resolveConcurrencyEnv()` are:\n\n1. **rawValue**\n2. **fallback**\n3. **min**\n4. **max**\n\nHowever, the context does not contain the implementation details of what the function does with out-of-range values. To answer that part of your question, I would need to read the actual file contents, which isn't available in the current context.",
+  "usage": {
+    "inputTokens": 26,
+    "outputTokens": 696,
+    "cacheReadInputTokens": 54285,
+    "cacheCreationInputTokens": 5544,
+    "costUsd": 0.020938500000000002
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 3,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "fallback",
+        "present": true
+      },
+      {
+        "term": "min",
+        "present": true
+      },
+      {
+        "term": "max",
+        "present": true
+      },
+      {
+        "term": "clamp",
+        "present": false
+      }
+    ]
+  }
+}

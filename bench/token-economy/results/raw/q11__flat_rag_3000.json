@@ -1,0 +1,58 @@
+{
+  "questionId": "q11",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2961,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 5,
+    "queryTokens": [
+      "cli",
+      "command",
+      "flags",
+      "added",
+      "engine",
+      "src",
+      "commands",
+      "repair.ts",
+      "undo",
+      "notes",
+      "wrongly",
+      "invalidated",
+      "dream-noise-cleanup",
+      "bug",
+      "default",
+      "value",
+      "--tags",
+      "flag"
+    ]
+  },
+  "latencyMs": 10726,
+  "answer": "Based on the context provided in `engine/src/commands/repair.ts`:\n\n**CLI Command:** `repair`\n\n**Flags:** \n- `--un-invalidate-noise` — selects the repair action to undo notes wrongly invalidated by the dream-noise-cleanup bug\n- `--tags <t1,t2,...>` — specifies which tags to scope the repair to\n\n**Default value of --tags flag:** `mission,agent,skill`\n\nThis is defined in the code as:\n```typescript\nexport const DEFAULT_REPAIR_TAGS = ['mission', 'agent', 'skill'];\n```\n\nThe repair command scans every note and removes the `data-cerveau-invalidated-by=\"dream-noise-cleanup\"` and `data-cerveau-valid-until` attributes only from notes that (a) carry the dream-noise-cleanup invalidation stamp AND (b) have at least one tag matching the `--tags` list. Additional flags include `--dry-run` to preview candidates without modifying anything.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 657,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8681,
+    "costUsd": 0.026742399999999996
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "un-invalidate-noise",
+        "present": true
+      },
+      {
+        "term": "mission,agent,skill",
+        "present": true
+      }
+    ]
+  }
+}

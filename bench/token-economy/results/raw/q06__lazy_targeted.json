@@ -1,0 +1,38 @@
+{
+  "questionId": "q06",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 193,
+  "configMeta": {
+    "corpusDir": "engine/src/graph",
+    "siblingFileCount": 27,
+    "leafKind": "tldr-fallback"
+  },
+  "latencyMs": 9843,
+  "answer": "I don't have access to read the file contents directly—the Read tool is currently disabled for this session. The context provided only shows that `engine/src/graph/code-scanner.ts` is a TypeScript file with 16 functions and 917 lines, but doesn't include the specific details about the default file-neuron note cap or the environment variable that overrides it.\n\nTo answer your question, I would need to read the file. Could you either:\n1. Enable the Read tool for this session, or\n2. Share the relevant section of code-scanner.ts that contains the cap and environment variable configuration?",
+  "usage": {
+    "inputTokens": 26,
+    "outputTokens": 549,
+    "cacheReadInputTokens": 54202,
+    "cacheCreationInputTokens": 5427,
+    "costUsd": 0.020047199999999998
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "400",
+        "present": false
+      },
+      {
+        "term": "LAZYBRAIN_MAX_FILE_NEURONS",
+        "present": false
+      }
+    ]
+  }
+}

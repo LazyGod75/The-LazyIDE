@@ -1,0 +1,33 @@
+{
+  "questionId": "q16",
+  "category": "structural",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 3954,
+  "configMeta": {
+    "corpusDir": "engine/src/retrieval",
+    "fileCount": 23
+  },
+  "latencyMs": 8416,
+  "answer": "I don't have the answer in the provided context. The skeleton information shows that `pickLevel()` exists in `router.ts` (line 403), but the actual file contents aren't included—only metadata and function names.\n\nTo answer your question about what token range `pickLevel()` was widened FROM, I would need to see either:\n1. The current implementation of `pickLevel()` in router.ts\n2. Git history showing the change to this routing logic\n\nWould you like me to read the file or check the git history to find this information?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 423,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10834,
+    "costUsd": 0.0320024
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "6-15",
+        "present": false
+      }
+    ]
+  }
+}

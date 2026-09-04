@@ -1,0 +1,41 @@
+{
+  "questionId": "q15",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 5828,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "pickLevel"
+    ],
+    "filesMatched": 3,
+    "filesPicked": 3
+  },
+  "latencyMs": 15698,
+  "answer": "Looking at the `pickLevel()` function in `engine/src/retrieval/router.ts` (lines 337–358), the threshold was **narrowed from `<=5` to `<=2` tokens**.\n\nThe comment explains the regression that prompted this fix:\n\n> Narrowed from <=5 to <=2 tokens: short natural-language queries (3-5 tokens, e.g. \"how does auth work\") were being routed to keyword-only L2 and never reaching semantic search. Keep this narrow — only true keyword/tag lookups (1-2 tokens) stay pure-L2.\n\n**The problem:** Queries with 3–5 tokens (like \"how does auth work\") were stuck in pure keyword-only L2 lookup, missing semantic recall entirely.\n\n**The fix:** Now only truly short lookups (1–2 tokens) go to pure L2; anything with 3–15 tokens routes through the hybrid L2_L3_HYBRID path, which fuses keyword search with bi-encoder semantic search via RRF (Reciprocal Rank Fusion).",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 993,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 12531,
+    "costUsd": 0.0399524
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "5",
+        "present": true
+      },
+      {
+        "term": "2",
+        "present": true
+      }
+    ]
+  }
+}

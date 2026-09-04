@@ -1,0 +1,57 @@
+{
+  "questionId": "q18",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2760,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 5,
+    "queryTokens": [
+      "lazybrain",
+      "query",
+      "selector",
+      "cli",
+      "command",
+      "engine",
+      "src",
+      "cli",
+      "register-core.ts",
+      "described",
+      "specific",
+      "latency",
+      "determinism",
+      "claim.",
+      "router",
+      "level",
+      "correspond"
+    ]
+  },
+  "latencyMs": 11570,
+  "answer": "The context provided does not contain `engine/src/cli/register-core.ts`, which is the file mentioned in your question. I can see references to the query command in the other files (particularly `engine/src/commands/query.ts` which implements `runQuery`), but the specific description with the latency and determinism claim from the CLI registration file is not included in the context.\n\nTo answer your question accurately, I would need to see the actual command description from `engine/src/cli/register-core.ts`.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 841,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8243,
+    "costUsd": 0.0263574
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "L1",
+        "present": false
+      },
+      {
+        "term": "deterministic",
+        "present": false
+      }
+    ]
+  }
+}

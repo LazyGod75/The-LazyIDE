@@ -1,0 +1,38 @@
+{
+  "questionId": "q20",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 52,
+  "configMeta": {
+    "corpusDir": "src/cli/lib",
+    "siblingFileCount": 7,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 11483,
+  "answer": "The context provided doesn't include the actual implementation of the `claudeCall` function—only that it exists in `src/cli/lib/agentLoop.ts`. I'm unable to read the file directly with the current tool permissions to see the exact CLI flags being passed.\n\nCould you either share the relevant code snippet from `claudeCall`, or verify that Read/Bash permissions are enabled so I can inspect the file?",
+  "usage": {
+    "inputTokens": 34,
+    "outputTokens": 557,
+    "cacheReadInputTokens": 73779,
+    "cacheCreationInputTokens": 5434,
+    "costUsd": 0.0218709
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "--output-format json",
+        "present": false
+      },
+      {
+        "term": "--safe-mode",
+        "present": false
+      }
+    ]
+  }
+}

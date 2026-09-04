@@ -1,0 +1,25 @@
+{
+  "description": "Metadata for the pilot run bundled in results/raw/ and results/summary.json. run.mjs overwrites results/last-run-meta.json on every invocation (it only reflects the most recent partial run), so this file is the durable record of what actually produced the committed raw results.",
+  "date": "2026-08-16",
+  "answerModel": "haiku",
+  "claudeVersion": "2.1.228 (Claude Code)",
+  "invocation": "claude -p <prompt> --model haiku --output-format json --safe-mode --disallowedTools Bash,Read,Write,Edit,NotebookEdit,Glob,Grep,WebFetch,WebSearch,Task,TodoWrite,ExitPlanMode",
+  "questionIds": ["q01", "q03", "q06", "q10", "q13", "q20"],
+  "configVariants": [
+    "lazy_targeted",
+    "lazy_full_subtree",
+    "flat_rag_800",
+    "flat_rag_3000",
+    "grep_read_1500",
+    "grep_read_6000"
+  ],
+  "recordCount": 36,
+  "grading": "deterministic requiredTerms keyword match only (gradeKeywordMatch) — the LLM-judge path in lib/grader.mjs (gradeLlmJudge) exists but was NOT exercised in this pilot; see README-FIXTURE.txt.",
+  "fixtureBrain": "isolated, outside the repo (LAZYBRAIN_FIXTURE_BRAIN), built by scripts/build-fixture-brain.mjs from the exact corpusDirs in questions.json — see results/fixture-build-report.json for the real indexing timings (0 LLM calls, $0).",
+  "commandsToReproduce": [
+    "cd engine && npm run build   # only if dist/bin/lazybrain.js is stale",
+    "node bench/token-economy/scripts/build-fixture-brain.mjs <someIsolatedDir>",
+    "LAZYBRAIN_FIXTURE_BRAIN=<someIsolatedDir> node bench/token-economy/run.mjs --ids q01,q03,q06,q10,q13,q20",
+    "node bench/token-economy/report.mjs"
+  ]
+}

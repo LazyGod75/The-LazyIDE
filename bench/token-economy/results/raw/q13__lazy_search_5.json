@@ -1,0 +1,45 @@
+{
+  "questionId": "q13",
+  "category": "structural",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 237,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 8858,
+  "answer": "I don't have that information in the provided context. The context mentions that `engine/src/util/concurrency.ts` exists and is a TypeScript file with 2 functions (59 lines), but it doesn't include the actual code or details about the `resolveConcurrencyEnv()` function's parameters or behavior.\n\nI can read the file to answer your question if you'd like.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 433,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5129,
+    "costUsd": 0.0149774
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "fallback",
+        "present": false
+      },
+      {
+        "term": "min",
+        "present": false
+      },
+      {
+        "term": "max",
+        "present": false
+      },
+      {
+        "term": "clamp",
+        "present": false
+      }
+    ]
+  }
+}

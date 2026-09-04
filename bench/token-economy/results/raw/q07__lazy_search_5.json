@@ -1,0 +1,33 @@
+{
+  "questionId": "q07",
+  "category": "behavioral",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 141,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 9534,
+  "answer": "I don't have enough context to answer this question. The fixture notes reference decisions to fix something in `engine/src/commands/inject-context/sections.ts` and `markers.ts` (mentioning \"restore the proven scored\" but cut off mid-description), but they don't explain:\n\n1. What the actual underlying bug was\n2. Where it lived in the codebase\n3. What the relationship was between the mode=turn return-empty issue and the real problem\n\nTo answer your question accurately, I'd need to either:\n- See the actual commits or PRs that fixed this issue (to see the commit messages and diffs)\n- Read the current state of those files and related code\n- See any issue tracking or notes that documented what the real bug was\n\nWould you like me to examine those files in the codebase to figure out what was actually fixed?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 547,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 4975,
+    "costUsd": 0.0151214
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "pickLevel",
+        "present": false
+      }
+    ]
+  }
+}

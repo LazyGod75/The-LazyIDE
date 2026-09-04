@@ -1,0 +1,38 @@
+{
+  "questionId": "q16",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "pickLevel",
+      "L2_L3_HYBRID"
+    ],
+    "filesMatched": 10,
+    "filesPicked": 1
+  },
+  "latencyMs": 7087,
+  "answer": "I don't see the `pickLevel()` function or its token range logic in the provided context. The context shows the beginning of `engine/src/retrieval/router.ts` with imports and some type definitions, but it's truncated before reaching the `pickLevel()` function implementation.\n\nTo answer your question about what token range the L2_L3_HYBRID dispatch was widened from, I'd need to see the actual `pickLevel()` function body or a commit message/comment documenting that change.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 307,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6269,
+    "costUsd": 0.0177384
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "6-15",
+        "present": false
+      }
+    ]
+  }
+}

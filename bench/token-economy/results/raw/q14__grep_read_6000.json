@@ -1,0 +1,43 @@
+{
+  "questionId": "q14",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 0,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [],
+    "filesMatched": 0,
+    "filesPicked": 0
+  },
+  "latencyMs": 16263,
+  "answer": "I don't have access to read the codebase files in this session — the Read and Grep tools are currently disabled. Without being able to search through the source code, I cannot identify the specific environment variable name, its default value, or its clamp range for the import annotation concurrency feature.\n\nTo find this information, you could:\n1. Search your codebase for keywords like `CONCUR`, `IMPORT`, or `PARALLEL` combined with `process.env` or `process.env.` \n2. Look in your main CLI registration files or configuration modules\n3. Search git history/commits mentioning \"6.4x\" or \"faster-import\" for related changes\n\nIf you can access the codebase directly, the environment variable is likely set near where import concurrency is being used. Could you share the relevant code snippet or file, or would you like me to help analyze it once you can provide the information?",
+  "usage": {
+    "inputTokens": 34,
+    "outputTokens": 829,
+    "cacheReadInputTokens": 73553,
+    "cacheCreationInputTokens": 5446,
+    "costUsd": 0.0231363
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 3,
+    "hits": [
+      {
+        "term": "LAZYBRAIN_IMPORT_CONCURRENCY",
+        "present": false
+      },
+      {
+        "term": "5",
+        "present": false
+      },
+      {
+        "term": "12",
+        "present": false
+      }
+    ]
+  }
+}

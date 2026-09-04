@@ -1,0 +1,1110 @@
+{
+  "generatedAt": "2026-08-16T03:23:55.701Z",
+  "correctnessFloor": 0.8,
+  "recordCount": 168,
+  "accuracyVsTokensCurve": [
+    {
+      "variantId": "flat_rag_800",
+      "configId": "flat_rag",
+      "budget": 800,
+      "n": 24,
+      "correct": 6,
+      "accuracy": 0.25,
+      "meanInjectedTokens": 780
+    },
+    {
+      "variantId": "flat_rag_3000",
+      "configId": "flat_rag",
+      "budget": 3000,
+      "n": 24,
+      "correct": 10,
+      "accuracy": 0.4166666666666667,
+      "meanInjectedTokens": 2957
+    },
+    {
+      "variantId": "grep_read_1500",
+      "configId": "grep_read",
+      "budget": 1500,
+      "n": 24,
+      "correct": 7,
+      "accuracy": 0.2916666666666667,
+      "meanInjectedTokens": 932
+    },
+    {
+      "variantId": "grep_read_6000",
+      "configId": "grep_read",
+      "budget": 6000,
+      "n": 24,
+      "correct": 12,
+      "accuracy": 0.5,
+      "meanInjectedTokens": 3981
+    },
+    {
+      "variantId": "lazy_full_subtree",
+      "configId": "lazy_full_subtree",
+      "budget": null,
+      "n": 24,
+      "correct": 4,
+      "accuracy": 0.16666666666666666,
+      "meanInjectedTokens": 5509
+    },
+    {
+      "variantId": "lazy_search_5",
+      "configId": "lazy_search",
+      "budget": 5,
+      "n": 24,
+      "correct": 0,
+      "accuracy": 0,
+      "meanInjectedTokens": 428
+    },
+    {
+      "variantId": "lazy_targeted",
+      "configId": "lazy_targeted",
+      "budget": null,
+      "n": 24,
+      "correct": 5,
+      "accuracy": 0.20833333333333334,
+      "meanInjectedTokens": 171
+    }
+  ],
+  "tokensPerCorrectAnswer": [],
+  "tokensPerCorrectAnswer_note": "Only variants with accuracy >= correctnessFloor are ranked here — a config cannot win by being wrong more often.",
+  "byCategoryAccuracy": {
+    "structural": [
+      {
+        "variantId": "flat_rag_3000",
+        "n": 17,
+        "accuracy": 0.47058823529411764
+      },
+      {
+        "variantId": "flat_rag_800",
+        "n": 17,
+        "accuracy": 0.29411764705882354
+      },
+      {
+        "variantId": "grep_read_1500",
+        "n": 17,
+        "accuracy": 0.35294117647058826
+      },
+      {
+        "variantId": "grep_read_6000",
+        "n": 17,
+        "accuracy": 0.6470588235294118
+      },
+      {
+        "variantId": "lazy_full_subtree",
+        "n": 17,
+        "accuracy": 0.17647058823529413
+      },
+      {
+        "variantId": "lazy_search_5",
+        "n": 17,
+        "accuracy": 0
+      },
+      {
+        "variantId": "lazy_targeted",
+        "n": 17,
+        "accuracy": 0.17647058823529413
+      }
+    ],
+    "behavioral": [
+      {
+        "variantId": "flat_rag_3000",
+        "n": 7,
+        "accuracy": 0.2857142857142857
+      },
+      {
+        "variantId": "flat_rag_800",
+        "n": 7,
+        "accuracy": 0.14285714285714285
+      },
+      {
+        "variantId": "grep_read_1500",
+        "n": 7,
+        "accuracy": 0.14285714285714285
+      },
+      {
+        "variantId": "grep_read_6000",
+        "n": 7,
+        "accuracy": 0.14285714285714285
+      },
+      {
+        "variantId": "lazy_full_subtree",
+        "n": 7,
+        "accuracy": 0.14285714285714285
+      },
+      {
+        "variantId": "lazy_search_5",
+        "n": 7,
+        "accuracy": 0
+      },
+      {
+        "variantId": "lazy_targeted",
+        "n": 7,
+        "accuracy": 0.2857142857142857
+      }
+    ]
+  },
+  "perQuestion": {
+    "q01": {
+      "category": "behavioral",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2998,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 800,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": false,
+          "tokens": 5957,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 6390,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 401,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 189,
+          "error": null
+        }
+      }
+    },
+    "q02": {
+      "category": "behavioral",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": true,
+          "tokens": 2952,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 791,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 0,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": false,
+          "tokens": 0,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 3286,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 397,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 127,
+          "error": null
+        }
+      }
+    },
+    "q03": {
+      "category": "behavioral",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 3000,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 806,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": false,
+          "tokens": 4798,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 6390,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 441,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 188,
+          "error": null
+        }
+      }
+    },
+    "q04": {
+      "category": "behavioral",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2995,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 785,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": false,
+          "tokens": 4550,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": true,
+          "tokens": 2021,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 402,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": true,
+          "tokens": 91,
+          "error": null
+        }
+      }
+    },
+    "q05": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2982,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 731,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": true,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": true,
+          "tokens": 4550,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 2021,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 415,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 85,
+          "error": null
+        }
+      }
+    },
+    "q06": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2960,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 784,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 0,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": false,
+          "tokens": 0,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 6390,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 427,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 193,
+          "error": null
+        }
+      }
+    },
+    "q07": {
+      "category": "behavioral",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2973,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 889,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": false,
+          "tokens": 5680,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 3954,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 447,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": true,
+          "tokens": 151,
+          "error": null
+        }
+      }
+    },
+    "q08": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2960,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 790,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": true,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": true,
+          "tokens": 5929,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 14843,
+          "error": "claude exited null: "
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 438,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 393,
+          "error": null
+        }
+      }
+    },
+    "q09": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2810,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 777,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": true,
+          "tokens": 1416,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": true,
+          "tokens": 4268,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": true,
+          "tokens": 1410,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 453,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 79,
+          "error": null
+        }
+      }
+    },
+    "q10": {
+      "category": "behavioral",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2978,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 764,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": false,
+          "tokens": 4550,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 14843,
+          "error": "claude exited null: "
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 419,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 388,
+          "error": null
+        }
+      }
+    },
+    "q11": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": true,
+          "tokens": 2961,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": true,
+          "tokens": 792,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 0,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": false,
+          "tokens": 0,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 14843,
+          "error": "claude exited null: "
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 431,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 393,
+          "error": null
+        }
+      }
+    },
+    "q12": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": true,
+          "tokens": 2958,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": true,
+          "tokens": 790,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": true,
+          "tokens": 1352,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": true,
+          "tokens": 4696,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": true,
+          "tokens": 3286,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 441,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": true,
+          "tokens": 131,
+          "error": null
+        }
+      }
+    },
+    "q13": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": true,
+          "tokens": 2986,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 790,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": true,
+          "tokens": 1353,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": true,
+          "tokens": 4696,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 3286,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 411,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": true,
+          "tokens": 141,
+          "error": null
+        }
+      }
+    },
+    "q14": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": true,
+          "tokens": 2974,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 790,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 0,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": false,
+          "tokens": 0,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 3286,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 399,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 141,
+          "error": null
+        }
+      }
+    },
+    "q15": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": true,
+          "tokens": 2990,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": true,
+          "tokens": 800,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": true,
+          "tokens": 5828,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 3954,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 445,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 151,
+          "error": null
+        }
+      }
+    },
+    "q16": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": true,
+          "tokens": 2944,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 801,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": true,
+          "tokens": 5998,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 3954,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 444,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 151,
+          "error": null
+        }
+      }
+    },
+    "q17": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2990,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 770,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 0,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": false,
+          "tokens": 0,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": true,
+          "tokens": 3954,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 467,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 156,
+          "error": null
+        }
+      }
+    },
+    "q18": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2760,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": true,
+          "tokens": 700,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": false,
+          "tokens": 5645,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 0,
+          "error": "context-build failed: No corpusDir matches lazyTarget.file engine/src/cli/register-core.ts"
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 416,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 0,
+          "error": "context-build failed: No corpusDir matches lazyTarget.file engine/src/cli/register-core.ts"
+        }
+      }
+    },
+    "q19": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2987,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 706,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": false,
+          "tokens": 5645,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 0,
+          "error": "context-build failed: No corpusDir matches lazyTarget.file engine/src/cli/register-core.ts"
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 506,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 0,
+          "error": "context-build failed: No corpusDir matches lazyTarget.file engine/src/cli/register-core.ts"
+        }
+      }
+    },
+    "q20": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2989,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 782,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": true,
+          "tokens": 4550,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 1474,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 399,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 52,
+          "error": null
+        }
+      }
+    },
+    "q21": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": true,
+          "tokens": 2994,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 775,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": true,
+          "tokens": 4550,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 1474,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 427,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 55,
+          "error": null
+        }
+      }
+    },
+    "q22": {
+      "category": "behavioral",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": true,
+          "tokens": 2918,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": true,
+          "tokens": 769,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": true,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": true,
+          "tokens": 4550,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 1474,
+          "error": null
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 397,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 55,
+          "error": null
+        }
+      }
+    },
+    "q23": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": false,
+          "tokens": 2952,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": false,
+          "tokens": 764,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": true,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": true,
+          "tokens": 4550,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 14843,
+          "error": "claude exited null: "
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 415,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": true,
+          "tokens": 394,
+          "error": null
+        }
+      }
+    },
+    "q24": {
+      "category": "structural",
+      "variants": {
+        "flat_rag_3000": {
+          "correct": true,
+          "tokens": 2957,
+          "error": null
+        },
+        "flat_rag_800": {
+          "correct": true,
+          "tokens": 782,
+          "error": null
+        },
+        "grep_read_1500": {
+          "correct": false,
+          "tokens": 1141,
+          "error": null
+        },
+        "grep_read_6000": {
+          "correct": true,
+          "tokens": 4550,
+          "error": null
+        },
+        "lazy_full_subtree": {
+          "correct": false,
+          "tokens": 14843,
+          "error": "claude exited null: "
+        },
+        "lazy_search_5": {
+          "correct": false,
+          "tokens": 433,
+          "error": null
+        },
+        "lazy_targeted": {
+          "correct": false,
+          "tokens": 393,
+          "error": null
+        }
+      }
+    }
+  }
+}

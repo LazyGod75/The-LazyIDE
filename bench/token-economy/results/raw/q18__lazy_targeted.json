@@ -1,0 +1,12 @@
+{
+  "questionId": "q18",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 0,
+  "configMeta": null,
+  "answer": null,
+  "correct": false,
+  "error": "context-build failed: No corpusDir matches lazyTarget.file engine/src/cli/register-core.ts"
+}

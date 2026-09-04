@@ -1,0 +1,55 @@
+{
+  "questionId": "q19",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "--mode",
+      "lazybrain",
+      "--max-tokens"
+    ],
+    "filesMatched": 76,
+    "filesPicked": 1
+  },
+  "latencyMs": 7361,
+  "answer": "The context provided (a config path discovery test file) does not contain information about the `--mode` option or `--max-tokens` budget for the `lazybrain inject-context` command. I cannot answer this question based on the given context.\n\nTo find this information, I would need to see:\n- The command definition or help text for `inject-context`\n- The CLI argument parser configuration for that command\n- Any relevant documentation or source files that define those options\n\nWould you like me to search for these details in the codebase?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 341,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6111,
+    "costUsd": 0.017441400000000003
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 5,
+    "hits": [
+      {
+        "term": "session",
+        "present": false
+      },
+      {
+        "term": "turn",
+        "present": false
+      },
+      {
+        "term": "marker",
+        "present": false
+      },
+      {
+        "term": "highlights",
+        "present": false
+      },
+      {
+        "term": "3000",
+        "present": false
+      }
+    ]
+  }
+}

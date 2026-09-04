@@ -1,0 +1,56 @@
+<article id="file-acme-src-api-middleware-ts" data-cerveau-version="0.2.0" data-cerveau-type="file-neuron" data-cerveau-created="2026-06-08T00:00:00Z" data-cerveau-tags="code typescript acme file-neuron" data-cerveau-topic="acme/code/typescript" data-cerveau-importance="0.5900">
+<nav class="breadcrumb"><a href="#/acme">acme</a> / <a href="#/acme/src">src</a> / <a href="#/acme/src/api">api</a> / <span aria-current="page">middleware.ts</span></nav>
+<h1><a data-cerveau-link-auto="1" data-cerveau-link-type="mentions" href="#aggregate-acme-src-api">src/api</a>/middleware.ts</h1>
+<aside class="infobox">
+  <dl>
+    <dt>Language</dt><dd>typescript</dd>
+    <dt>Lines</dt><dd>100</dd>
+    <dt>Inbound</dt><dd>0</dd>
+    <dt>Exports</dt><dd>4</dd>
+  </dl>
+</aside>
+<section data-section="tldr">
+  <p>typescript file with 4 functions (100 lines)</p>
+</section>
+<nav class="toc" role="navigation">
+  <h2>Contents</h2>
+  <ol>
+    <li class="toclevel-1 tocsection-1"><a href="#architecture"><span class="tocnumber">1</span> <span class="toctext">Imports &amp; Exports</span></a></li>
+    <li class="toclevel-1 tocsection-2"><a href="#children"><span class="tocnumber">2</span> <span class="toctext">Symbols</span></a></li>
+    <li class="toclevel-2 tocsection-3"><a href="#fn-authenticate"><span class="tocnumber">3</span> <span class="toctext">authenticate</span></a></li>
+    <li class="toclevel-2 tocsection-4"><a href="#fn-requirerole"><span class="tocnumber">4</span> <span class="toctext">requireRole</span></a></li>
+    <li class="toclevel-2 tocsection-5"><a href="#fn-requestlogger"><span class="tocnumber">5</span> <span class="toctext">requestLogger</span></a></li>
+    <li class="toclevel-2 tocsection-6"><a href="#fn-errorhandler"><span class="tocnumber">6</span> <span class="toctext">errorHandler</span></a></li>
+    <li class="toclevel-1 tocsection-7"><a href="#ideas"><span class="tocnumber">7</span> <span class="toctext">Ideas</span></a></li>
+  </ol>
+</nav>
+<section data-section="architecture">
+  <h3>Imports &amp; Exports</h3>
+  <h4>Imports</h4>
+  <ul>
+      <li><a href="#/file:../auth/session.js"><code>../auth/session.js</code></a></li>
+      <li><a href="#/file:../auth/jwt.js"><code>../auth/jwt.js</code></a></li>
+  </ul>
+  <h4>Exports</h4>
+  <ul>
+      <li><code>authenticate</code></li>
+      <li><code>requireRole</code></li>
+      <li><code>requestLogger</code></li>
+      <li><code>errorHandler</code></li>
+  </ul>
+</section>
+<section data-section="children">
+  <h3>Symbols</h3>
+  <h3 id="fn-authenticate"><span class="export-badge">export</span> <code>authenticate(req, res, next)</code></h3>
+  <h3 id="fn-requirerole"><span class="export-badge">export</span> <code>requireRole()</code></h3>
+  <h3 id="fn-requestlogger"><span class="export-badge">export</span> <code>requestLogger(req, res, next)</code></h3>
+  <h3 id="fn-errorhandler"><span class="export-badge">export</span> <code>errorHandler(err, req, res, _next)</code></h3>
+</section>
+<section data-section="ideas">
+  <h3>Ideas</h3>
+  <ul>
+    <li data-cerveau-confidence="1"><a data-cerveau-link-auto="1" data-cerveau-link-type="mentions" href="#concept-idea-should-also-add-a-cancellation-confirmation-email-that-clear">Idea</a>: we should add rate limiting to the /auth/login endpoint in <a data-cerveau-link-auto="1" data-cerveau-link-type="mentions" href="#aggregate-acme-src-api">src/api</a>/middleware <a href="#acme-conv-rate-limiting-idea-2026-05-26" class="conv-source">[source]</a></li>
+    <li data-cerveau-confidence="1">Should also add rate limiting on the /webhooks/stripe endpoint to prevent DoS via fake webhook floods, though in practice Stripe's IP allowlist is a better first line of defense there <a href="#acme-conv-rate-limiting-idea-2026-05-26" class="conv-source">[source]</a></li>
+  </ul>
+</section>
+</article>

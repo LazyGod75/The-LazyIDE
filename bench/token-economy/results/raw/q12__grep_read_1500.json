@@ -1,0 +1,41 @@
+{
+  "questionId": "q12",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1352,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "mapLimit"
+    ],
+    "filesMatched": 3,
+    "filesPicked": 2
+  },
+  "latencyMs": 10044,
+  "answer": "Based on the CONTEXT provided, I can answer the first part:\n\n**mapLimit() returns results in input order**, not completion order. This is explicitly verified by the test \"returns results in input order regardless of completion order\", which states:\n\n> \"Item 0 resolves slowest, item 4 resolves fastest — output must still be [0, 1, 2, 3, 4], matching the ORIGINAL sequential for-loop's ordering guarantee, not completion order.\"\n\nThe test confirms that even though items complete in a different order (item 4 fastest, item 0 slowest), the results array maintains the original input order `[0, 1, 2, 3, 4]`.\n\n**However**, the CONTEXT does not contain the actual implementation of engine/src/util/concurrency.ts itself—only the test file. Therefore, I cannot tell you the specific chunking strategy used to implement the bounded concurrency. To answer that part, I'd need to see the actual implementation in concurrency.ts.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 558,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6495,
+    "costUsd": 0.0196914
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "input order",
+        "present": true
+      },
+      {
+        "term": "chunk",
+        "present": true
+      }
+    ]
+  }
+}

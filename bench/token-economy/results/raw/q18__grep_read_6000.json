@@ -1,0 +1,41 @@
+{
+  "questionId": "q18",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 5645,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "lazybrain"
+    ],
+    "filesMatched": 75,
+    "filesPicked": 3
+  },
+  "latencyMs": 7694,
+  "answer": "The context provided does not include `engine/src/cli/register-core.ts` or any information about the `lazybrain query <selector>` command's latency and determinism claims. I cannot answer this question based on the available context.\n\nTo answer your question, I would need to see the `register-core.ts` file where that command is defined.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 341,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 11770,
+    "costUsd": 0.0344244
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "L1",
+        "present": false
+      },
+      {
+        "term": "deterministic",
+        "present": false
+      }
+    ]
+  }
+}

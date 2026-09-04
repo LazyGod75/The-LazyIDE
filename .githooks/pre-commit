@@ -1,0 +1,3 @@
+#!/bin/sh
+# Block commits that introduce Stripe, Supabase service-role, R2, or signing secrets.
+node scripts/guard-secrets.mjs --staged || exit 1

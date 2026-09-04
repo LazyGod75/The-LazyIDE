@@ -1,0 +1,88 @@
+{
+  "_comment": "SWE-bench-like tasks: bug-fix, refactor, greenfield. Each task has setup files, a test file, and spec. Scoring runs the test file and checks pass/fail.",
+  "tasks": [
+    {
+      "id": "swe-bugfix-debounce",
+      "title": "Bug-fix: debounce fires immediately instead of after delay",
+      "category": "bug-fix",
+      "difficulty": "easy",
+      "spec": "The debounce function in debounce.mjs has a bug: it fires fn immediately on first call instead of waiting delayMs. Fix it so that fn only fires after delayMs of silence. The timer must be cleared on each call. Do not change the test file.",
+      "setupFiles": [
+        {
+          "path": "bench/swe-workspace/debounce.mjs",
+          "content": "export default function debounce(fn, delayMs) {\n  let timer;\n  return function (...args) {\n    fn(...args);  // BUG: fires immediately\n    timer = setTimeout(() => {}, delayMs);\n  };\n}\n"
+        },
+        {
+          "path": "bench/swe-workspace/debounce.test.mjs",
+          "content": "import assert from 'node:assert';\nimport { test } from 'node:test';\nimport debounce from './debounce.mjs';\n\ntest('fn does not fire immediately', () => {\n  let calls = 0;\n  const d = debounce(() => calls++, 50);\n  d();\n  assert.strictEqual(calls, 0, 'fn should not fire immediately');\n});\n\ntest('fn fires after delay', async () => {\n  let calls = 0;\n  const d = debounce(() => calls++, 50);\n  d();\n  await new Promise(r => setTimeout(r, 80));\n  assert.strictEqual(calls, 1, 'fn should fire once after delay');\n});\n\ntest('fn does not fire if called again within delay', async () => {\n  let calls = 0;\n  const d = debounce(() => calls++, 50);\n  d();\n  await new Promise(r => setTimeout(r, 30));\n  d();  // reset timer\n  await new Promise(r => setTimeout(r, 30));\n  assert.strictEqual(calls, 0, 'fn should not fire yet (timer was reset)');\n  await new Promise(r => setTimeout(r, 30));\n  assert.strictEqual(calls, 1, 'fn should fire after second delay');\n});\n\ntest('passes arguments correctly', async () => {\n  let result;\n  const d = debounce((a, b) => result = a + b, 30);\n  d(3, 4);\n  await new Promise(r => setTimeout(r, 50));\n  assert.strictEqual(result, 7, 'arguments should be passed through');\n});\n"
+        }
+      ],
+      "testCommand": "node --test bench/swe-workspace/debounce.test.mjs",
+      "testFile": "bench/swe-workspace/debounce.test.mjs",
+      "implFile": "bench/swe-workspace/debounce.mjs",
+      "scoring": {
+        "method": "test-run",
+        "checks": [
+          { "id": "test-passes", "description": "All tests pass (exit code 0)" },
+          { "id": "no-immediate-fire", "description": "fn does not fire immediately", "pattern": "calls.*0" },
+          { "id": "uses-clearTimeout", "description": "Implementation uses clearTimeout", "pattern": "clearTimeout" }
+        ]
+      }
+    },
+    {
+      "id": "swe-refactor-callback-to-async",
+      "title": "Refactor: convert callback-based fetchData to async/await",
+      "category": "refactor",
+      "difficulty": "medium",
+      "spec": "Refactor fetchData in api.mjs from callback style to async/await. The function should return a Promise that resolves with the data. Remove the callback parameter. Keep the same URL and error handling behavior. Do not change the test file.",
+      "setupFiles": [
+        {
+          "path": "bench/swe-workspace/api.mjs",
+          "content": "// Callback-based fetchData — refactor to async/await\nexport function fetchData(url, callback) {\n  setTimeout(() => {\n    if (url.includes('error')) {\n      callback(new Error('Network error'), null);\n    } else {\n      callback(null, { url, data: 'response-' + url });\n    }\n  }, 10);\n}\n"
+        },
+        {
+          "path": "bench/swe-workspace/api.test.mjs",
+          "content": "import assert from 'node:assert';\nimport { test } from 'node:test';\nimport { fetchData } from './api.mjs';\n\ntest('fetchData returns a Promise', () => {\n  const result = fetchData('https://api.example.com/users');\n  assert.ok(result instanceof Promise, 'should return a Promise');\n});\n\ntest('fetchData resolves with data', async () => {\n  const result = await fetchData('https://api.example.com/users');\n  assert.deepStrictEqual(result, { url: 'https://api.example.com/users', data: 'response-https://api.example.com/users' });\n});\n\ntest('fetchData rejects on error URL', async () => {\n  await assert.rejects(\n    () => fetchData('https://api.example.com/error'),\n    /Network error/\n  );\n});\n\ntest('fetchData has no callback parameter', () => {\n  assert.strictEqual(fetchData.length, 1, 'function should accept only url parameter');\n});\n"
+        }
+      ],
+      "testCommand": "node --test bench/swe-workspace/api.test.mjs",
+      "testFile": "bench/swe-workspace/api.test.mjs",
+      "implFile": "bench/swe-workspace/api.mjs",
+      "scoring": {
+        "method": "test-run",
+        "checks": [
+          { "id": "test-passes", "description": "All tests pass (exit code 0)" },
+          { "id": "returns-promise", "description": "Function returns a Promise", "pattern": "async|Promise" },
+          { "id": "no-callback-param", "description": "No callback parameter", "patternAbsent": "callback" },
+          { "id": "uses-await", "description": "Uses await or Promise constructor", "pattern": "await|new Promise" }
+        ]
+      }
+    },
+    {
+      "id": "swe-greenfield-lru-cache",
+      "title": "Greenfield: implement LRU cache from scratch",
+      "category": "greenfield",
+      "difficulty": "medium",
+      "spec": "Create an LRU cache class in lru.mjs with get(key) and put(key, value) methods. Capacity is set in constructor. When capacity is exceeded, evict the least recently used item. get marks an item as recently used. Export the class as default. Do not change the test file.",
+      "setupFiles": [
+        {
+          "path": "bench/swe-workspace/lru.test.mjs",
+          "content": "import assert from 'node:assert';\nimport { test } from 'node:test';\nimport LRUCache from './lru.mjs';\n\ntest('get returns cached value', () => {\n  const cache = new LRUCache(2);\n  cache.put('a', 1);\n  assert.strictEqual(cache.get('a'), 1);\n});\n\ntest('evicts least recently used when full', () => {\n  const cache = new LRUCache(2);\n  cache.put('a', 1);\n  cache.put('b', 2);\n  cache.get('a');  // a is now MRU\n  cache.put('c', 3);  // should evict b (LRU)\n  assert.strictEqual(cache.get('b'), -1, 'b should be evicted');\n  assert.strictEqual(cache.get('a'), 1, 'a should still be cached');\n  assert.strictEqual(cache.get('c'), 3, 'c should be cached');\n});\n\ntest('get returns -1 for missing key', () => {\n  const cache = new LRUCache(2);\n  assert.strictEqual(cache.get('missing'), -1);\n});\n\ntest('put updates existing key', () => {\n  const cache = new LRUCache(2);\n  cache.put('a', 1);\n  cache.put('a', 2);\n  assert.strictEqual(cache.get('a'), 2);\n});\n\ntest('capacity 1 evicts correctly', () => {\n  const cache = new LRUCache(1);\n  cache.put('a', 1);\n  cache.put('b', 2);\n  assert.strictEqual(cache.get('a'), -1);\n  assert.strictEqual(cache.get('b'), 2);\n});\n"
+        }
+      ],
+      "testCommand": "node --test bench/swe-workspace/lru.test.mjs",
+      "testFile": "bench/swe-workspace/lru.test.mjs",
+      "implFile": "bench/swe-workspace/lru.mjs",
+      "scoring": {
+        "method": "test-run",
+        "checks": [
+          { "id": "test-passes", "description": "All tests pass (exit code 0)" },
+          { "id": "has-class", "description": "Exports a class", "pattern": "class|export default class" },
+          { "id": "has-get-method", "description": "Has get method", "pattern": "get\\s*\\(" },
+          { "id": "has-put-method", "description": "Has put method", "pattern": "put\\s*\\(" },
+          { "id": "handles-capacity", "description": "Uses capacity in constructor", "pattern": "capacity|constructor" }
+        ]
+      }
+    }
+  ]
+}

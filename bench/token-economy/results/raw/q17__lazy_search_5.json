@@ -1,0 +1,49 @@
+{
+  "questionId": "q17",
+  "category": "structural",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 229,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 7396,
+  "answer": "I don't have access to `engine/src/retrieval/router.ts` in the provided context. The context mentions retrieval-related files (like `file-retrieval-levels-l1.ts`, `l2.ts`, `l4.ts`, and the `aggregate-retrieval-levels` module), but it doesn't include the `router.ts` file itself or the header comment describing the five phases.\n\nTo answer your question accurately, I'd need to read the actual file. Would you like me to read `engine/src/retrieval/router.ts` to find those five phases and their descriptions?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 423,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5061,
+    "costUsd": 0.014716400000000001
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 3,
+    "totalTerms": 5,
+    "hits": [
+      {
+        "term": "l1.ts",
+        "present": true
+      },
+      {
+        "term": "l2.ts",
+        "present": true
+      },
+      {
+        "term": "l3.ts",
+        "present": false
+      },
+      {
+        "term": "l4.ts",
+        "present": true
+      },
+      {
+        "term": "hybrid.ts",
+        "present": false
+      }
+    ]
+  }
+}

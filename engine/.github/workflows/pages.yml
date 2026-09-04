@@ -1,0 +1,52 @@
+# Manual GitHub Pages deploy — triggered only by workflow_dispatch.
+# Never runs automatically on push or schedule.
+#
+# Usage: Actions tab → "Deploy Demo Site to Pages" → Run workflow
+#
+# The _site staging directory is assembled at deploy time:
+#   - demo/              → _site/   (the live demo brain)
+#   - docs/why-html-for-ai-memory.html → _site/why-html.html  (the thesis)
+
+name: Deploy Demo Site to Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Assemble _site
+        run: |
+          cp -r demo/ _site/
+          cp docs/why-html-for-ai-memory.html _site/why-html.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

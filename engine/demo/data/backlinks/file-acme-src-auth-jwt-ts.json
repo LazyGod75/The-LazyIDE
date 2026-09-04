@@ -1,0 +1,1 @@
+{"noteId":"file-acme-src-auth-jwt-ts","total":3,"backlinks":[{"from":"acme-conv-db-transaction-bug-2026-05-28","type":"see-also","surface":"JWT","auto":false},{"from":"acme-conv-jwt-library-2026-05-02","type":"see-also","surface":"JWT","auto":false},{"from":"acme-conv-session-race-bug-2026-05-05","type":"see-also","surface":"JWT","auto":false}]}

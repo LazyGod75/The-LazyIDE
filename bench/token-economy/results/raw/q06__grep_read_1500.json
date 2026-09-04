@@ -1,0 +1,39 @@
+{
+  "questionId": "q06",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 0,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [],
+    "filesMatched": 0,
+    "filesPicked": 0
+  },
+  "latencyMs": 11111,
+  "answer": "I'm unable to read the file because file access tools are disabled in this session. The context provided doesn't contain information about `engine/src/graph/code-scanner.ts`.\n\nTo answer your question about the default cap on file-neuron notes per project and the environment variable that overrides it, I would need access to read that file. Could you enable file reading tools or provide the relevant section of the code?",
+  "usage": {
+    "inputTokens": 42,
+    "outputTokens": 595,
+    "cacheReadInputTokens": 93199,
+    "cacheCreationInputTokens": 5420,
+    "costUsd": 0.0238939
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "400",
+        "present": false
+      },
+      {
+        "term": "LAZYBRAIN_MAX_FILE_NEURONS",
+        "present": false
+      }
+    ]
+  }
+}

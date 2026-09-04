@@ -1,0 +1,59 @@
+{
+  "questionId": "q24",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2957,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 5,
+    "queryTokens": [
+      "engine",
+      "src",
+      "commands",
+      "inject-context",
+      "sections.ts",
+      "buildmainpage",
+      "groups",
+      "notes",
+      "into",
+      "project",
+      "feature",
+      "tree.",
+      "field",
+      "note",
+      "split",
+      "derive",
+      "project",
+      "feature",
+      "segments"
+    ]
+  },
+  "latencyMs": 8669,
+  "answer": "Looking at the code in the context (lines 201-260), the field is **`topic`**.\n\nAt line 209-213:\n```typescript\nfor (const n of _notes) {\n  const topic = n.topic;\n  if (!topic) {\n    uncategorized.push(n);\n    continue;\n  }\n  const segments = topic.split('/');\n  const project = segments[0];\n  const feature = segments[1] || '_general';\n```\n\nThe `topic` field is split on `/`, where `segments[0]` becomes the project and `segments[1]` becomes the feature (defaulting to `'_general'` if no second segment exists).",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 553,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8653,
+    "costUsd": 0.026115399999999997
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "topic",
+        "present": true
+      },
+      {
+        "term": "_general",
+        "present": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+{"id":"concept-rule-always-return-401-unauthorized-when-the-token-is-missing-o","path":"notes/concept-rule-always-return-401-unauthorized-when-the-token-is-missing-o.html","type":"concept","title":": always return 401 Unauthorized when the token is missing or invalid, never 403","topic":"acme/concepts","tags":"concept rule acme","importance":0.5,"created":"2026-05-18T00:00:00Z"}

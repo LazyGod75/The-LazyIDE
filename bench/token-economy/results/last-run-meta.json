@@ -1,0 +1,14 @@
+{
+  "startedAt": "2026-08-17T13:49:33.207Z",
+  "answerModel": "haiku",
+  "claudeVersion": "2.1.228 (Claude Code)",
+  "questionIds": [
+    "q01"
+  ],
+  "configIds": [
+    "lazy_targeted"
+  ],
+  "dryRun": false,
+  "finishedAt": "2026-08-17T13:49:38.888Z",
+  "resultCount": 1
+}

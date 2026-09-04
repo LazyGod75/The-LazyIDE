@@ -1,0 +1,38 @@
+{
+  "questionId": "q07",
+  "category": "behavioral",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "search",
+      "returns"
+    ],
+    "filesMatched": 97,
+    "filesPicked": 1
+  },
+  "latencyMs": 9894,
+  "answer": "The context provided (from `engine/src/retrieval/nl-routes.ts`) doesn't contain information about the `commands/inject-context` bug, the `mode=turn` workaround, or the Rust sidecar comment you're referring to.\n\nTo answer your question accurately, I'd need to see:\n1. The relevant Rust command code where the stale comment existed\n2. The IDE code that implemented the `search --strip --top 6` workaround\n3. The actual implementation of `inject-context` with `mode=turn`\n4. The retrieval or search layer that was incorrectly returning empty results\n\nCan you point me to the files involved, or would you like me to search the codebase for these references?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 496,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6290,
+    "costUsd": 0.018803399999999998
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "pickLevel",
+        "present": false
+      }
+    ]
+  }
+}

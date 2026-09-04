@@ -1,0 +1,69 @@
+{
+  "questionId": "q17",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2990,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 6,
+    "queryTokens": [
+      "are",
+      "five",
+      "phases",
+      "level",
+      "implementation",
+      "modules",
+      "listed",
+      "header",
+      "comment",
+      "engine",
+      "src",
+      "retrieval",
+      "router.ts",
+      "each",
+      "one",
+      "one",
+      "phrase"
+    ]
+  },
+  "latencyMs": 7601,
+  "answer": "I don't see `engine/src/retrieval/router.ts` in the provided context. The context includes several files from `engine/src/` (graph, commands, annotator, retrieval/multi-query.ts, and graph/backlinks.ts), but not the router.ts file you're asking about.\n\nTo answer your question about the five phases and their purposes, I would need to read that specific file.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 382,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8500,
+    "costUsd": 0.024812400000000002
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 5,
+    "hits": [
+      {
+        "term": "l1.ts",
+        "present": false
+      },
+      {
+        "term": "l2.ts",
+        "present": false
+      },
+      {
+        "term": "l3.ts",
+        "present": false
+      },
+      {
+        "term": "l4.ts",
+        "present": false
+      },
+      {
+        "term": "hybrid.ts",
+        "present": false
+      }
+    ]
+  }
+}

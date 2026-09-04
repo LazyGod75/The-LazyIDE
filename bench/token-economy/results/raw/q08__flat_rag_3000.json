@@ -1,0 +1,56 @@
+{
+  "questionId": "q08",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2960,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 6,
+    "queryTokens": [
+      "engine",
+      "src",
+      "commands",
+      "inject-context",
+      "markers.ts",
+      "are",
+      "three",
+      "values",
+      "nudgestyle",
+      "type",
+      "one",
+      "default"
+    ]
+  },
+  "latencyMs": 9303,
+  "answer": "I don't have the answer in the provided context. While the context shows that `NudgeStyle` is imported from `engine/src/commands/inject-context/markers.ts` and references a `DEFAULT_NUDGE_STYLE` constant, the actual definition of the `NudgeStyle` type and its three values are not included in the context snippets you provided.\n\nTo answer this question, I would need to see the actual `markers.ts` file or at least the section where `NudgeStyle` is defined and `DEFAULT_NUDGE_STYLE` is declared.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 454,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8345,
+    "costUsd": 0.0247444
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 3,
+    "hits": [
+      {
+        "term": "skill",
+        "present": false
+      },
+      {
+        "term": "tool",
+        "present": false
+      },
+      {
+        "term": "none",
+        "present": false
+      }
+    ]
+  }
+}

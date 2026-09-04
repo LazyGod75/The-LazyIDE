@@ -1,0 +1,56 @@
+/* replay.css — Agent Canvas W8d: Replay-only decoration classes. Kept in
+   this NEW replay/ directory (never chrome/canvas.css or canvas-layout.css
+   — both outside this wave's writable set) and imported once by
+   CanvasView.tsx, same "own file, side-effect import" pattern every other
+   canvas CSS module already uses.
+
+   Every animation here reuses an EXISTING keyframe where one already fits
+   (canvas-chain-dot's traveling-dot / offset-path mechanics, ChainEdge.tsx
+   — decoration only sets `data.firing`, never redefines the animation) —
+   this file only adds the two things Replay itself needs: hiding a
+   not-yet-created node, and dimming a non-historical (draft/note) one.
+*/
+
+.canvas-replay-hidden {
+  display: none;
+}
+
+.canvas-replay-dim {
+  opacity: 0.28;
+  filter: grayscale(0.6);
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.canvas-replay-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: var(--color-danger);
+  color: #14141c;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@keyframes canvas-replay-badge-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.canvas-replay-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #14141c;
+  animation: canvas-replay-badge-pulse 1.4s ease-in-out infinite;
+}

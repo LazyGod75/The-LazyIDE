@@ -1,0 +1,27 @@
+<article id="db-choice-postgres-3"
+         data-cerveau-version="0.1.0"
+         data-cerveau-created="2026-05-12T09:30:00Z"
+         data-cerveau-type="decision"
+         data-cerveau-source="session:sample#003"
+         data-cerveau-tier="working"
+         data-cerveau-importance="0.85"
+         data-cerveau-tags="database postgres sqlite architecture"
+         data-cerveau-valid-from="2026-05-12">
+
+  <h2>Postgres choisi contre SQLite pour le service principal</h2>
+
+  <p data-cerveau-fact data-cerveau-confidence="1.0" data-cerveau-extracted-by="human"
+     data-cerveau-kind="decision">
+    Décision : adopter Postgres comme base principale pour les écritures multi-instance.
+  </p>
+
+  <p data-cerveau-fact data-cerveau-confidence="0.9" data-cerveau-extracted-by="human"
+     data-cerveau-kind="learning">
+    SQLite reste utilisé pour les caches locaux et les index FTS où la concurrence d'écriture est nulle.
+  </p>
+
+  <p data-cerveau-fact data-cerveau-confidence="0.75" data-cerveau-extracted-by="heuristic"
+     data-cerveau-kind="fact">
+    Raison clé : besoin de réplication logique pour le failover Europe-east1.
+  </p>
+</article>

@@ -1,0 +1,45 @@
+{
+  "questionId": "q10",
+  "category": "behavioral",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 352,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 8186,
+  "answer": "I don't have enough detail in the context provided to answer your question. The context shows that **dream.ts** is a 1198-line TypeScript file with 35 functions and 14 exports, but it doesn't include the actual code content showing:\n\n1. Which three tags exempt a note from noise-based invalidation during `runNoiseCleanup`\n2. The name of the exported helper function\n\nTo answer this accurately, I'd need to read the actual file. Would you like me to read engine/src/commands/dream.ts to find these details?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 388,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5270,
+    "costUsd": 0.0151944
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "mission",
+        "present": false
+      },
+      {
+        "term": "agent",
+        "present": false
+      },
+      {
+        "term": "skill",
+        "present": false
+      },
+      {
+        "term": "hasNoiseExemptTag",
+        "present": false
+      }
+    ]
+  }
+}

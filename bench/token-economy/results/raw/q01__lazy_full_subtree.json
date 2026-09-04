@@ -1,0 +1,37 @@
+{
+  "questionId": "q01",
+  "category": "behavioral",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 6581,
+  "configMeta": {
+    "corpusDir": "engine/src/graph",
+    "fileCount": 27
+  },
+  "latencyMs": 10410,
+  "answer": "The context provided shows that `ast-parser.ts` had a Tree-sitter WASM leak fix noted in the Decisions section (\"fix(brain): plug graph AST-parse leak, cache footgun, import noise, charset - graph code-scan leaked a web-tree-sitter WASM Tree per parsed file\"), but the skeleton dump does not include the actual source code of the file — only metadata about exports, imports, and function signatures.\n\nTo answer your question about the specific call and control-flow construct used to fix the leak, I would need to read the actual source code. The context says the fix is now in place, but the implementation details aren't shown in this skeleton.\n\nWould you like me to read `engine/src/graph/ast-parser.ts` directly to find the specific fix?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 543,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 14340,
+    "costUsd": 0.0431224
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "tree.delete",
+        "present": false
+      },
+      {
+        "term": "finally",
+        "present": false
+      }
+    ]
+  }
+}

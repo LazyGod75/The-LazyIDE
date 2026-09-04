@@ -1,0 +1,69 @@
+{
+  "questionId": "q17",
+  "category": "structural",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 770,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 3,
+    "queryTokens": [
+      "are",
+      "five",
+      "phases",
+      "level",
+      "implementation",
+      "modules",
+      "listed",
+      "header",
+      "comment",
+      "engine",
+      "src",
+      "retrieval",
+      "router.ts",
+      "each",
+      "one",
+      "one",
+      "phrase"
+    ]
+  },
+  "latencyMs": 5591,
+  "answer": "The context provided does not include engine/src/retrieval/router.ts, so I cannot answer this question based on the available context. I would need to read that file to see the header comment listing the five phases.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 199,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5755,
+    "costUsd": 0.0156584
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 5,
+    "hits": [
+      {
+        "term": "l1.ts",
+        "present": false
+      },
+      {
+        "term": "l2.ts",
+        "present": false
+      },
+      {
+        "term": "l3.ts",
+        "present": false
+      },
+      {
+        "term": "l4.ts",
+        "present": false
+      },
+      {
+        "term": "hybrid.ts",
+        "present": false
+      }
+    ]
+  }
+}

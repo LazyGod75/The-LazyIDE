@@ -1,0 +1,72 @@
+name: Full Checks
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master, main, feat/auto-updater]
+  pull_request:
+    branches: [master, main, feat/auto-updater]
+
+jobs:
+  checks-full:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    # Optional Cloud client config for tests that exercise auth/billing.
+    # Anon/publishable key is public by design (RLS). Service-role, Stripe,
+    # and R2 secrets must never appear in this file.
+    env:
+      VITE_SUPABASE_URL: https://afjrltfwhksdipchwqsf.supabase.co
+      VITE_SUPABASE_ANON_KEY: sb_publishable_5fcQFK8vEQzled0QZ2aR4g_PfA8VvBI
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Secret scan
+        run: npm run secrets:check
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Provision node.exe for Tauri bundling (Windows)
+        shell: pwsh
+        run: |
+          $node = (Get-Command node).Source
+          New-Item -ItemType Directory -Force -Path src-tauri/resources | Out-Null
+          Copy-Item -Force $node -Destination src-tauri/resources/node.exe
+          if (-not (Test-Path src-tauri/resources/node.exe)) { throw "node.exe not provisioned" }
+          Write-Host "Provisioned node.exe from $node"
+
+      - name: Vite build
+        run: npm run build
+
+      - name: Cargo check
+        working-directory: src-tauri
+        run: cargo check
+
+      - name: Cargo test
+        working-directory: src-tauri
+        run: cargo test
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests (Playwright)
+        run: npm run test:e2e
+        env:
+          CI: "true"

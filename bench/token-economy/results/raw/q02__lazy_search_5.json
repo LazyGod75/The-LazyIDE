@@ -1,0 +1,37 @@
+{
+  "questionId": "q02",
+  "category": "behavioral",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 141,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 26642,
+  "answer": "I don't have direct access to file-reading tools in the current environment. Could you share the relevant portions of `engine/src/util/config.ts` that show the migration mechanism for `dirname(brain)/_cache`? Specifically, I'm looking for what stops the legacy migration from re-running when the cache is deleted.\n\nAlternatively, if you can point me to the specific function or section that handles this migration, I can analyze it and answer your question about the mechanism.",
+  "usage": {
+    "inputTokens": 70,
+    "outputTokens": 2063,
+    "cacheReadInputTokens": 168883,
+    "cacheCreationInputTokens": 15160,
+    "costUsd": 0.058513300000000004
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "cache-migrated",
+        "present": false
+      },
+      {
+        "term": "marker",
+        "present": false
+      }
+    ]
+  }
+}

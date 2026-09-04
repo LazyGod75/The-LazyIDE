@@ -1,0 +1,47 @@
+{
+  "builtAt": "2026-08-16T00:06:18.685Z",
+  "targetDir": "C:/Users/user/AppData/Local/Temp/claude/C--Users-David-Documents-cerveau/32ad4d7b-6319-4de8-bacd-f12144290e18/scratchpad/brain-fixture/brain",
+  "corpusDirs": [
+    "engine/src/retrieval",
+    "engine/src/graph",
+    "engine/src/commands",
+    "engine/src/util",
+    "engine/src/store",
+    "engine/src/annotator/blocks/composers",
+    "src/cli/lib"
+  ],
+  "totalMs": 102742,
+  "perDirTimings": [
+    {
+      "dir": "engine/src/retrieval",
+      "ms": 19619
+    },
+    {
+      "dir": "engine/src/graph",
+      "ms": 23025
+    },
+    {
+      "dir": "engine/src/commands",
+      "ms": 24866
+    },
+    {
+      "dir": "engine/src/util",
+      "ms": 11014
+    },
+    {
+      "dir": "engine/src/store",
+      "ms": 8201
+    },
+    {
+      "dir": "engine/src/annotator/blocks/composers",
+      "ms": 7748
+    },
+    {
+      "dir": "src/cli/lib",
+      "ms": 8264
+    }
+  ],
+  "llmCallsUsed": 0,
+  "dollarCost": 0,
+  "note": "Structural code-scan only (AST parsing via web-tree-sitter, no LLM extraction). This is the number to compare against GraphRAG-style LLM-extraction indexing cost."
+}

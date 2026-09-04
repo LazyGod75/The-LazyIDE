@@ -1,0 +1,38 @@
+{
+  "questionId": "q12",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 131,
+  "configMeta": {
+    "corpusDir": "engine/src/util",
+    "siblingFileCount": 21,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 11794,
+  "answer": "I cannot answer this question because the tools needed to read the file are disabled in this session (both Read and Bash tools are unavailable). To provide the specific implementation details about whether `mapLimit()` returns results in input order or completion order and how the bounded concurrency is implemented, I would need to read `engine/src/util/concurrency.ts`.\n\nIf you can enable file reading tools or share the file contents directly, I can give you the exact answer.",
+  "usage": {
+    "inputTokens": 34,
+    "outputTokens": 588,
+    "cacheReadInputTokens": 74106,
+    "cacheCreationInputTokens": 5548,
+    "costUsd": 0.0223966
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "input order",
+        "present": true
+      },
+      {
+        "term": "chunk",
+        "present": false
+      }
+    ]
+  }
+}

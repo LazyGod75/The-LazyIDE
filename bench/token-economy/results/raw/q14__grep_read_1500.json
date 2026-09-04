@@ -1,0 +1,43 @@
+{
+  "questionId": "q14",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 0,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [],
+    "filesMatched": 0,
+    "filesPicked": 0
+  },
+  "latencyMs": 24103,
+  "answer": "Based on the context provided and the state of the system, I don't have the ability to search the codebase directly at this moment (Bash and PowerShell are disabled, and file read tools aren't currently loaded). \n\nHowever, based on your question about an environment variable for import annotation concurrency with a \"6.4x-faster-import fix,\" this is likely related to the Tauri backend's import system (given the `history_import.rs` file in git status). Common naming patterns for such concurrency-bounding environment variables in projects like this would be:\n\n- `IMPORT_CONCURRENCY`\n- `ANNOTATION_CONCURRENCY`\n- `HISTORY_IMPORT_CONCURRENCY`\n\nTo find the exact name, default value, and clamp range, I would need to:\n1. Search for environment variable definitions in the Rust code (likely in `src-tauri/src/commands/brain/history_import.rs`)\n2. Look for any configuration files or constants related to import concurrency\n3. Check for references to \"6.4x\" or performance-related commit messages\n\nCould you either provide the environment variable name, or allow me to load the necessary tools to search the codebase? Alternatively, if you know the file where this is defined, I can read it directly.",
+  "usage": {
+    "inputTokens": 70,
+    "outputTokens": 1480,
+    "cacheReadInputTokens": 171672,
+    "cacheCreationInputTokens": 10503,
+    "costUsd": 0.046348200000000006
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 3,
+    "hits": [
+      {
+        "term": "LAZYBRAIN_IMPORT_CONCURRENCY",
+        "present": false
+      },
+      {
+        "term": "5",
+        "present": false
+      },
+      {
+        "term": "12",
+        "present": false
+      }
+    ]
+  }
+}

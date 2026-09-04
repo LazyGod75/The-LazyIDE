@@ -1,0 +1,49 @@
+{
+  "questionId": "q23",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 4550,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "compactLine"
+    ],
+    "filesMatched": 4,
+    "filesPicked": 1
+  },
+  "latencyMs": 8825,
+  "answer": "Looking at the `TYPE_ICON` object in sections.ts (lines 38-44), the single-letter icons for each note type are:\n\n- **decision**: `D`\n- **episodic**: `E`\n- **reference**: `R`\n- **semantic**: `S`\n- **procedural**: `P`\n\nIf a note's type doesn't match any of these, `compactLine()` defaults to `·` (a middot).",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 344,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10742,
+    "costUsd": 0.0313294
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 4,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "decision",
+        "present": true
+      },
+      {
+        "term": "D",
+        "present": true
+      },
+      {
+        "term": "episodic",
+        "present": true
+      },
+      {
+        "term": "E",
+        "present": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "questionId": "q03",
+  "category": "behavioral",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "s",
+      "parseTargetId"
+    ],
+    "filesMatched": 2,
+    "filesPicked": 1
+  },
+  "latencyMs": 13786,
+  "answer": "I can see from the test file what formats **should** be accepted after the fix, but the context only shows the test file (backlinks.test.ts), not the actual parseTargetId implementation in backlinks.ts. Based on the test comments, here's what the fix documents:\n\n**Accepted href formats after the fix:**\n1. **Bare `#<id>` format** — the dominant real-world link format (~97% of notes), emitted by the auto-linker and enrichment \"[source]\" links\n2. **`#/wiki/<id>` format**\n3. **`#/note/<id>` format**\n\n**Rejected formats (these remain filtered out):**\n- In-page navigation anchors (`#see-also`, `#children`, `#architecture`, etc.)\n- `#fn-*` footnote anchors\n- `#cls-*` symbol anchors  \n- `#/file:<path>` file-open pseudo-links\n- Relative paths with fragments\n\nThe test comment notes this was a \"Bare-link fix (backlinks_total was always 0 in production)\" — confirming the bug was real.\n\n**However**, I don't have data on how many edges the fix actually added on a real sample. That information isn't in the provided context. You'd need to check:\n- The actual parseTargetId implementation in engine/src/graph/backlinks.ts\n- Git history or a commit message that might mention the edge count delta\n- Or run a before/after comparison on your production data\n\nCan you share the backlinks.ts file or point me to where the edge count was measured?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 1039,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6175,
+    "costUsd": 0.0211684
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "1658",
+        "present": false
+      },
+      {
+        "term": "wiki",
+        "present": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "questionId": "q05",
+  "category": "structural",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 168,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 8112,
+  "answer": "I don't find information about the `toAnchorId()` helper function in the context provided. The context includes several file-neuron-related files (util, retrieval, graph modules) but doesn't include `engine/src/annotator/blocks/composers/file-neuron.ts` or details about that specific function.\n\nI'd need to read that file directly to tell you what transformation `toAnchorId()` applies to symbol names. Would you like me to look at it?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 398,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5001,
+    "costUsd": 0.0144474
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "lowercase",
+        "present": false
+      },
+      {
+        "term": "hyphen",
+        "present": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "questionId": "q22",
+  "category": "behavioral",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 769,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 2,
+    "queryTokens": [
+      "src",
+      "cli",
+      "lib",
+      "agentloop.ts",
+      "tool",
+      "loop",
+      "honesty",
+      "contract",
+      "mirrors",
+      "desktop",
+      "lazyide",
+      "managed",
+      "agent.",
+      "per",
+      "header",
+      "comment",
+      "through",
+      "action",
+      "can",
+      "agent",
+      "only",
+      "claim",
+      "completion"
+    ]
+  },
+  "latencyMs": 8112,
+  "answer": "Per the header comment in `src/cli/lib/agentLoop.ts`, the agent can only claim completion via the **`finish` action**.\n\nThis is stated explicitly in the honesty contract section:\n\n> \"the SAME honesty contract as the manager: a tool reports what it really did, and the agent can only claim completion via the `finish` action\"\n\nThe protocol further specifies that every agent turn is a strict JSON object—either a tool call `{\"tool\":..., \"args\":{...}}` or a completion `{\"finish\":\"summary\"}`.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 580,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5693,
+    "costUsd": 0.0173614
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 1,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "finish",
+        "present": true
+      }
+    ]
+  }
+}

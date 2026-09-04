@@ -1,0 +1,57 @@
+{
+  "questionId": "q18",
+  "category": "structural",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 700,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 2,
+    "queryTokens": [
+      "lazybrain",
+      "query",
+      "selector",
+      "cli",
+      "command",
+      "engine",
+      "src",
+      "cli",
+      "register-core.ts",
+      "described",
+      "specific",
+      "latency",
+      "determinism",
+      "claim.",
+      "router",
+      "level",
+      "correspond"
+    ]
+  },
+  "latencyMs": 11058,
+  "answer": "Based on the provided context, the description is in **`engine/src/retrieval/levels/l1.ts`** (not register-core.ts), and it makes these claims:\n\n**Latency claim:** `< 5 ms per query`\n\n**Determinism claim:** `Zero network cost` with `exact structural matches` (returns 1.0-scored hits)\n\n**Router level:** `L1` (structural retrieval level)\n\nThe context describes it as \"CSS-selector-based lookup into the HTML note index\" with zero network cost and deterministic performance because it's doing local, in-memory structural queries without any network calls.\n\nHowever, the provided context does **not** include the actual CLI command registration from `engine/src/cli/register-core.ts`, so I cannot tell you the exact wording used when the `lazybrain query` command is described to users there.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 738,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5748,
+    "costUsd": 0.0183374
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "L1",
+        "present": true
+      },
+      {
+        "term": "deterministic",
+        "present": true
+      }
+    ]
+  }
+}

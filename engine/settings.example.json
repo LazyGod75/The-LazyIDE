@@ -1,0 +1,26 @@
+{
+  "_instructions": "SETUP: Replace every <LAZYBRAIN_REPO> placeholder below with the absolute path to your LazyBrain clone (e.g. /home/you/LazyBrain on Linux/macOS, C:/Users/You/LazyBrain on Windows). Alternatively, skip manual editing entirely and run `npm run install:lazybrain` from the repo root — the installer resolves all paths automatically and writes them directly to ~/.claude/settings.local.json.",
+  "_comment": "Drop this content into ~/.claude/settings.local.json (merge with existing content). The install script does it automatically.",
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "bash <LAZYBRAIN_REPO>/plugins/lazybrain/hooks/session-start.sh" }] }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "bash <LAZYBRAIN_REPO>/plugins/lazybrain/hooks/user-prompt-submit.sh" }] }
+    ],
+    "PostToolUse": [
+      { "hooks": [{ "type": "command", "command": "bash <LAZYBRAIN_REPO>/plugins/lazybrain/hooks/post-tool-use.sh" }] }
+    ],
+    "PreCompact": [
+      { "hooks": [{ "type": "command", "command": "bash <LAZYBRAIN_REPO>/plugins/lazybrain/hooks/pre-compact.sh" }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "bash <LAZYBRAIN_REPO>/plugins/lazybrain/hooks/stop.sh" }] }
+    ]
+  },
+  "env": {
+    "LAZYBRAIN_BRAIN_PATH": "<absolute-path-to>/Lazy-Brain-<user>/brain",
+    "LAZYBRAIN_LOG_LEVEL": "info",
+    "LAZYBRAIN_TELEMETRY": "1"
+  }
+}

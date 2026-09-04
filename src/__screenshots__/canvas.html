@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- W-CARDS — pre-existing gate noise fix, unrelated to the canvas
+         feature itself: with no favicon link, the browser auto-requests
+         /favicon.ico and Chromium logs the 404 as a console error, which
+         made the harness's "zero console errors" gate fail on EVERY mode
+         even against unmodified HEAD (verified via `git stash` before this
+         fix). A no-op data-URI favicon suppresses that request entirely. -->
+    <link rel="icon" href="data:," />
+    <title>Canvas Harness</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/__screenshots__/canvas-harness.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,60 @@
+{
+  "questionId": "q02",
+  "category": "behavioral",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 791,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 2,
+    "queryTokens": [
+      "engine",
+      "src",
+      "util",
+      "config.ts",
+      "mechanism",
+      "stops",
+      "legacy",
+      "dirname",
+      "brain",
+      "_cache",
+      "migration",
+      "re-running",
+      "re-polluting",
+      "fresh",
+      "brain",
+      "every",
+      "time",
+      "brain",
+      "_cache",
+      "deleted"
+    ]
+  },
+  "latencyMs": 9039,
+  "answer": "According to the code comment in the context provided, the mechanism is **`CACHE_MIGRATION_MARKER`**.\n\nThe comment states (line 148-151):\n\n> Guarded by CACHE_MIGRATION_MARKER so this is truly ONE-WAY: once the decision has been made for a brain, deleting brain/_cache (the normal way to force a fresh index/reset) must NEVER re-trigger a copy from the legacy sibling.\n\nThe guard ensures that once the migration decision is made for a brain, deleting `brain/_cache` won't cause the legacy migration to re-run on the next startup, preventing unwanted re-population of a fresh brain.\n\nHowever, the provided context cuts off before showing the actual implementation of how `CACHE_MIGRATION_MARKER` is used. To see the complete implementation details, I would need to read further into that file.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 553,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5702,
+    "costUsd": 0.0172994
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "cache-migrated",
+        "present": false
+      },
+      {
+        "term": "marker",
+        "present": true
+      }
+    ]
+  }
+}

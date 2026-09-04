@@ -1,0 +1,42 @@
+{
+  "questionId": "q03",
+  "category": "behavioral",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 4798,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "s",
+      "parseTargetId"
+    ],
+    "filesMatched": 2,
+    "filesPicked": 2
+  },
+  "latencyMs": 26815,
+  "answer": "Based on the context provided, `parseTargetId` accepts these href formats after the fix:\n\n1. **`#/note/<id>`** — explicit SPA-routable format\n2. **`#/wiki/<id>`** — explicit SPA-routable format  \n3. **Bare `#<id>`** — the auto-linker's dominant format (~97% of notes)\n\nThe bare format explicitly rejects in-page anchors by filtering out links starting with `#fn-` or `#cls-` (symbol anchors), and relies on the caller's `knownIds` check to drop heading/TOC anchors like `#see-also`, `#children`, `#architecture` that happen to use the same syntax.\n\n**Impact on real data:** The context doesn't provide exact numbers for edges added on a real sample. It mentions that a realistic 5488-note brain produces a ~44 MB backlinks.json file, but the specific edge count before/after the fix isn't given. However, the docstring emphasizes that the bare format is the **DOMINANT real link format (~97% of notes)**, and the fix's regression test shows it changed `backlinks_total` from 0 (complete failure) to non-zero, so the impact was substantial — essentially recovering nearly all the real inter-note links that were being silently dropped before.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 2049,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10748,
+    "costUsd": 0.039929400000000004
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "1658",
+        "present": false
+      },
+      {
+        "term": "wiki",
+        "present": true
+      }
+    ]
+  }
+}

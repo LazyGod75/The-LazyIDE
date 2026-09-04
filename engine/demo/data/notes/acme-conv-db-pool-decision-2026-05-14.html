@@ -1,0 +1,6 @@
+<article id="acme-conv-db-pool-decision-2026-05-14" data-cerveau-version="1" data-cerveau-type="decision" data-cerveau-created="2026-05-14" data-cerveau-topic="acme">
+  <h1>Database <a data-cerveau-link-auto="true" data-cerveau-link-type="see-also" href="#/note/file-acme-src-db-client-ts">Client</a> ? pg over Prisma for Core Pool</h1>
+  <p>We decided to use the pg (node-postgres) library directly rather than Prisma for the core connection pool in <a data-cerveau-link-auto="1" data-cerveau-link-type="depends-on" href="#file-acme-src-db-client-ts">src/db/client.ts</a>. Complex analytics queries in the billing <a data-cerveau-link-auto="1" data-cerveau-link-type="depends-on" href="#aggregate-acme-src-api">module</a> require raw SQL with window functions and CTEs that do not map well to Prisma's query builder.</p>
+  <p>Prisma is still used exclusively for schema migrations (the declarative schema is valuable for version-controlled migration history), but all runtime queries go through the pg pool. This gives us both migration safety and query flexibility.</p>
+  <p>We chose a max pool size of 20 connections ? this matches our Postgres instance's max_connections divided by 5, leaving headroom for migrations and monitoring connections. Idle timeout set to 30 seconds to prevent stale connections from accumulating under low traffic.</p>
+</article>

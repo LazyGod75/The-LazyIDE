@@ -1,0 +1,45 @@
+{
+  "questionId": "q08",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "NudgeStyle"
+    ],
+    "filesMatched": 3,
+    "filesPicked": 1
+  },
+  "latencyMs": 5502,
+  "answer": "The three values of the `NudgeStyle` type are:\n\n1. `'skill'`\n2. `'tool'`\n3. `'none'`\n\nThe default is `'skill'`, as defined by the constant `DEFAULT_NUDGE_STYLE: NudgeStyle = 'skill'`.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 227,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6217,
+    "costUsd": 0.0172094
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 3,
+    "totalTerms": 3,
+    "hits": [
+      {
+        "term": "skill",
+        "present": true
+      },
+      {
+        "term": "tool",
+        "present": true
+      },
+      {
+        "term": "none",
+        "present": true
+      }
+    ]
+  }
+}

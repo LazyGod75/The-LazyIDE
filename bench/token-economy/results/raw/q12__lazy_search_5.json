@@ -1,0 +1,37 @@
+{
+  "questionId": "q12",
+  "category": "structural",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 224,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 6795,
+  "answer": "I don't have the actual code content for `engine/src/util/concurrency.ts` in the context provided. The context only indicates that the file exists and contains 2 functions across 59 lines, but doesn't show the implementation details.\n\nTo answer your questions about `mapLimit()`'s return order and the concurrent chunking strategy, I would need to read the actual file. Would you like me to fetch and examine it?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 353,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5044,
+    "costUsd": 0.014334399999999999
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "input order",
+        "present": false
+      },
+      {
+        "term": "chunk",
+        "present": true
+      }
+    ]
+  }
+}

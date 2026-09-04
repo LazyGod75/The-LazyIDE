@@ -1,0 +1,66 @@
+{
+  "questionId": "q23",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2952,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 5,
+    "queryTokens": [
+      "engine",
+      "src",
+      "commands",
+      "inject-context",
+      "sections.ts",
+      "single-letter",
+      "icon",
+      "compactline",
+      "use",
+      "each",
+      "five",
+      "note",
+      "types",
+      "decision",
+      "episodic",
+      "reference",
+      "semantic",
+      "procedural"
+    ]
+  },
+  "latencyMs": 8403,
+  "answer": "The context provided does not contain `engine/src/commands/inject-context/sections.ts`, so I cannot answer this question based on the information available. To find this information, I would need to read that file directly.\n\nWould you like me to look up that file for you?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 331,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8863,
+    "costUsd": 0.025633399999999997
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 2,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "decision",
+        "present": false
+      },
+      {
+        "term": "D",
+        "present": true
+      },
+      {
+        "term": "episodic",
+        "present": false
+      },
+      {
+        "term": "E",
+        "present": true
+      }
+    ]
+  }
+}

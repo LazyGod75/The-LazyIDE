@@ -1,0 +1,38 @@
+<article id="oauth-migration-12"
+         data-cerveau-version="0.1.0"
+         data-cerveau-created="2026-05-20T10:15:00Z"
+         data-cerveau-type="decision"
+         data-cerveau-source="session:sample#001"
+         data-cerveau-tier="working"
+         data-cerveau-importance="0.9"
+         data-cerveau-tags="auth oauth security migration"
+         data-cerveau-valid-from="2026-05-20">
+
+  <h2>Migration vers OAuth2 PKCE</h2>
+
+  <p data-cerveau-fact data-cerveau-confidence="1.0" data-cerveau-extracted-by="human"
+     data-cerveau-kind="decision">
+    Décision : abandonner le JWT custom au profit d'OAuth2 PKCE.
+  </p>
+
+  <p data-cerveau-fact data-cerveau-confidence="0.8" data-cerveau-extracted-by="heuristic"
+     data-cerveau-kind="fact">
+    Motif principal : audit sécurité Q2 a relevé que la rotation des secrets était manuelle.
+  </p>
+
+  <p data-cerveau-fact data-cerveau-confidence="0.7" data-cerveau-extracted-by="heuristic"
+     data-cerveau-kind="fact">
+    Impact : tous les clients devront re-onboarder via le nouveau flow PKCE d'ici fin juillet.
+  </p>
+
+  <section data-cerveau-links>
+    <h3>Liens</h3>
+    <ul>
+      <li>
+        <a href="./audit-q2.html" data-cerveau-link-type="cites" data-cerveau-link-strength="0.95">
+          audit sécurité Q2
+        </a>
+      </li>
+    </ul>
+  </section>
+</article>

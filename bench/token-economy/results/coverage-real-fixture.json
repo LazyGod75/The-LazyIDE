@@ -1,0 +1,531 @@
+{
+  "generatedAt": "2026-08-17T13:50:39.912Z",
+  "summary": {
+    "css_targeted_leaf": {
+      "full": 13,
+      "ceil": 0.5417,
+      "struct": 0.5294,
+      "behav": 0.5714,
+      "meanTokens": 219,
+      "meanRecall": 0.6563
+    },
+    "full_neuron_subtree": {
+      "full": 18,
+      "ceil": 0.75,
+      "meanTokens": 5111,
+      "meanRecall": 0.8569
+    }
+  },
+  "rows": [
+    {
+      "id": "q01",
+      "category": "behavioral",
+      "file": "engine/src/graph/ast-parser.ts",
+      "symbol": "parseFile",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 363,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 9559,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q02",
+      "category": "behavioral",
+      "file": "engine/src/util/config.ts",
+      "symbol": "getConfig",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 202,
+        "all": false,
+        "ratio": 0,
+        "missing": [
+          "cache-migrated",
+          "marker"
+        ]
+      },
+      "fullNeuron": {
+        "tokens": 2771,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q03",
+      "category": "behavioral",
+      "file": "engine/src/graph/backlinks.ts",
+      "symbol": "parseTargetId",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 500,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "1658"
+        ]
+      },
+      "fullNeuron": {
+        "tokens": 2501,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "1658"
+        ]
+      }
+    },
+    {
+      "id": "q04",
+      "category": "behavioral",
+      "file": "engine/src/annotator/blocks/composers/file-neuron.ts",
+      "symbol": "fileNeuronArticleId",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 207,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 8204,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q05",
+      "category": "structural",
+      "file": "engine/src/annotator/blocks/composers/file-neuron.ts",
+      "symbol": "toAnchorId",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 71,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 8204,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q06",
+      "category": "structural",
+      "file": "engine/src/graph/code-scanner.ts",
+      "symbol": "MAX_FILE_NEURONS_PER_PROJECT",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 90,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 9104,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q07",
+      "category": "behavioral",
+      "file": "engine/src/retrieval/router.ts",
+      "symbol": "pickLevel",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 332,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 3627,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q08",
+      "category": "structural",
+      "file": "engine/src/commands/inject-context/markers.ts",
+      "symbol": "NudgeStyle",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 286,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 2107,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q09",
+      "category": "structural",
+      "file": "engine/src/store/upsert.ts",
+      "symbol": "isRicherBody",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 113,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "mergeUpsertHtml"
+        ]
+      },
+      "fullNeuron": {
+        "tokens": 1478,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q10",
+      "category": "behavioral",
+      "file": "engine/src/commands/dream.ts",
+      "symbol": "hasNoiseExemptTag",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 91,
+        "all": false,
+        "ratio": 0.25,
+        "missing": [
+          "mission",
+          "agent",
+          "skill"
+        ]
+      },
+      "fullNeuron": {
+        "tokens": 13792,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q11",
+      "category": "structural",
+      "file": "engine/src/commands/repair.ts",
+      "symbol": "runRepairUnInvalidateNoise",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 343,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "mission,agent,skill"
+        ]
+      },
+      "fullNeuron": {
+        "tokens": 2084,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "mission,agent,skill"
+        ]
+      }
+    },
+    {
+      "id": "q12",
+      "category": "structural",
+      "file": "engine/src/util/concurrency.ts",
+      "symbol": "mapLimit",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 396,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "input order"
+        ]
+      },
+      "fullNeuron": {
+        "tokens": 810,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "input order"
+        ]
+      }
+    },
+    {
+      "id": "q13",
+      "category": "structural",
+      "file": "engine/src/util/concurrency.ts",
+      "symbol": "resolveConcurrencyEnv",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 154,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 810,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q14",
+      "category": "structural",
+      "file": "engine/src/util/concurrency.ts",
+      "symbol": "resolveConcurrencyEnv",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 154,
+        "all": false,
+        "ratio": 0,
+        "missing": [
+          "LAZYBRAIN_IMPORT_CONCURRENCY",
+          "5",
+          "12"
+        ]
+      },
+      "fullNeuron": {
+        "tokens": 810,
+        "all": false,
+        "ratio": 0.6666666666666666,
+        "missing": [
+          "LAZYBRAIN_IMPORT_CONCURRENCY"
+        ]
+      }
+    },
+    {
+      "id": "q15",
+      "category": "structural",
+      "file": "engine/src/retrieval/router.ts",
+      "symbol": "pickLevel",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 332,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 3627,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q16",
+      "category": "structural",
+      "file": "engine/src/retrieval/router.ts",
+      "symbol": "pickLevel",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 332,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 3627,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q17",
+      "category": "structural",
+      "file": "engine/src/retrieval/router.ts",
+      "symbol": "dispatchLevel",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 160,
+        "all": false,
+        "ratio": 0,
+        "missing": [
+          "l1.ts",
+          "l2.ts",
+          "l3.ts",
+          "l4.ts",
+          "hybrid.ts"
+        ]
+      },
+      "fullNeuron": {
+        "tokens": 3627,
+        "all": false,
+        "ratio": 0,
+        "missing": [
+          "l1.ts",
+          "l2.ts",
+          "l3.ts",
+          "l4.ts",
+          "hybrid.ts"
+        ]
+      }
+    },
+    {
+      "id": "q18",
+      "category": "structural",
+      "file": "engine/src/cli/register-core.ts",
+      "symbol": "query",
+      "leafKind": "tldr-fallback",
+      "css": {
+        "tokens": 11,
+        "all": false,
+        "ratio": 0,
+        "missing": [
+          "L1",
+          "deterministic"
+        ]
+      },
+      "fullNeuron": {
+        "tokens": 1448,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q19",
+      "category": "structural",
+      "file": "engine/src/cli/register-core.ts",
+      "symbol": "inject-context",
+      "leafKind": "tldr-fallback",
+      "css": {
+        "tokens": 11,
+        "all": false,
+        "ratio": 0,
+        "missing": [
+          "session",
+          "turn",
+          "marker",
+          "highlights",
+          "3000"
+        ]
+      },
+      "fullNeuron": {
+        "tokens": 1448,
+        "all": false,
+        "ratio": 0.4,
+        "missing": [
+          "session",
+          "highlights",
+          "3000"
+        ]
+      }
+    },
+    {
+      "id": "q20",
+      "category": "structural",
+      "file": "src/cli/lib/agentLoop.ts",
+      "symbol": "claudeCall",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 444,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 6993,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q21",
+      "category": "structural",
+      "file": "src/cli/lib/agentLoop.ts",
+      "symbol": "API_KEY",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 14,
+        "all": false,
+        "ratio": 0.5,
+        "missing": [
+          "api.deepseek.com"
+        ]
+      },
+      "fullNeuron": {
+        "tokens": 6993,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q22",
+      "category": "behavioral",
+      "file": "src/cli/lib/agentLoop.ts",
+      "symbol": "AgentLoopResult",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 102,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 6993,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q23",
+      "category": "structural",
+      "file": "engine/src/commands/inject-context/sections.ts",
+      "symbol": "TYPE_ICON",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 34,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 11022,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    },
+    {
+      "id": "q24",
+      "category": "structural",
+      "file": "engine/src/commands/inject-context/sections.ts",
+      "symbol": "buildMainPage",
+      "leafKind": "symbol-anchor",
+      "css": {
+        "tokens": 520,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      },
+      "fullNeuron": {
+        "tokens": 11022,
+        "all": true,
+        "ratio": 1,
+        "missing": []
+      }
+    }
+  ]
+}

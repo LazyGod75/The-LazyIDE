@@ -1,0 +1,6 @@
+<article id="acme-conv-user-enumeration-fix-2026-06-03" data-cerveau-version="1" data-cerveau-type="episodic" data-cerveau-created="2026-06-03" data-cerveau-topic="acme">
+  <h1>Security Fix ? Prevent User Enumeration on Login Endpoint</h1>
+  <p>Fixed a user enumeration vulnerability in the POST /auth/login handler in <a data-cerveau-link-auto="1" data-cerveau-link-type="fixes" href="#file-acme-src-api-routes-ts">src/api/routes.ts</a>. The original implementation returned 404 Not Found when the email did not exist in the database, which allowed an attacker to enumerate valid email addresses by observing whether the response was 404 (email not found) or 401 (wrong password).</p>
+  <p>Fix: both cases now return 401 Unauthorized with the same generic message "Invalid credentials". The timing of the response is also equalized ? even when the user is not found, we still perform a dummy bcrypt comparison to prevent timing side-channel attacks where a fast 404 response reveals that the email does not exist.</p>
+  <p>This fix follows the OWASP guidance on preventing user enumeration at authentication endpoints. Combined with the rate limiting we should add to the middleware, this significantly hardens the login endpoint against automated attacks.</p>
+</article>

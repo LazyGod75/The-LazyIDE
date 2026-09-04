@@ -1,0 +1,61 @@
+{
+  "questionId": "q15",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2990,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 6,
+    "queryTokens": [
+      "engine",
+      "src",
+      "retrieval",
+      "router.ts",
+      "picklevel",
+      "routes",
+      "very",
+      "short",
+      "natural-language",
+      "queries",
+      "tokens",
+      "phrase",
+      "straight",
+      "pure",
+      "l2.",
+      "threshold",
+      "narrowed",
+      "regression",
+      "narrower",
+      "threshold",
+      "fix"
+    ]
+  },
+  "latencyMs": 13716,
+  "answer": "According to the comments in the code, the threshold was **narrowed from `<=5` to `<=2` tokens**.\n\nThe regression it fixed: short natural-language queries with 3–5 tokens (e.g., \"how does auth work\") were being routed to keyword-only L2 and never reaching semantic search. With the old `<=5` threshold, these queries stayed in pure L2 instead of falling through to L2_L3_HYBRID (which would have provided semantic recall via RRF fusion).\n\nThe comment states: \"Keep this narrow — only true keyword/tag lookups (1-2 tokens) stay pure-L2.\"",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 872,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8731,
+    "costUsd": 0.0279514
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "5",
+        "present": true
+      },
+      {
+        "term": "2",
+        "present": true
+      }
+    ]
+  }
+}

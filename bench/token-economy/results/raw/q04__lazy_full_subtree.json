@@ -1,0 +1,33 @@
+{
+  "questionId": "q04",
+  "category": "behavioral",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 2021,
+  "configMeta": {
+    "corpusDir": "engine/src/annotator/blocks/composers",
+    "fileCount": 9
+  },
+  "latencyMs": 11076,
+  "answer": "Based on the context provided, the new exported function is **`fileNeuronArticleId`** (file-neuron.ts).\n\nIt computes the persisted article ID for a file-neuron — the same ID format used in the FTS index — rather than using the logical graph ID (file:<relPath>). This allows `resolveExistingInbound` to correctly look up the file-neuron by matching the persisted ID stored in the index, fixing the mismatch that was preventing conversation-derived decisions and bugs from attaching to the target file-neuron.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 663,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 7796,
+    "costUsd": 0.0240954
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 1,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "fileNeuronArticleId",
+        "present": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "questionId": "q08",
+  "category": "structural",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 16805,
+  "configMeta": {
+    "corpusDir": "engine/src/commands",
+    "fileCount": 64
+  },
+  "error": "claude exited null: ",
+  "correct": false
+}

@@ -1,0 +1,38 @@
+{
+  "questionId": "q04",
+  "category": "behavioral",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 4550,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "resolveExistingInbound",
+      "relPath"
+    ],
+    "filesMatched": 6,
+    "filesPicked": 1
+  },
+  "latencyMs": 8012,
+  "answer": "The provided context from `engine/src/commands/enrich.ts` does not contain information about the fix in `engine/src/annotator/blocks/composers/file-neuron.ts`. The context discusses the enrichment pipeline, TLDR validation, metadata detection, and content classification, but does not mention the new exported function that resolved the file-neuron lookup bug.\n\nTo answer your question, I would need to see the contents of `engine/src/annotator/blocks/composers/file-neuron.ts` to identify what new function was added and what it computes to resolve the mismatch between the logical graph id and the FTS index's persisted id.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 453,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10343,
+    "costUsd": 0.030740399999999998
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "fileNeuronArticleId",
+        "present": false
+      }
+    ]
+  }
+}

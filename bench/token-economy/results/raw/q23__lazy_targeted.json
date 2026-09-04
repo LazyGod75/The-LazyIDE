@@ -1,0 +1,46 @@
+{
+  "questionId": "q23",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 394,
+  "configMeta": {
+    "corpusDir": "engine/src/commands",
+    "siblingFileCount": 64,
+    "leafKind": "tldr-fallback"
+  },
+  "latencyMs": 29834,
+  "answer": "I'm unable to access the file tools (Read, Edit, Write) that are typically available. The context you provided shows the file exists at `engine/src/commands/inject-context/sections.ts`, but only includes the directory skeleton, not the file contents.\n\nTo answer your question about the single-letter icons that `compactLine()` uses for decision/episodic/reference/semantic/procedural note types, I would need to read the actual file content.\n\nCould you either:\n1. Share the relevant section of `sections.ts` that contains the `compactLine()` function, or\n2. Let me know if there's a way to access the file reading capabilities in your environment?",
+  "usage": {
+    "inputTokens": 82,
+    "outputTokens": 1873,
+    "cacheReadInputTokens": 261354,
+    "cacheCreationInputTokens": 27557,
+    "costUsd": 0.0920194
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 4,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "decision",
+        "present": true
+      },
+      {
+        "term": "D",
+        "present": true
+      },
+      {
+        "term": "episodic",
+        "present": true
+      },
+      {
+        "term": "E",
+        "present": true
+      }
+    ]
+  }
+}

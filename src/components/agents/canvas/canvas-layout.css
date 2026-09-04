@@ -1,0 +1,38 @@
+/* canvas-layout.css — W2b visual states owned by this wave: the one-shot
+   auto-layout/lane-mode transition and the search/filter dim state (spec
+   §5 "Auto-layout", "Search/filter"). Lives in canvas/ root (NOT chrome/ —
+   chrome/canvas.css stays a hard boundary this wave, "zoom polish only").
+   Imported exactly once, from CanvasView.tsx.
+*/
+
+/* Auto-layout / lane-mode apply (useCanvasLayout.ts): a temporary class on
+   the React Flow wrapper gives every node's position change a smooth
+   transition instead of a hard cut — CSS-only (transform), no WebGL (NVIDIA
+   TDR constraint, matches chrome/canvas.css's own convention). */
+.canvas-animating .react-flow__node {
+  transition: transform 300ms ease;
+}
+
+/* Search/status-filter dim (useCanvasFilter.ts): non-matching nodes stay
+   fully interactive (pointer-events untouched — spec: "dim class (opacity
+   .25, pointer-events kept)"), only their opacity drops. */
+.canvas-dim {
+  opacity: 0.25;
+  transition: opacity 0.2s ease;
+}
+
+/* R11 UI polish (e) — a subtle radial vignette behind the dot grid so an
+   empty (or mostly-empty) canvas reads as a bounded surface instead of an
+   infinite flat void. Scoped to THIS component's own `.react-flow` root
+   (never a global `.react-flow` rule — some other part of the app could
+   mount its own React Flow instance someday) and layered via
+   `background-image` alongside xyflow's own `background-color` (set from
+   `--xy-background-color`, CanvasView.tsx's CANVAS_THEME_VARS) — the two
+   coexist on the same element, and BackgroundVariant.Dots paints its SVG
+   dot pattern in a layer above both, so the dots stay exactly as legible as
+   before; only the flat color underneath gains a soft center-to-edge fade.
+   Static (no animation), a couple of percent darker at the very edges —
+   deliberately faint, this is atmosphere, not a focal element. */
+[data-testid='canvas-view'] .react-flow {
+  background-image: radial-gradient(ellipse at center, transparent 0%, transparent 35%, rgba(0, 0, 0, 0.28) 100%);
+}

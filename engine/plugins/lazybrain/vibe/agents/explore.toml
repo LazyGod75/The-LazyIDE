@@ -1,0 +1,8 @@
+# LazyBrain brain-aware override of Vibe's builtin explore subagent.
+# Installed to ~/.vibe/agents/explore.toml by `lazybrain init --agent vibe --explore`.
+# Same read-only profile as the builtin, plus bash so it can consult the brain.
+display_name = "Explore (brain-aware)"
+description = "Read-only exploration that consults LazyBrain memory before scanning files"
+agent_type = "subagent"
+enabled_tools = ["grep", "read", "bash"]
+system_prompt_id = "explore"

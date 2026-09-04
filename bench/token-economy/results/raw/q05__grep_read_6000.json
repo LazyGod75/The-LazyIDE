@@ -1,0 +1,43 @@
+{
+  "questionId": "q05",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 4550,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "#fn-<name>",
+      "#cls-<name>",
+      "toAnchorId"
+    ],
+    "filesMatched": 1,
+    "filesPicked": 1
+  },
+  "latencyMs": 7996,
+  "answer": "According to the code in `engine/src/annotator/blocks/composers/file-neuron.ts`, the `toAnchorId()` function (lines 100–107) applies these transformations to a symbol name:\n\n1. **Lowercase** – converts the entire name to lowercase\n2. **Replace non-alphanumeric** – replaces any sequence of non-alphanumeric characters (`[^a-z0-9]`) with a single hyphen\n3. **Strip leading/trailing hyphens** – removes hyphens from the start and end of the string\n\nFor example, a function named `MyClass::constructor()` would become `myclass-constructor`.\n\nThe result is a valid HTML id fragment suitable for use in anchor attributes like `id=\"fn-myclass-constructor\"` or `id=\"cls-myclass\"`.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 481,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10532,
+    "costUsd": 0.0314414
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "lowercase",
+        "present": true
+      },
+      {
+        "term": "hyphen",
+        "present": true
+      }
+    ]
+  }
+}

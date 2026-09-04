@@ -1,0 +1,64 @@
+{
+  "questionId": "q10",
+  "category": "behavioral",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2978,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 6,
+    "queryTokens": [
+      "engine",
+      "src",
+      "commands",
+      "dream.ts",
+      "three",
+      "tags",
+      "exempt",
+      "note",
+      "noise-based",
+      "invalidation",
+      "during",
+      "runnoisecleanup",
+      "exported",
+      "helper",
+      "function",
+      "called"
+    ]
+  },
+  "latencyMs": 6584,
+  "answer": "The context provided does not contain information about `engine/src/commands/dream.ts`, the tags that exempt notes from noise-based invalidation during `runNoiseCleanup`, or the exported helper function. To answer your question, I would need to see the contents of that file.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 321,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8954,
+    "costUsd": 0.025885400000000003
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "mission",
+        "present": false
+      },
+      {
+        "term": "agent",
+        "present": false
+      },
+      {
+        "term": "skill",
+        "present": false
+      },
+      {
+        "term": "hasNoiseExemptTag",
+        "present": false
+      }
+    ]
+  }
+}

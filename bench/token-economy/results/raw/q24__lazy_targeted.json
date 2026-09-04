@@ -1,0 +1,38 @@
+{
+  "questionId": "q24",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 393,
+  "configMeta": {
+    "corpusDir": "engine/src/commands",
+    "siblingFileCount": 64,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 12341,
+  "answer": "I don't have access to file reading tools in this session, and the context provided only shows the file structure and function signature, not the implementation of `buildMainPage()`. \n\nTo answer your question about which field is split on '/' to derive project and feature segments, I would need to see the actual code inside that function. You could check the file directly at `engine/src/commands/inject-context/sections.ts`, or if you can share the relevant code snippet, I can help identify the field being split.",
+  "usage": {
+    "inputTokens": 34,
+    "outputTokens": 601,
+    "cacheReadInputTokens": 75247,
+    "cacheCreationInputTokens": 5885,
+    "costUsd": 0.023641699999999998
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "topic",
+        "present": false
+      },
+      {
+        "term": "_general",
+        "present": false
+      }
+    ]
+  }
+}

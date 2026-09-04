@@ -1,0 +1,33 @@
+{
+  "questionId": "q16",
+  "category": "structural",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 196,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 7638,
+  "answer": "I don't see the answer in the context provided. The context references retrieval-related TypeScript files but doesn't include the actual code or change history for `engine/src/retrieval/router.ts` showing what the previous token range was before it was widened to 3-15 tokens for `L2_L3_HYBRID`.\n\nTo find this information, I'd need to either:\n1. Read the actual `router.ts` file and check git history to see the previous range\n2. Check the git blame or commit messages for that specific line\n\nWould you like me to look at the actual file to find this information?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 402,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5031,
+    "costUsd": 0.014518399999999999
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "6-15",
+        "present": false
+      }
+    ]
+  }
+}

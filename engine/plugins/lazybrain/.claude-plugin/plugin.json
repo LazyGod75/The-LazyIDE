@@ -1,0 +1,9 @@
+{
+  "name": "lazybrain",
+  "version": "0.2.0",
+  "description": "HTML-first persistent memory for LLM agents — CLI-driven, queryable without LLM calls, local-first, optional public publishing.",
+  "author": { "name": "LazyGod75" },
+  "repository": "https://github.com/LazyGod75/LazyBrain",
+  "license": "Apache-2.0",
+  "keywords": ["memory", "context", "persistence", "hooks", "html", "second-brain", "claude-code"]
+}

@@ -1,0 +1,43 @@
+{
+  "questionId": "q21",
+  "category": "structural",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "agentLoop",
+      "DeepSeek",
+      "DEEPSEEK_API_URL"
+    ],
+    "filesMatched": 2,
+    "filesPicked": 1
+  },
+  "latencyMs": 8569,
+  "answer": "Based on the provided context:\n\n1. **DeepSeek API key environment variable**: `DEEPSEEK_API_KEY` — explicitly mentioned in the file comment: \"backend: DeepSeek via its OpenAI-compatible API (DEEPSEEK_API_KEY) by default\"\n\n2. **Default DeepSeek API URL**: The context provided is truncated and does not show the implementation details for the default API URL. The file shows type definitions and comments but cuts off before the actual function implementations that would set the default URL.\n\nTo find the default DeepSeek API URL, I would need to see the full implementation of the agentLoop function, which isn't included in the provided excerpt.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 459,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6198,
+    "costUsd": 0.0182784
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "DEEPSEEK_API_KEY",
+        "present": true
+      },
+      {
+        "term": "api.deepseek.com",
+        "present": false
+      }
+    ]
+  }
+}

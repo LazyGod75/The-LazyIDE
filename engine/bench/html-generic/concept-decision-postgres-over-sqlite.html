@@ -1,0 +1,24 @@
+<article id="concept-decision-postgres-over-sqlite">
+
+  <header>
+    <h1>Decision: Postgres over SQLite for multi-instance writes</h1>
+    <dl>
+      <dt>Kind</dt><dd>decision</dd>
+      <dt>Confidence</dt><dd>0.95</dd>
+      <dt>Date</dt><dd>2026-05-10</dd>
+    </dl>
+  </header>
+
+  <div><a href="#/acme">Acme</a> / <a href="#/acme/concepts">Concepts</a></div>
+
+  <section>
+    <p>Chose Postgres over SQLite for multi-instance writes in production deployment.</p>
+  </section>
+
+  <section>
+    <p>Decision recorded 2026-05-10. SQLite cannot handle concurrent writes from multiple app instances. Postgres with connection pooling via Supabase handles this natively. Migration completed with zero downtime using logical replication.</p>
+    <dl>
+      <dt>Kind</dt><dd>decision</dd>
+    </dl>
+  </section>
+</article>

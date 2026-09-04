@@ -1,0 +1,38 @@
+{
+  "questionId": "q02",
+  "category": "behavioral",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 127,
+  "configMeta": {
+    "corpusDir": "engine/src/util",
+    "siblingFileCount": 21,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 8487,
+  "answer": "The context provided does not contain the implementation details of `engine/src/util/config.ts`. While the file is listed in the skeleton and `getConfig()` is noted as exported, the actual code showing the migration mechanism is not included (the entry is marked \"[LEAF — attribute-filtered]\").\n\nTo answer this question, I would need to read the actual file to see what mechanism (likely a state marker, completion flag, or timestamp check) prevents the legacy migration from re-running. Would you like me to read the file?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 491,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 4996,
+    "costUsd": 0.014821399999999998
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "cache-migrated",
+        "present": false
+      },
+      {
+        "term": "marker",
+        "present": true
+      }
+    ]
+  }
+}

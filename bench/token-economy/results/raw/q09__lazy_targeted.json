@@ -1,0 +1,38 @@
+{
+  "questionId": "q09",
+  "category": "structural",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 79,
+  "configMeta": {
+    "corpusDir": "engine/src/store",
+    "siblingFileCount": 8,
+    "leafKind": "symbol-anchor"
+  },
+  "latencyMs": 15227,
+  "answer": "Based on the provided context, I can only identify one of the two functions: **`isRicherBody(existingHtml, candidateHtml)`** — which compares whether candidate HTML is richer than existing HTML.\n\nHowever, the context doesn't show the second function. I don't have access to read the full `engine/src/store/upsert.ts` file to identify it or provide the one-line descriptions you're asking for. To answer this completely, I would need to view the full file content.",
+  "usage": {
+    "inputTokens": 34,
+    "outputTokens": 937,
+    "cacheReadInputTokens": 73775,
+    "cacheCreationInputTokens": 5556,
+    "costUsd": 0.0240415
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "isRicherBody",
+        "present": true
+      },
+      {
+        "term": "mergeUpsertHtml",
+        "present": false
+      }
+    ]
+  }
+}

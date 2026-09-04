@@ -1,0 +1,37 @@
+{
+  "questionId": "q18",
+  "category": "structural",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 180,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 8772,
+  "answer": "The context provided does not contain the specific content of `engine/src/cli/register-core.ts` or details about the latency and determinism claims for the `lazybrain query <selector>` command. \n\nWhile the context references retrieval router types and retrieval levels (L1 and L2), it doesn't include the actual descriptions, latency claims, or the mapping between the query command and its corresponding router level.\n\nTo answer this question accurately, I would need to read the actual `engine/src/cli/register-core.ts` file and potentially the router-types and retrieval-levels files to find the specific claim and level correspondence.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 495,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5025,
+    "costUsd": 0.0149924
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 1,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "L1",
+        "present": true
+      },
+      {
+        "term": "deterministic",
+        "present": false
+      }
+    ]
+  }
+}

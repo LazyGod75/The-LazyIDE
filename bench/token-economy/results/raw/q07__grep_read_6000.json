@@ -1,0 +1,38 @@
+{
+  "questionId": "q07",
+  "category": "behavioral",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 5680,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "search",
+      "returns"
+    ],
+    "filesMatched": 97,
+    "filesPicked": 3
+  },
+  "latencyMs": 11369,
+  "answer": "I don't have enough context to answer this. The provided files show the `markers.ts` nudge formatters and `nl-routes.ts` phase routing, but they don't contain:\n\n1. The actual implementation of `inject-context` with `mode=turn` logic\n2. The Rust comment and the `search --strip --top 6` workaround code\n3. What was actually returning empty (or why)\n\nTo identify the real bug and its location, I'd need to see:\n- The `inject-context.ts` implementation (the turn-mode logic itself)\n- The Rust sidecar code that replaced it with the raw search call\n- Any error handling or empty-check logic that was masking the issue\n\nCan you point me to those files, or would you like me to search the codebase for them?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 660,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 12377,
+    "costUsd": 0.037863400000000005
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "pickLevel",
+        "present": false
+      }
+    ]
+  }
+}

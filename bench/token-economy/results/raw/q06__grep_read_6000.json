@@ -1,0 +1,39 @@
+{
+  "questionId": "q06",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 0,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [],
+    "filesMatched": 0,
+    "filesPicked": 0
+  },
+  "latencyMs": 16002,
+  "answer": "I'm unable to read the file because the Read and Bash tools are disabled in this session. To answer your question about the default file-neuron note cap and its environment variable override in `engine/src/graph/code-scanner.ts`, you would need to:\n\n1. Open the file directly in your editor at `engine/src/graph/code-scanner.ts`\n2. Look for constants or configuration related to file-neuron limits (likely named something like `MAX_FILE_NEURONS`, `FILE_NEURON_CAP`, etc.)\n3. Search for environment variables that override this (commonly in patterns like `process.env.SOME_VAR_NAME`)\n\nAlternatively, if you can temporarily enable file access tools (Read/Bash), I can then provide the specific answer with exact values and variable names.",
+  "usage": {
+    "inputTokens": 52,
+    "outputTokens": 901,
+    "cacheReadInputTokens": 114462,
+    "cacheCreationInputTokens": 6016,
+    "costUsd": 0.028752200000000002
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "400",
+        "present": false
+      },
+      {
+        "term": "LAZYBRAIN_MAX_FILE_NEURONS",
+        "present": false
+      }
+    ]
+  }
+}

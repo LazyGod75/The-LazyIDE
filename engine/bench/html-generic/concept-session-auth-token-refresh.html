@@ -1,0 +1,21 @@
+<article id="concept-session-auth-token-refresh">
+
+  <header>
+    <h1>Session management: short-lived tokens with silent refresh</h1>
+    <dl>
+      <dt>Kind</dt><dd>architecture</dd>
+      <dt>Confidence</dt><dd>0.85</dd>
+      <dt>Date</dt><dd>2026-05-06</dd>
+    </dl>
+  </header>
+
+  <div><a href="#/acme">Acme</a> / <a href="#/acme/concepts">Concepts</a></div>
+
+  <section>
+    <p>Auth sessions use 1-hour access tokens with silent refresh via refresh tokens stored in httpOnly cookies. Managed by Supabase Auth.</p>
+  </section>
+
+  <section>
+    <p>Sessions are short-lived (1 hour) with silent refresh via refresh tokens stored in httpOnly cookies. The refresh logic runs automatically in the background — users never see a re-login prompt unless the refresh token has also expired (7-day default). Supabase Auth handles the token rotation natively.</p>
+  </section>
+</article>

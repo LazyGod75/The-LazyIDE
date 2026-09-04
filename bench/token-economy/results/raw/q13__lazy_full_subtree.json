@@ -1,0 +1,45 @@
+{
+  "questionId": "q13",
+  "category": "structural",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 3367,
+  "configMeta": {
+    "corpusDir": "engine/src/util",
+    "fileCount": 21
+  },
+  "latencyMs": 8715,
+  "answer": "Based on the context provided, I can see that `resolveConcurrencyEnv()` in `engine/src/util/concurrency.ts` has the following four parameters:\n\n1. `rawValue`\n2. `fallback`\n3. `min`\n4. `max`\n\nHowever, the context provided only includes the skeleton/symbol listing for this file, not the actual implementation code. Therefore, I cannot tell you what the function does with out-of-range values. To answer that part of your question, I would need to read the actual `concurrency.ts` file to see the implementation.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 471,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 9709,
+    "costUsd": 0.0288584
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 3,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "fallback",
+        "present": true
+      },
+      {
+        "term": "min",
+        "present": true
+      },
+      {
+        "term": "max",
+        "present": true
+      },
+      {
+        "term": "clamp",
+        "present": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "questionId": "q22",
+  "category": "behavioral",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 1535,
+  "configMeta": {
+    "corpusDir": "src/cli/lib",
+    "fileCount": 7
+  },
+  "latencyMs": 12050,
+  "answer": "I don't have access to the Read tool in this session. Can you either:\n\n1. Share the header comment from `src/cli/lib/agentLoop.ts` directly, or\n2. Enable the Read tool so I can view the file and answer your question about the \"tool loop honesty contract\" and the completion action?\n\nAlternatively, if you have the file open, you could paste the relevant header comment section.",
+  "usage": {
+    "inputTokens": 26,
+    "outputTokens": 706,
+    "cacheReadInputTokens": 58655,
+    "cacheCreationInputTokens": 7825,
+    "costUsd": 0.0281215
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "finish",
+        "present": false
+      }
+    ]
+  }
+}

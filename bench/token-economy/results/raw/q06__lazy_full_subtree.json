@@ -1,0 +1,37 @@
+{
+  "questionId": "q06",
+  "category": "structural",
+  "variantId": "lazy_full_subtree",
+  "configId": "lazy_full_subtree",
+  "budget": null,
+  "injectedTokens": 6581,
+  "configMeta": {
+    "corpusDir": "engine/src/graph",
+    "fileCount": 27
+  },
+  "latencyMs": 7239,
+  "answer": "I don't have access to the specific implementation details of `code-scanner.ts` in the provided context. The context shows the file structure and function names, but doesn't include the actual code that would reveal the default cap on file-neuron notes per project or which environment variable controls it.\n\nTo find this information, I would need to read the actual `code-scanner.ts` file. Would you like me to do that?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 500,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 14305,
+    "costUsd": 0.0428034
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "400",
+        "present": false
+      },
+      {
+        "term": "LAZYBRAIN_MAX_FILE_NEURONS",
+        "present": false
+      }
+    ]
+  }
+}

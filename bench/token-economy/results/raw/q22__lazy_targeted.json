@@ -1,0 +1,34 @@
+{
+  "questionId": "q22",
+  "category": "behavioral",
+  "variantId": "lazy_targeted",
+  "configId": "lazy_targeted",
+  "budget": null,
+  "injectedTokens": 55,
+  "configMeta": {
+    "corpusDir": "src/cli/lib",
+    "siblingFileCount": 7,
+    "leafKind": "tldr-fallback"
+  },
+  "latencyMs": 15618,
+  "answer": "I don't have the file content in the provided context (it's marked as attribute-filtered). I need to read the actual file from your codebase to see the header comment about the tool loop honesty contract.\n\nCould you share the header comment from `src/cli/lib/agentLoop.ts`, or would you like me to attempt to read it from your file system? If you'd like me to read it, I'll need the appropriate file-reading permissions.",
+  "usage": {
+    "inputTokens": 26,
+    "outputTokens": 795,
+    "cacheReadInputTokens": 53834,
+    "cacheCreationInputTokens": 5334,
+    "costUsd": 0.020862399999999996
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "finish",
+        "present": false
+      }
+    ]
+  }
+}

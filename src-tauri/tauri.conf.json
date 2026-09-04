@@ -1,0 +1,82 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Lazy",
+  "version": "0.1.19",
+  "identifier": "com.lazy.app",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Lazy",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 700,
+        "resizable": true,
+        "fullscreen": false,
+        "theme": "Dark"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:* https://*.supabase.co wss://*.supabase.co ipc: http://ipc.localhost https://api.deepseek.com https://api.openai.com https://openrouter.ai https://api.x.ai https://api.groq.com https://api.mistral.ai https://api.anthropic.com https://api.getsolari.com wss://api.getsolari.com https://mcp.getsolari.com; frame-src 'self' http://localhost:* http://127.0.0.1:* https://*.getsolari.com;"
+    }
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": [
+          "lazy"
+        ]
+      }
+    },
+    "updater": {
+      "endpoints": [],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDgwODU1MkE5RDE4RkY1NzkKUldSNTlZL1JxVktGZ0ZUUTVtODl5dkpQTFltN0YrdTQ2aVRBdjZ3b0FnbFpIR0Y0SEYrbHB2cVEK"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": true,
+    "targets": [
+      "nsis",
+      "msi",
+      "app",
+      "dmg",
+      "appimage",
+      "deb"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "resources/node.exe": "resources/node.exe",
+      "resources/lazybrain/lazybrain.js": "resources/lazybrain/lazybrain.js",
+      "resources/lazybrain/package.json": "resources/lazybrain/package.json",
+      "resources/lazybrain/node_modules": "resources/lazybrain/node_modules",
+      "resources/brain-mcp/brain-search-server.mjs": "resources/brain-mcp/brain-search-server.mjs"
+    },
+    "android": {
+      "debugApplicationIdSuffix": ".debug"
+    },
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "displayLanguageSelector": false,
+        "languages": [
+          "English"
+        ],
+        "installMode": "currentUser",
+        "installerHooks": "./installer-hooks.nsh"
+      }
+    }
+  }
+}

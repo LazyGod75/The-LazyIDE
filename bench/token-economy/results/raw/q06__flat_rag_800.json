@@ -1,0 +1,56 @@
+{
+  "questionId": "q06",
+  "category": "structural",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 784,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 2,
+    "queryTokens": [
+      "engine",
+      "src",
+      "graph",
+      "code-scanner.ts",
+      "many",
+      "file-neuron",
+      "notes",
+      "can",
+      "written",
+      "per",
+      "project",
+      "default",
+      "environment",
+      "variable",
+      "overrides",
+      "cap"
+    ]
+  },
+  "latencyMs": 6985,
+  "answer": "The context provided does not include `engine/src/graph/code-scanner.ts`, so I cannot answer this question based on the available information. I would need to read that file directly to tell you the default cap on file-neuron notes per project and which environment variable overrides it.\n\nWould you like me to read that file to find this information?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 236,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5751,
+    "costUsd": 0.015886400000000002
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "400",
+        "present": false
+      },
+      {
+        "term": "LAZYBRAIN_MAX_FILE_NEURONS",
+        "present": false
+      }
+    ]
+  }
+}

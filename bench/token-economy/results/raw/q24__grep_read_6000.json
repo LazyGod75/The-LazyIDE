@@ -1,0 +1,41 @@
+{
+  "questionId": "q24",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 4550,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "buildMainPage"
+    ],
+    "filesMatched": 2,
+    "filesPicked": 1
+  },
+  "latencyMs": 8343,
+  "answer": "In `buildMainPage()`, the **`topic`** field of a note is split on '/' to derive the project and feature segments.\n\nLooking at lines 246-251 of the provided code:\n\n```typescript\nfor (const n of _notes) {\n  const topic = n.topic;\n  if (!topic) {\n    uncategorized.push(n);\n    continue;\n  }\n  const segments = topic.split('/');\n  const project = segments[0];\n  const feature = segments[1] || '_general';\n```\n\nThe `topic` field is split into segments, where `segments[0]` becomes the project name and `segments[1]` becomes the feature name (defaulting to `'_general'` if absent).",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 473,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10738,
+    "costUsd": 0.0319724
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "topic",
+        "present": true
+      },
+      {
+        "term": "_general",
+        "present": true
+      }
+    ]
+  }
+}

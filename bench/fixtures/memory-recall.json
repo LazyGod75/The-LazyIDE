@@ -1,0 +1,127 @@
+{
+  "_comment": "Synthetic fixture: deterministic, self-contained, no dependency on David's private brain.",
+  "index": [
+    {
+      "id": "node-editor-undo",
+      "title": "Editor Undo Stack",
+      "topic": "editor",
+      "tags": ["editor", "undo", "history", "immutable"],
+      "body": "The editor maintains an immutable undo stack. Each keystroke appends a new state snapshot rather than mutating the previous one. Ctrl+Z walks the stack backward."
+    },
+    {
+      "id": "node-agent-permissions",
+      "title": "Agent Permission Model",
+      "topic": "agents",
+      "tags": ["agents", "permissions", "security", "allowedTools", "deniedTools"],
+      "body": "Agents run with an optional allowed_tools and denied_tools list mapped to claude --allowedTools / --disallowedTools flags. The permission_mode field controls baseline trust level."
+    },
+    {
+      "id": "node-brain-graph",
+      "title": "Brain Graph Architecture",
+      "topic": "brain",
+      "tags": ["brain", "graph", "nodes", "edges", "clusters"],
+      "body": "The brain graph stores nodes with id, title, type, cluster, importance. Edges connect nodes with a type label. Clusters group related nodes and carry color + center coordinates."
+    },
+    {
+      "id": "node-tauri-commands",
+      "title": "Tauri IPC Commands",
+      "topic": "tauri",
+      "tags": ["tauri", "ipc", "invoke", "rust", "commands"],
+      "body": "Tauri exposes Rust functions as IPC commands via #[tauri::command]. The frontend calls them with invoke('command_name', args). All async commands return a Result type."
+    },
+    {
+      "id": "node-platform-health",
+      "title": "Platform Health Check",
+      "topic": "tauri",
+      "tags": ["health", "platform", "brain", "git", "terminal", "model", "agentRunner"],
+      "body": "health() returns a HealthReport with statuses for brain, git, terminal, model, and agentRunner. Each status is 'ok' | 'down' | 'unknown'. An optional details record carries diagnostic strings."
+    },
+    {
+      "id": "node-missions-persistence",
+      "title": "Missions Persistence Layer",
+      "topic": "agents",
+      "tags": ["missions", "persistence", "localStorage", "filesystem", "json"],
+      "body": "Missions are saved via missions.save(projectRoot, data) and loaded with missions.load(projectRoot). Tauri stores at <projectRoot>/.lazy/missions.json; Web uses localStorage key 'lazy:missions'."
+    },
+    {
+      "id": "node-event-bus",
+      "title": "Event Bus",
+      "topic": "editor",
+      "tags": ["bus", "events", "emit", "on", "navigation", "editor"],
+      "body": "The event bus (src/lib/bus.ts) provides emit and on functions. Events: nav:navigateSpace, nav:focusBrainNode, agent:launch, agent:runningCount, editor:applyEdit, editor:openFile."
+    },
+    {
+      "id": "node-test-runner-result",
+      "title": "Test Runner Result Format",
+      "topic": "editor",
+      "tags": ["tests", "runner", "TestRunResult", "vitest", "jest"],
+      "body": "tests.run(repoPath) returns TestRunResult: { ok, tool, total, passed, failed, durationMs, failures: [{name, message, file?, line?}], raw }."
+    },
+    {
+      "id": "node-brain-backlinks",
+      "title": "Brain Backlinks and Neighbors",
+      "topic": "brain",
+      "tags": ["brain", "backlinks", "neighbors", "provenance", "graph"],
+      "body": "brain.backlinks(nodeId) returns an array of node ids that link to the given node. brain.neighbors(nodeId) returns adjacent node ids. These map to Tauri commands brain_fetch_backlinks and brain_fetch_neighbors."
+    },
+    {
+      "id": "node-immutable-pattern",
+      "title": "Immutable State Pattern",
+      "topic": "editor",
+      "tags": ["immutable", "pattern", "spread", "mutation", "state"],
+      "body": "All state updates return new objects via spread. Direct mutation is forbidden. Functions must return a new copy with changes applied rather than modifying the original."
+    }
+  ],
+  "queries": [
+    {
+      "query": "how does undo work in the editor",
+      "expectedIds": ["node-editor-undo"],
+      "expectedTopics": ["editor"]
+    },
+    {
+      "query": "agent tool permissions allowedTools deniedTools",
+      "expectedIds": ["node-agent-permissions"],
+      "expectedTopics": ["agents"]
+    },
+    {
+      "query": "brain graph nodes edges clusters",
+      "expectedIds": ["node-brain-graph"],
+      "expectedTopics": ["brain"]
+    },
+    {
+      "query": "tauri invoke ipc rust command",
+      "expectedIds": ["node-tauri-commands", "node-platform-health"],
+      "expectedTopics": ["tauri"]
+    },
+    {
+      "query": "health check platform status",
+      "expectedIds": ["node-platform-health"],
+      "expectedTopics": ["tauri"]
+    },
+    {
+      "query": "save load missions json localStorage",
+      "expectedIds": ["node-missions-persistence"],
+      "expectedTopics": ["agents"]
+    },
+    {
+      "query": "event bus emit on navigate",
+      "expectedIds": ["node-event-bus"],
+      "expectedTopics": ["editor"]
+    },
+    {
+      "query": "test run result passed failed",
+      "expectedIds": ["node-test-runner-result"],
+      "expectedTopics": ["editor"]
+    },
+    {
+      "query": "backlinks neighbors brain provenance",
+      "expectedIds": ["node-brain-backlinks"],
+      "expectedTopics": ["brain"]
+    },
+    {
+      "query": "immutable spread no mutation return new object",
+      "expectedIds": ["node-immutable-pattern"],
+      "expectedTopics": ["editor"]
+    }
+  ]
+}

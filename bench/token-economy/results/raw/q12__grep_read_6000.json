@@ -1,0 +1,41 @@
+{
+  "questionId": "q12",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 4696,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "mapLimit"
+    ],
+    "filesMatched": 3,
+    "filesPicked": 3
+  },
+  "latencyMs": 11894,
+  "answer": "Based on the code in `engine/src/util/concurrency.ts`:\n\n**Return order:** `mapLimit()` returns results in **input order**, not completion order. The function explicitly guarantees this in its docstring: \"resolving to results in the SAME order as `items` (independent of completion order).\" This is confirmed by the test at line 8-20 of the test file, which verifies that even when items complete at different speeds (delays of 50, 40, 30, 20, 10ms), the output is still `[0, 1, 2, 3, 4]` matching input order.\n\n**Chunking strategy:** The implementation uses **fixed-size chunking**. Here's how it works:\n\n1. Items are divided into chunks of size `limit` \n2. Each chunk is processed with `Promise.all()`, allowing up to `limit` items to run concurrently within that chunk\n3. One chunk is **fully awaited before the next chunk starts** (the `await` on line 8 blocks until all promises in `Promise.all` resolve)\n\nThis approach is described in the docstring as mirroring an existing pattern in `graph/code-scanner.ts` rather than using a continuous worker-pool. The benefit is that concurrency is trivially auditable (never exceeds the limit) and per-item synchronous side effects (like disk writes) execute as soon as that item completes, rather than being deferred until the entire chunk finishes.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 1205,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10447,
+    "costUsd": 0.034764399999999994
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "input order",
+        "present": true
+      },
+      {
+        "term": "chunk",
+        "present": true
+      }
+    ]
+  }
+}

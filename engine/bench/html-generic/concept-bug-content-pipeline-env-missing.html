@@ -1,0 +1,28 @@
+<article id="concept-bug-content-pipeline-env-missing">
+
+  <header>
+    <h1>Bug: Missing SUPABASE_URL env var in CI build</h1>
+    <dl>
+      <dt>Kind</dt><dd>bug</dd>
+      <dt>Confidence</dt><dd>0.85</dd>
+      <dt>Date</dt><dd>2026-05-11</dd>
+    </dl>
+  </header>
+
+  <div><a href="#/content-pipeline">content-pipeline</a> / <a href="#/content-pipeline/concepts">Concepts</a></div>
+
+  <section>
+    <p>CI build fails because SUPABASE_URL is not set in the build environment, causing env.ts validation to throw at startup.</p>
+  </section>
+
+  <section>
+    <p>Bug recorded 2026-05-11. The content-pipeline validates required environment variables at startup via content-pipeline/src/lib/env.ts. The CI pipeline was missing SUPABASE_URL and SUPABASE_ANON_KEY in the build step environment — these were only set for the deploy step. Fixed by moving env var injection to the build step in the CI config.</p>
+  </section>
+
+  <section>
+    <h3>Related neurons</h3>
+    <ul>
+      <li><a href="#/file:content-pipeline/src/lib/env.ts">content-pipeline/src/lib/env.ts</a></li>
+    </ul>
+  </section>
+</article>

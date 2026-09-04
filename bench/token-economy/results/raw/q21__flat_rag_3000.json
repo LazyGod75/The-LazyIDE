@@ -1,0 +1,56 @@
+{
+  "questionId": "q21",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2994,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 6,
+    "queryTokens": [
+      "src",
+      "cli",
+      "lib",
+      "agentloop.ts",
+      "environment",
+      "variable",
+      "supplies",
+      "deepseek",
+      "api",
+      "key",
+      "default",
+      "deepseek",
+      "api",
+      "url",
+      "deepseek_api_url",
+      "unset"
+    ]
+  },
+  "latencyMs": 12335,
+  "answer": "Based on the context provided, I can confirm that the DeepSeek API key comes from the `DEEPSEEK_API_KEY` environment variable (evident from the error message in the `deepseekCall` function: \"DEEPSEEK_API_KEY is not set\").\n\nHowever, the context excerpt from `src/cli/lib/agentLoop.ts` (lines 201-260) does not include the top of the file where the `API_URL` constant is defined. Therefore, I cannot provide the default DeepSeek API URL for that specific file from the context given.\n\nFor reference, `src/cli/lib/orchestrator.ts` shows a similar pattern where the default is `'https://api.deepseek.com/chat/completions'`, but I cannot confirm this is used in `agentLoop.ts` without seeing its full initialization code.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 901,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8734,
+    "costUsd": 0.028106400000000004
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 2,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "DEEPSEEK_API_KEY",
+        "present": true
+      },
+      {
+        "term": "api.deepseek.com",
+        "present": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "questionId": "q08",
+  "category": "structural",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 790,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 3,
+    "queryTokens": [
+      "engine",
+      "src",
+      "commands",
+      "inject-context",
+      "markers.ts",
+      "are",
+      "three",
+      "values",
+      "nudgestyle",
+      "type",
+      "one",
+      "default"
+    ]
+  },
+  "latencyMs": 5909,
+  "answer": "The context provided does not include `engine/src/commands/inject-context/markers.ts`, so I cannot answer this question based on the information given. I would need to read that file directly to tell you the NudgeStyle type values and which is the default.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 235,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5752,
+    "costUsd": 0.015852400000000003
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 3,
+    "hits": [
+      {
+        "term": "skill",
+        "present": false
+      },
+      {
+        "term": "tool",
+        "present": false
+      },
+      {
+        "term": "none",
+        "present": false
+      }
+    ]
+  }
+}

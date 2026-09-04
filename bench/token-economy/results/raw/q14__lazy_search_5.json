@@ -1,0 +1,41 @@
+{
+  "questionId": "q14",
+  "category": "structural",
+  "variantId": "lazy_search_5",
+  "configId": "lazy_search",
+  "budget": 5,
+  "injectedTokens": 299,
+  "configMeta": {
+    "topK": 5,
+    "cliError": null
+  },
+  "latencyMs": 8947,
+  "answer": "Based on the context provided, I can see there are relevant files that likely contain this information—specifically `file-util-concurrency-ts` (util/concurrency) and `file-commands-import-ts` (commands/import)—but the context doesn't include the actual code content or configuration details needed to answer your question.\n\nTo find the environment variable name, default value, and clamp range for the import annotation concurrency control, I'd need to read those files directly. Would you like me to check those files?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 441,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5241,
+    "costUsd": 0.015343399999999998
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 3,
+    "hits": [
+      {
+        "term": "LAZYBRAIN_IMPORT_CONCURRENCY",
+        "present": false
+      },
+      {
+        "term": "5",
+        "present": false
+      },
+      {
+        "term": "12",
+        "present": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "questionId": "q06",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2960,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 5,
+    "queryTokens": [
+      "engine",
+      "src",
+      "graph",
+      "code-scanner.ts",
+      "many",
+      "file-neuron",
+      "notes",
+      "can",
+      "written",
+      "per",
+      "project",
+      "default",
+      "environment",
+      "variable",
+      "overrides",
+      "cap"
+    ]
+  },
+  "latencyMs": 8029,
+  "answer": "I don't have that information in the provided context. The context includes excerpts from `engine/src/commands/graph.ts`, `engine/src/graph/global-graph.ts`, and `engine/src/commands/enrich.ts`, but not from `engine/src/graph/code-scanner.ts` where the file-neuron note cap and its environment variable override would be defined.\n\nTo answer your question, I'd need to read that file directly. Would you like me to do that?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 299,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8460,
+    "costUsd": 0.024312399999999998
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "400",
+        "present": false
+      },
+      {
+        "term": "LAZYBRAIN_MAX_FILE_NEURONS",
+        "present": false
+      }
+    ]
+  }
+}

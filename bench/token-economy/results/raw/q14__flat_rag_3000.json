@@ -1,0 +1,56 @@
+{
+  "questionId": "q14",
+  "category": "structural",
+  "variantId": "flat_rag_3000",
+  "configId": "flat_rag",
+  "budget": 3000,
+  "injectedTokens": 2974,
+  "configMeta": {
+    "tokenBudget": 3000,
+    "chunksConsidered": 865,
+    "chunksPicked": 6,
+    "queryTokens": [
+      "import",
+      "annotation",
+      "concurrency",
+      "6.4x-faster-import",
+      "fix",
+      "bounded",
+      "environment",
+      "variable.",
+      "called",
+      "default",
+      "clamp",
+      "range"
+    ]
+  },
+  "latencyMs": 10110,
+  "answer": "Based on the context from `engine/src/commands/import.ts:51-110`:\n\n- **Environment variable**: `LAZYBRAIN_IMPORT_CONCURRENCY`\n- **Default**: `5`\n- **Clamp range**: `[1, 12]` (minimum 1, maximum 12)\n\nThe documentation note explains that this bounds per-conversation LLM annotation (the slow step), which was taking ~2 hours for a 440-conversation import when run sequentially. Each annotation is an independent OS process, so the cap exists conservatively to avoid rate-limiting the user's Claude Code CLI, not for correctness.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 551,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 8293,
+    "costUsd": 0.0250244
+  },
+  "correct": true,
+  "grade": {
+    "correct": true,
+    "presentCount": 3,
+    "totalTerms": 3,
+    "hits": [
+      {
+        "term": "LAZYBRAIN_IMPORT_CONCURRENCY",
+        "present": true
+      },
+      {
+        "term": "5",
+        "present": true
+      },
+      {
+        "term": "12",
+        "present": true
+      }
+    ]
+  }
+}

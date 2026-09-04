@@ -1,0 +1,49 @@
+{
+  "questionId": "q10",
+  "category": "behavioral",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 4550,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [
+      "runNoiseCleanup"
+    ],
+    "filesMatched": 3,
+    "filesPicked": 1
+  },
+  "latencyMs": 9366,
+  "answer": "The provided context does not contain the answer to your question. The visible portion of engine/src/commands/dream.ts is truncated and does not include the `runNoiseCleanup` function implementation or information about the three tags that exempt notes from noise-based invalidation.\n\nTo find this information, I would need to see the complete `runNoiseCleanup` function and its associated comment documentation in that file.",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 522,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 10351,
+    "costUsd": 0.0310734
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "mission",
+        "present": false
+      },
+      {
+        "term": "agent",
+        "present": false
+      },
+      {
+        "term": "skill",
+        "present": false
+      },
+      {
+        "term": "hasNoiseExemptTag",
+        "present": false
+      }
+    ]
+  }
+}

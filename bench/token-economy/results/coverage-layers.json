@@ -1,0 +1,3202 @@
+{
+  "generatedAt": "2026-08-16T11:04:24.489Z",
+  "fixture": "C:/Users/user/AppData/Local/Temp/claude/C--Users-David-Documents-cerveau/32ad4d7b-6319-4de8-bacd-f12144290e18/scratchpad/brain-fixture/brain",
+  "note": "This is a COVERAGE ceiling (is the fact even stored / selectable), not an answering-model score. A layer cannot beat its coverage ceiling no matter how good retrieval is.",
+  "summary": {
+    "source": {
+      "questionsFullyCovered": 21,
+      "n": 24,
+      "accuracyCeiling": 0.875,
+      "meanTokens": 5000,
+      "meanTermRecall": 0.9167,
+      "structuralCeiling": 0.8824,
+      "behavioralCeiling": 0.8571
+    },
+    "neuron_html": {
+      "questionsFullyCovered": 4,
+      "n": 24,
+      "accuracyCeiling": 0.1667,
+      "meanTokens": 1449,
+      "meanTermRecall": 0.3403,
+      "structuralCeiling": 0.1176,
+      "behavioralCeiling": 0.2857
+    },
+    "neuron_stripped": {
+      "questionsFullyCovered": 4,
+      "n": 24,
+      "accuracyCeiling": 0.1667,
+      "meanTokens": 295,
+      "meanTermRecall": 0.3194,
+      "structuralCeiling": 0.1176,
+      "behavioralCeiling": 0.2857
+    },
+    "strip_prompt_240": {
+      "questionsFullyCovered": 2,
+      "n": 24,
+      "accuracyCeiling": 0.0833,
+      "meanTokens": 55,
+      "meanTermRecall": 0.1181,
+      "structuralCeiling": 0.1176,
+      "behavioralCeiling": 0
+    },
+    "tldr": {
+      "questionsFullyCovered": 0,
+      "n": 24,
+      "accuracyCeiling": 0,
+      "meanTokens": 11,
+      "meanTermRecall": 0.0243,
+      "structuralCeiling": 0,
+      "behavioralCeiling": 0
+    },
+    "architecture": {
+      "questionsFullyCovered": 2,
+      "n": 24,
+      "accuracyCeiling": 0.0833,
+      "meanTokens": 69,
+      "meanTermRecall": 0.1806,
+      "structuralCeiling": 0.0588,
+      "behavioralCeiling": 0.1429
+    },
+    "children": {
+      "questionsFullyCovered": 3,
+      "n": 24,
+      "accuracyCeiling": 0.125,
+      "meanTokens": 98,
+      "meanTermRecall": 0.2396,
+      "structuralCeiling": 0.0588,
+      "behavioralCeiling": 0.2857
+    },
+    "symbol_anchor": {
+      "questionsFullyCovered": 2,
+      "n": 24,
+      "accuracyCeiling": 0.0833,
+      "meanTokens": 6,
+      "meanTermRecall": 0.1458,
+      "structuralCeiling": 0,
+      "behavioralCeiling": 0.2857
+    },
+    "source_fn_window": {
+      "questionsFullyCovered": 7,
+      "n": 24,
+      "accuracyCeiling": 0.2917,
+      "meanTokens": 96,
+      "meanTermRecall": 0.4167,
+      "structuralCeiling": 0.1176,
+      "behavioralCeiling": 0.7143
+    },
+    "css_sig_plus_body": {
+      "questionsFullyCovered": 7,
+      "n": 24,
+      "accuracyCeiling": 0.2917,
+      "meanTokens": 102,
+      "meanTermRecall": 0.4167,
+      "structuralCeiling": 0.1176,
+      "behavioralCeiling": 0.7143
+    }
+  },
+  "rows": [
+    {
+      "id": "q01",
+      "category": "behavioral",
+      "file": "engine/src/graph/ast-parser.ts",
+      "symbol": "parseFile",
+      "terms": [
+        "tree.delete",
+        "finally"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 9027,
+          "chars": 36106,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 2210,
+          "chars": 8840,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "tree.delete",
+            "finally"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 440,
+          "chars": 1758,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "tree.delete",
+            "finally"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "tree.delete",
+            "finally"
+          ]
+        },
+        "tldr": {
+          "tokens": 12,
+          "chars": 46,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "tree.delete",
+            "finally"
+          ]
+        },
+        "architecture": {
+          "tokens": 36,
+          "chars": 144,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "tree.delete",
+            "finally"
+          ]
+        },
+        "children": {
+          "tokens": 180,
+          "chars": 720,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "tree.delete",
+            "finally"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 7,
+          "chars": 26,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "tree.delete",
+            "finally"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 600,
+          "chars": 2397,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "css_sig_plus_body": {
+          "tokens": 606,
+          "chars": 2424,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        }
+      }
+    },
+    {
+      "id": "q02",
+      "category": "behavioral",
+      "file": "engine/src/util/config.ts",
+      "symbol": "getConfig",
+      "terms": [
+        "cache-migrated",
+        "marker"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 2271,
+          "chars": 9084,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1240,
+          "chars": 4958,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "cache-migrated"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 236,
+          "chars": 944,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "cache-migrated"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "cache-migrated",
+            "marker"
+          ]
+        },
+        "tldr": {
+          "tokens": 11,
+          "chars": 44,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "cache-migrated",
+            "marker"
+          ]
+        },
+        "architecture": {
+          "tokens": 39,
+          "chars": 153,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "cache-migrated",
+            "marker"
+          ]
+        },
+        "children": {
+          "tokens": 69,
+          "chars": 273,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "cache-migrated"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 5,
+          "chars": 18,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "cache-migrated",
+            "marker"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 19,
+          "chars": 74,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "css_sig_plus_body": {
+          "tokens": 24,
+          "chars": 93,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        }
+      }
+    },
+    {
+      "id": "q03",
+      "category": "behavioral",
+      "file": "engine/src/graph/backlinks.ts",
+      "symbol": "parseTargetId",
+      "terms": [
+        "1658",
+        "wiki"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 2298,
+          "chars": 9191,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "1658"
+          ]
+        },
+        "neuron_html": {
+          "tokens": 1097,
+          "chars": 4385,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "1658",
+            "wiki"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 200,
+          "chars": 797,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "1658",
+            "wiki"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "1658",
+            "wiki"
+          ]
+        },
+        "tldr": {
+          "tokens": 11,
+          "chars": 44,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "1658",
+            "wiki"
+          ]
+        },
+        "architecture": {
+          "tokens": 49,
+          "chars": 196,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "1658",
+            "wiki"
+          ]
+        },
+        "children": {
+          "tokens": 42,
+          "chars": 168,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "1658",
+            "wiki"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 5,
+          "chars": 19,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "1658",
+            "wiki"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 72,
+          "chars": 288,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "1658",
+            "wiki"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 77,
+          "chars": 308,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "1658",
+            "wiki"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q04",
+      "category": "behavioral",
+      "file": "engine/src/annotator/blocks/composers/file-neuron.ts",
+      "symbol": "fileNeuronArticleId",
+      "terms": [
+        "fileNeuronArticleId"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 6980,
+          "chars": 27918,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1876,
+          "chars": 7501,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_stripped": {
+          "tokens": 414,
+          "chars": 1655,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "fileNeuronArticleId"
+          ]
+        },
+        "tldr": {
+          "tokens": 12,
+          "chars": 45,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "fileNeuronArticleId"
+          ]
+        },
+        "architecture": {
+          "tokens": 84,
+          "chars": 333,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "children": {
+          "tokens": 154,
+          "chars": 615,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "symbol_anchor": {
+          "tokens": 8,
+          "chars": 32,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "source_fn_window": {
+          "tokens": 65,
+          "chars": 260,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "css_sig_plus_body": {
+          "tokens": 74,
+          "chars": 293,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        }
+      }
+    },
+    {
+      "id": "q05",
+      "category": "structural",
+      "file": "engine/src/annotator/blocks/composers/file-neuron.ts",
+      "symbol": "toAnchorId",
+      "terms": [
+        "lowercase",
+        "hyphen"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 6980,
+          "chars": 27918,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1876,
+          "chars": 7501,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "lowercase",
+            "hyphen"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 414,
+          "chars": 1655,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "lowercase",
+            "hyphen"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "lowercase",
+            "hyphen"
+          ]
+        },
+        "tldr": {
+          "tokens": 12,
+          "chars": 45,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "lowercase",
+            "hyphen"
+          ]
+        },
+        "architecture": {
+          "tokens": 84,
+          "chars": 333,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "lowercase",
+            "hyphen"
+          ]
+        },
+        "children": {
+          "tokens": 154,
+          "chars": 615,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "lowercase",
+            "hyphen"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 4,
+          "chars": 16,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "lowercase",
+            "hyphen"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 36,
+          "chars": 141,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "hyphen"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 40,
+          "chars": 158,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "hyphen"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q06",
+      "category": "structural",
+      "file": "engine/src/graph/code-scanner.ts",
+      "symbol": "MAX_FILE_NEURONS_PER_PROJECT",
+      "terms": [
+        "400",
+        "LAZYBRAIN_MAX_FILE_NEURONS"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 7754,
+          "chars": 31014,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1868,
+          "chars": 7472,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "LAZYBRAIN_MAX_FILE_NEURONS"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 411,
+          "chars": 1642,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "400",
+            "LAZYBRAIN_MAX_FILE_NEURONS"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "400",
+            "LAZYBRAIN_MAX_FILE_NEURONS"
+          ]
+        },
+        "tldr": {
+          "tokens": 12,
+          "chars": 45,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "400",
+            "LAZYBRAIN_MAX_FILE_NEURONS"
+          ]
+        },
+        "architecture": {
+          "tokens": 90,
+          "chars": 357,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "400",
+            "LAZYBRAIN_MAX_FILE_NEURONS"
+          ]
+        },
+        "children": {
+          "tokens": 154,
+          "chars": 616,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "400",
+            "LAZYBRAIN_MAX_FILE_NEURONS"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "400",
+            "LAZYBRAIN_MAX_FILE_NEURONS"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 29,
+          "chars": 115,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "css_sig_plus_body": {
+          "tokens": 29,
+          "chars": 115,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        }
+      }
+    },
+    {
+      "id": "q07",
+      "category": "behavioral",
+      "file": "engine/src/retrieval/router.ts",
+      "symbol": "pickLevel",
+      "terms": [
+        "pickLevel"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 3888,
+          "chars": 15549,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1377,
+          "chars": 5506,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_stripped": {
+          "tokens": 279,
+          "chars": 1113,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "pickLevel"
+          ]
+        },
+        "tldr": {
+          "tokens": 11,
+          "chars": 44,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "pickLevel"
+          ]
+        },
+        "architecture": {
+          "tokens": 106,
+          "chars": 421,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "pickLevel"
+          ]
+        },
+        "children": {
+          "tokens": 70,
+          "chars": 278,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "symbol_anchor": {
+          "tokens": 6,
+          "chars": 22,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "source_fn_window": {
+          "tokens": 10,
+          "chars": 37,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "css_sig_plus_body": {
+          "tokens": 15,
+          "chars": 60,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        }
+      }
+    },
+    {
+      "id": "q08",
+      "category": "structural",
+      "file": "engine/src/commands/inject-context/markers.ts",
+      "symbol": "NudgeStyle",
+      "terms": [
+        "skill",
+        "tool",
+        "none"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 2024,
+          "chars": 8094,
+          "present": 3,
+          "total": 3,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1075,
+          "chars": 4300,
+          "present": 1,
+          "total": 3,
+          "ratio": 0.3333333333333333,
+          "all": false,
+          "missing": [
+            "skill",
+            "tool"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 189,
+          "chars": 754,
+          "present": 1,
+          "total": 3,
+          "ratio": 0.3333333333333333,
+          "all": false,
+          "missing": [
+            "skill",
+            "tool"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 3,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "skill",
+            "tool",
+            "none"
+          ]
+        },
+        "tldr": {
+          "tokens": 11,
+          "chars": 44,
+          "present": 0,
+          "total": 3,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "skill",
+            "tool",
+            "none"
+          ]
+        },
+        "architecture": {
+          "tokens": 48,
+          "chars": 191,
+          "present": 1,
+          "total": 3,
+          "ratio": 0.3333333333333333,
+          "all": false,
+          "missing": [
+            "skill",
+            "tool"
+          ]
+        },
+        "children": {
+          "tokens": 46,
+          "chars": 184,
+          "present": 0,
+          "total": 3,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "skill",
+            "tool",
+            "none"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 3,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "skill",
+            "tool",
+            "none"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 258,
+          "chars": 1032,
+          "present": 0,
+          "total": 3,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "skill",
+            "tool",
+            "none"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 258,
+          "chars": 1032,
+          "present": 0,
+          "total": 3,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "skill",
+            "tool",
+            "none"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q09",
+      "category": "structural",
+      "file": "engine/src/store/upsert.ts",
+      "symbol": "isRicherBody",
+      "terms": [
+        "isRicherBody",
+        "mergeUpsertHtml"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 1137,
+          "chars": 4545,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 857,
+          "chars": 3425,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_stripped": {
+          "tokens": 146,
+          "chars": 584,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "tldr": {
+          "tokens": 11,
+          "chars": 43,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "isRicherBody",
+            "mergeUpsertHtml"
+          ]
+        },
+        "architecture": {
+          "tokens": 20,
+          "chars": 78,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "children": {
+          "tokens": 41,
+          "chars": 161,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "symbol_anchor": {
+          "tokens": 12,
+          "chars": 48,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "mergeUpsertHtml"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 64,
+          "chars": 255,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "mergeUpsertHtml"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 76,
+          "chars": 304,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "mergeUpsertHtml"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q10",
+      "category": "behavioral",
+      "file": "engine/src/commands/dream.ts",
+      "symbol": "hasNoiseExemptTag",
+      "terms": [
+        "mission",
+        "agent",
+        "skill",
+        "hasNoiseExemptTag"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 10823,
+          "chars": 43291,
+          "present": 4,
+          "total": 4,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 3295,
+          "chars": 13180,
+          "present": 2,
+          "total": 4,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "mission",
+            "skill"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 733,
+          "chars": 2931,
+          "present": 2,
+          "total": 4,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "mission",
+            "skill"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 4,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "mission",
+            "agent",
+            "skill",
+            "hasNoiseExemptTag"
+          ]
+        },
+        "tldr": {
+          "tokens": 12,
+          "chars": 46,
+          "present": 0,
+          "total": 4,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "mission",
+            "agent",
+            "skill",
+            "hasNoiseExemptTag"
+          ]
+        },
+        "architecture": {
+          "tokens": 173,
+          "chars": 691,
+          "present": 2,
+          "total": 4,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "mission",
+            "skill"
+          ]
+        },
+        "children": {
+          "tokens": 277,
+          "chars": 1107,
+          "present": 1,
+          "total": 4,
+          "ratio": 0.25,
+          "all": false,
+          "missing": [
+            "mission",
+            "agent",
+            "skill"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 8,
+          "chars": 30,
+          "present": 1,
+          "total": 4,
+          "ratio": 0.25,
+          "all": false,
+          "missing": [
+            "mission",
+            "agent",
+            "skill"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 54,
+          "chars": 216,
+          "present": 1,
+          "total": 4,
+          "ratio": 0.25,
+          "all": false,
+          "missing": [
+            "mission",
+            "agent",
+            "skill"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 62,
+          "chars": 247,
+          "present": 1,
+          "total": 4,
+          "ratio": 0.25,
+          "all": false,
+          "missing": [
+            "mission",
+            "agent",
+            "skill"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q11",
+      "category": "structural",
+      "file": "engine/src/commands/repair.ts",
+      "symbol": "runRepairUnInvalidateNoise",
+      "terms": [
+        "un-invalidate-noise",
+        "mission,agent,skill"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 2233,
+          "chars": 8929,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1170,
+          "chars": 4680,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "un-invalidate-noise",
+            "mission,agent,skill"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 237,
+          "chars": 948,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "un-invalidate-noise",
+            "mission,agent,skill"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "un-invalidate-noise",
+            "mission,agent,skill"
+          ]
+        },
+        "tldr": {
+          "tokens": 11,
+          "chars": 44,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "un-invalidate-noise",
+            "mission,agent,skill"
+          ]
+        },
+        "architecture": {
+          "tokens": 70,
+          "chars": 277,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "un-invalidate-noise",
+            "mission,agent,skill"
+          ]
+        },
+        "children": {
+          "tokens": 58,
+          "chars": 230,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "un-invalidate-noise",
+            "mission,agent,skill"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 10,
+          "chars": 39,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "un-invalidate-noise",
+            "mission,agent,skill"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 381,
+          "chars": 1521,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "un-invalidate-noise",
+            "mission,agent,skill"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 391,
+          "chars": 1561,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "un-invalidate-noise",
+            "mission,agent,skill"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q12",
+      "category": "structural",
+      "file": "engine/src/util/concurrency.ts",
+      "symbol": "mapLimit",
+      "terms": [
+        "input order",
+        "chunk"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 605,
+          "chars": 2419,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "input order"
+          ]
+        },
+        "neuron_html": {
+          "tokens": 767,
+          "chars": 3065,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "input order",
+            "chunk"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 134,
+          "chars": 535,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "input order",
+            "chunk"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "input order",
+            "chunk"
+          ]
+        },
+        "tldr": {
+          "tokens": 11,
+          "chars": 43,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "input order",
+            "chunk"
+          ]
+        },
+        "architecture": {
+          "tokens": 20,
+          "chars": 80,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "input order",
+            "chunk"
+          ]
+        },
+        "children": {
+          "tokens": 26,
+          "chars": 102,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "input order",
+            "chunk"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 9,
+          "chars": 33,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "input order",
+            "chunk"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 129,
+          "chars": 515,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "input order"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 138,
+          "chars": 549,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "input order"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q13",
+      "category": "structural",
+      "file": "engine/src/util/concurrency.ts",
+      "symbol": "resolveConcurrencyEnv",
+      "terms": [
+        "fallback",
+        "min",
+        "max",
+        "clamp"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 605,
+          "chars": 2419,
+          "present": 4,
+          "total": 4,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 767,
+          "chars": 3065,
+          "present": 3,
+          "total": 4,
+          "ratio": 0.75,
+          "all": false,
+          "missing": [
+            "clamp"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 134,
+          "chars": 535,
+          "present": 3,
+          "total": 4,
+          "ratio": 0.75,
+          "all": false,
+          "missing": [
+            "clamp"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 4,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "fallback",
+            "min",
+            "max",
+            "clamp"
+          ]
+        },
+        "tldr": {
+          "tokens": 11,
+          "chars": 43,
+          "present": 0,
+          "total": 4,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "fallback",
+            "min",
+            "max",
+            "clamp"
+          ]
+        },
+        "architecture": {
+          "tokens": 20,
+          "chars": 80,
+          "present": 0,
+          "total": 4,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "fallback",
+            "min",
+            "max",
+            "clamp"
+          ]
+        },
+        "children": {
+          "tokens": 26,
+          "chars": 102,
+          "present": 3,
+          "total": 4,
+          "ratio": 0.75,
+          "all": false,
+          "missing": [
+            "clamp"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 15,
+          "chars": 58,
+          "present": 3,
+          "total": 4,
+          "ratio": 0.75,
+          "all": false,
+          "missing": [
+            "clamp"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 78,
+          "chars": 311,
+          "present": 3,
+          "total": 4,
+          "ratio": 0.75,
+          "all": false,
+          "missing": [
+            "clamp"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 93,
+          "chars": 370,
+          "present": 3,
+          "total": 4,
+          "ratio": 0.75,
+          "all": false,
+          "missing": [
+            "clamp"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q14",
+      "category": "structural",
+      "file": "engine/src/util/concurrency.ts",
+      "symbol": "resolveConcurrencyEnv",
+      "terms": [
+        "LAZYBRAIN_IMPORT_CONCURRENCY",
+        "5",
+        "12"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 605,
+          "chars": 2419,
+          "present": 0,
+          "total": 3,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "LAZYBRAIN_IMPORT_CONCURRENCY",
+            "5",
+            "12"
+          ]
+        },
+        "neuron_html": {
+          "tokens": 767,
+          "chars": 3065,
+          "present": 1,
+          "total": 3,
+          "ratio": 0.3333333333333333,
+          "all": false,
+          "missing": [
+            "LAZYBRAIN_IMPORT_CONCURRENCY",
+            "12"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 134,
+          "chars": 535,
+          "present": 1,
+          "total": 3,
+          "ratio": 0.3333333333333333,
+          "all": false,
+          "missing": [
+            "LAZYBRAIN_IMPORT_CONCURRENCY",
+            "12"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 1,
+          "total": 3,
+          "ratio": 0.3333333333333333,
+          "all": false,
+          "missing": [
+            "LAZYBRAIN_IMPORT_CONCURRENCY",
+            "12"
+          ]
+        },
+        "tldr": {
+          "tokens": 11,
+          "chars": 43,
+          "present": 1,
+          "total": 3,
+          "ratio": 0.3333333333333333,
+          "all": false,
+          "missing": [
+            "LAZYBRAIN_IMPORT_CONCURRENCY",
+            "12"
+          ]
+        },
+        "architecture": {
+          "tokens": 20,
+          "chars": 80,
+          "present": 0,
+          "total": 3,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "LAZYBRAIN_IMPORT_CONCURRENCY",
+            "5",
+            "12"
+          ]
+        },
+        "children": {
+          "tokens": 26,
+          "chars": 102,
+          "present": 0,
+          "total": 3,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "LAZYBRAIN_IMPORT_CONCURRENCY",
+            "5",
+            "12"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 15,
+          "chars": 58,
+          "present": 0,
+          "total": 3,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "LAZYBRAIN_IMPORT_CONCURRENCY",
+            "5",
+            "12"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 78,
+          "chars": 311,
+          "present": 0,
+          "total": 3,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "LAZYBRAIN_IMPORT_CONCURRENCY",
+            "5",
+            "12"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 93,
+          "chars": 370,
+          "present": 0,
+          "total": 3,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "LAZYBRAIN_IMPORT_CONCURRENCY",
+            "5",
+            "12"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q15",
+      "category": "structural",
+      "file": "engine/src/retrieval/router.ts",
+      "symbol": "pickLevel",
+      "terms": [
+        "5",
+        "2"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 3888,
+          "chars": 15549,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1377,
+          "chars": 5506,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_stripped": {
+          "tokens": 279,
+          "chars": 1113,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "tldr": {
+          "tokens": 11,
+          "chars": 44,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "5",
+            "2"
+          ]
+        },
+        "architecture": {
+          "tokens": 106,
+          "chars": 421,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "5"
+          ]
+        },
+        "children": {
+          "tokens": 70,
+          "chars": 278,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "5",
+            "2"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 6,
+          "chars": 22,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "5",
+            "2"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 10,
+          "chars": 37,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "5",
+            "2"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 15,
+          "chars": 60,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "5",
+            "2"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q16",
+      "category": "structural",
+      "file": "engine/src/retrieval/router.ts",
+      "symbol": "pickLevel",
+      "terms": [
+        "6-15"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 3888,
+          "chars": 15549,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1377,
+          "chars": 5506,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "6-15"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 279,
+          "chars": 1113,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "6-15"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "6-15"
+          ]
+        },
+        "tldr": {
+          "tokens": 11,
+          "chars": 44,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "6-15"
+          ]
+        },
+        "architecture": {
+          "tokens": 106,
+          "chars": 421,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "6-15"
+          ]
+        },
+        "children": {
+          "tokens": 70,
+          "chars": 278,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "6-15"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 6,
+          "chars": 22,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "6-15"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 10,
+          "chars": 37,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "6-15"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 15,
+          "chars": 60,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "6-15"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q17",
+      "category": "structural",
+      "file": "engine/src/retrieval/router.ts",
+      "symbol": "dispatchLevel",
+      "terms": [
+        "l1.ts",
+        "l2.ts",
+        "l3.ts",
+        "l4.ts",
+        "hybrid.ts"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 3888,
+          "chars": 15549,
+          "present": 5,
+          "total": 5,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1377,
+          "chars": 5506,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "l1.ts",
+            "l2.ts",
+            "l3.ts",
+            "l4.ts",
+            "hybrid.ts"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 279,
+          "chars": 1113,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "l1.ts",
+            "l2.ts",
+            "l3.ts",
+            "l4.ts",
+            "hybrid.ts"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "l1.ts",
+            "l2.ts",
+            "l3.ts",
+            "l4.ts",
+            "hybrid.ts"
+          ]
+        },
+        "tldr": {
+          "tokens": 11,
+          "chars": 44,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "l1.ts",
+            "l2.ts",
+            "l3.ts",
+            "l4.ts",
+            "hybrid.ts"
+          ]
+        },
+        "architecture": {
+          "tokens": 106,
+          "chars": 421,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "l1.ts",
+            "l2.ts",
+            "l3.ts",
+            "l4.ts",
+            "hybrid.ts"
+          ]
+        },
+        "children": {
+          "tokens": 70,
+          "chars": 278,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "l1.ts",
+            "l2.ts",
+            "l3.ts",
+            "l4.ts",
+            "hybrid.ts"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 10,
+          "chars": 38,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "l1.ts",
+            "l2.ts",
+            "l3.ts",
+            "l4.ts",
+            "hybrid.ts"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 97,
+          "chars": 385,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "l1.ts",
+            "l2.ts",
+            "l3.ts",
+            "l4.ts",
+            "hybrid.ts"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 106,
+          "chars": 424,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "l1.ts",
+            "l2.ts",
+            "l3.ts",
+            "l4.ts",
+            "hybrid.ts"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q18",
+      "category": "structural",
+      "file": "engine/src/cli/register-core.ts",
+      "symbol": "query",
+      "terms": [
+        "L1",
+        "deterministic"
+      ],
+      "neuronFound": false,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 3586,
+          "chars": 14342,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "L1",
+            "deterministic"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "L1",
+            "deterministic"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "L1",
+            "deterministic"
+          ]
+        },
+        "tldr": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "L1",
+            "deterministic"
+          ]
+        },
+        "architecture": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "L1",
+            "deterministic"
+          ]
+        },
+        "children": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "L1",
+            "deterministic"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "L1",
+            "deterministic"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 40,
+          "chars": 160,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "L1",
+            "deterministic"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 40,
+          "chars": 160,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "L1",
+            "deterministic"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q19",
+      "category": "structural",
+      "file": "engine/src/cli/register-core.ts",
+      "symbol": "inject-context",
+      "terms": [
+        "session",
+        "turn",
+        "marker",
+        "highlights",
+        "3000"
+      ],
+      "neuronFound": false,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 3586,
+          "chars": 14342,
+          "present": 5,
+          "total": 5,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "session",
+            "turn",
+            "marker",
+            "highlights",
+            "3000"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "session",
+            "turn",
+            "marker",
+            "highlights",
+            "3000"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "session",
+            "turn",
+            "marker",
+            "highlights",
+            "3000"
+          ]
+        },
+        "tldr": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "session",
+            "turn",
+            "marker",
+            "highlights",
+            "3000"
+          ]
+        },
+        "architecture": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "session",
+            "turn",
+            "marker",
+            "highlights",
+            "3000"
+          ]
+        },
+        "children": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "session",
+            "turn",
+            "marker",
+            "highlights",
+            "3000"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "session",
+            "turn",
+            "marker",
+            "highlights",
+            "3000"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 19,
+          "chars": 74,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "session",
+            "turn",
+            "marker",
+            "highlights",
+            "3000"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 19,
+          "chars": 74,
+          "present": 0,
+          "total": 5,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "session",
+            "turn",
+            "marker",
+            "highlights",
+            "3000"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q20",
+      "category": "structural",
+      "file": "src/cli/lib/agentLoop.ts",
+      "symbol": "claudeCall",
+      "terms": [
+        "--output-format json",
+        "--safe-mode"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 7711,
+          "chars": 30841,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1951,
+          "chars": 7801,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "--output-format json",
+            "--safe-mode"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 386,
+          "chars": 1542,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "--output-format json",
+            "--safe-mode"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "--output-format json",
+            "--safe-mode"
+          ]
+        },
+        "tldr": {
+          "tokens": 12,
+          "chars": 45,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "--output-format json",
+            "--safe-mode"
+          ]
+        },
+        "architecture": {
+          "tokens": 82,
+          "chars": 325,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "--output-format json",
+            "--safe-mode"
+          ]
+        },
+        "children": {
+          "tokens": 147,
+          "chars": 585,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "--output-format json",
+            "--safe-mode"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 7,
+          "chars": 27,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "--output-format json",
+            "--safe-mode"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 9,
+          "chars": 33,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "--output-format json",
+            "--safe-mode"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 16,
+          "chars": 61,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "--output-format json",
+            "--safe-mode"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q21",
+      "category": "structural",
+      "file": "src/cli/lib/agentLoop.ts",
+      "symbol": "API_KEY",
+      "terms": [
+        "DEEPSEEK_API_KEY",
+        "api.deepseek.com"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 7711,
+          "chars": 30841,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1951,
+          "chars": 7801,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "DEEPSEEK_API_KEY",
+            "api.deepseek.com"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 386,
+          "chars": 1542,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "DEEPSEEK_API_KEY",
+            "api.deepseek.com"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "DEEPSEEK_API_KEY",
+            "api.deepseek.com"
+          ]
+        },
+        "tldr": {
+          "tokens": 12,
+          "chars": 45,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "DEEPSEEK_API_KEY",
+            "api.deepseek.com"
+          ]
+        },
+        "architecture": {
+          "tokens": 82,
+          "chars": 325,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "DEEPSEEK_API_KEY",
+            "api.deepseek.com"
+          ]
+        },
+        "children": {
+          "tokens": 147,
+          "chars": 585,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "DEEPSEEK_API_KEY",
+            "api.deepseek.com"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "DEEPSEEK_API_KEY",
+            "api.deepseek.com"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 56,
+          "chars": 224,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "DEEPSEEK_API_KEY",
+            "api.deepseek.com"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 56,
+          "chars": 224,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "DEEPSEEK_API_KEY",
+            "api.deepseek.com"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q22",
+      "category": "behavioral",
+      "file": "src/cli/lib/agentLoop.ts",
+      "symbol": "AgentLoopResult",
+      "terms": [
+        "finish"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 7711,
+          "chars": 30841,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 1951,
+          "chars": 7801,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "finish"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 386,
+          "chars": 1542,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "finish"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "finish"
+          ]
+        },
+        "tldr": {
+          "tokens": 12,
+          "chars": 45,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "finish"
+          ]
+        },
+        "architecture": {
+          "tokens": 82,
+          "chars": 325,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "finish"
+          ]
+        },
+        "children": {
+          "tokens": 147,
+          "chars": 585,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "finish"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 1,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "finish"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 101,
+          "chars": 401,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "css_sig_plus_body": {
+          "tokens": 101,
+          "chars": 401,
+          "present": 1,
+          "total": 1,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        }
+      }
+    },
+    {
+      "id": "q23",
+      "category": "structural",
+      "file": "engine/src/commands/inject-context/sections.ts",
+      "symbol": "TYPE_ICON",
+      "terms": [
+        "decision",
+        "D",
+        "episodic",
+        "E"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 10406,
+          "chars": 41623,
+          "present": 4,
+          "total": 4,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 2271,
+          "chars": 9084,
+          "present": 3,
+          "total": 4,
+          "ratio": 0.75,
+          "all": false,
+          "missing": [
+            "episodic"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 488,
+          "chars": 1952,
+          "present": 3,
+          "total": 4,
+          "ratio": 0.75,
+          "all": false,
+          "missing": [
+            "episodic"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 2,
+          "total": 4,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "decision",
+            "episodic"
+          ]
+        },
+        "tldr": {
+          "tokens": 12,
+          "chars": 45,
+          "present": 1,
+          "total": 4,
+          "ratio": 0.25,
+          "all": false,
+          "missing": [
+            "decision",
+            "D",
+            "episodic"
+          ]
+        },
+        "architecture": {
+          "tokens": 118,
+          "chars": 471,
+          "present": 2,
+          "total": 4,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "decision",
+            "episodic"
+          ]
+        },
+        "children": {
+          "tokens": 184,
+          "chars": 735,
+          "present": 3,
+          "total": 4,
+          "ratio": 0.75,
+          "all": false,
+          "missing": [
+            "episodic"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 0,
+          "chars": 0,
+          "present": 0,
+          "total": 4,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "decision",
+            "D",
+            "episodic",
+            "E"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 34,
+          "chars": 133,
+          "present": 4,
+          "total": 4,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "css_sig_plus_body": {
+          "tokens": 34,
+          "chars": 133,
+          "present": 4,
+          "total": 4,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        }
+      }
+    },
+    {
+      "id": "q24",
+      "category": "structural",
+      "file": "engine/src/commands/inject-context/sections.ts",
+      "symbol": "buildMainPage",
+      "terms": [
+        "topic",
+        "_general"
+      ],
+      "neuronFound": true,
+      "fnWindowFound": true,
+      "layers": {
+        "source": {
+          "tokens": 10406,
+          "chars": 41623,
+          "present": 2,
+          "total": 2,
+          "ratio": 1,
+          "all": true,
+          "missing": []
+        },
+        "neuron_html": {
+          "tokens": 2271,
+          "chars": 9084,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "_general"
+          ]
+        },
+        "neuron_stripped": {
+          "tokens": 488,
+          "chars": 1952,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "_general"
+          ]
+        },
+        "strip_prompt_240": {
+          "tokens": 60,
+          "chars": 240,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "topic",
+            "_general"
+          ]
+        },
+        "tldr": {
+          "tokens": 12,
+          "chars": 45,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "topic",
+            "_general"
+          ]
+        },
+        "architecture": {
+          "tokens": 118,
+          "chars": 471,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "_general"
+          ]
+        },
+        "children": {
+          "tokens": 184,
+          "chars": 735,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "_general"
+          ]
+        },
+        "symbol_anchor": {
+          "tokens": 9,
+          "chars": 33,
+          "present": 0,
+          "total": 2,
+          "ratio": 0,
+          "all": false,
+          "missing": [
+            "topic",
+            "_general"
+          ]
+        },
+        "source_fn_window": {
+          "tokens": 59,
+          "chars": 236,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "_general"
+          ]
+        },
+        "css_sig_plus_body": {
+          "tokens": 68,
+          "chars": 270,
+          "present": 1,
+          "total": 2,
+          "ratio": 0.5,
+          "all": false,
+          "missing": [
+            "_general"
+          ]
+        }
+      }
+    }
+  ]
+}

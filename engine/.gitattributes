@@ -1,0 +1,16 @@
+# Normalize line endings to LF in the working tree.
+# This prevents biome from fighting Windows autocrlf (CRLF vs LF errors).
+* text=auto eol=lf
+
+# Do not process vendored minified bundles.
+*.min.js -text
+
+# Binary assets — never mangle.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.sqlite binary

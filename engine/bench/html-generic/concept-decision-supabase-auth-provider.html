@@ -1,0 +1,24 @@
+<article id="concept-decision-supabase-auth-provider">
+
+  <header>
+    <h1>Decision: Use Supabase Auth as the auth provider</h1>
+    <dl>
+      <dt>Kind</dt><dd>decision</dd>
+      <dt>Confidence</dt><dd>0.92</dd>
+      <dt>Date</dt><dd>2026-05-08</dd>
+    </dl>
+  </header>
+
+  <div><a href="#/acme">Acme</a> / <a href="#/acme/concepts">Concepts</a></div>
+
+  <section>
+    <p>Chose Supabase Auth over Auth0 for unified auth + database provider model.</p>
+  </section>
+
+  <section>
+    <p>Decision recorded 2026-05-08. Supabase Auth provides row-level security (RLS) integration directly with the database, removing the need for a separate service. Auth0 would add a monthly cost and require token bridging between auth and database layers. Session management via httpOnly cookies, 1-hour TTL with silent refresh.</p>
+    <dl>
+      <dt>Kind</dt><dd>decision</dd>
+    </dl>
+  </section>
+</article>

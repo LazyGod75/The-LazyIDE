@@ -1,0 +1,66 @@
+{
+  "questionId": "q23",
+  "category": "structural",
+  "variantId": "flat_rag_800",
+  "configId": "flat_rag",
+  "budget": 800,
+  "injectedTokens": 764,
+  "configMeta": {
+    "tokenBudget": 800,
+    "chunksConsidered": 865,
+    "chunksPicked": 2,
+    "queryTokens": [
+      "engine",
+      "src",
+      "commands",
+      "inject-context",
+      "sections.ts",
+      "single-letter",
+      "icon",
+      "compactline",
+      "use",
+      "each",
+      "five",
+      "note",
+      "types",
+      "decision",
+      "episodic",
+      "reference",
+      "semantic",
+      "procedural"
+    ]
+  },
+  "latencyMs": 6683,
+  "answer": "The context provided does not contain `engine/src/commands/inject-context/sections.ts` or information about the `compactLine()` function and its single-letter icons for note types. I cannot answer this question from the given context.\n\nTo find this information, I would need to read the actual `engine/src/commands/inject-context/sections.ts` file. Would you like me to do that?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 335,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 5920,
+    "costUsd": 0.0168294
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 2,
+    "totalTerms": 4,
+    "hits": [
+      {
+        "term": "decision",
+        "present": false
+      },
+      {
+        "term": "D",
+        "present": true
+      },
+      {
+        "term": "episodic",
+        "present": false
+      },
+      {
+        "term": "E",
+        "present": true
+      }
+    ]
+  }
+}

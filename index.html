@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lazy</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      window.__lazyErrors = [];
+      window.addEventListener('error', (e) => {
+        window.__lazyErrors.push({ type: 'error', message: e.message, filename: e.filename, line: e.lineno, stack: e.error?.stack?.slice(0, 800) });
+      });
+      window.addEventListener('unhandledrejection', (e) => {
+        window.__lazyErrors.push({ type: 'rejection', reason: String(e.reason), stack: e.reason?.stack?.slice(0, 800) });
+      });
+      const origErr = console.error;
+      console.error = function(...args) {
+        window.__lazyErrors.push({ type: 'console.error', msg: args.map(a => typeof a === 'string' ? a : (a?.message || a?.stack || String(a))).join(' ').slice(0, 800) });
+        origErr.apply(console, args);
+      };
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

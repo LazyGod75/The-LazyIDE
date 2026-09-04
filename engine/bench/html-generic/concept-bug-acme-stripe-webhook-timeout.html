@@ -1,0 +1,29 @@
+<article id="concept-bug-acme-stripe-webhook-timeout">
+
+  <header>
+    <h1>Bug: Stripe webhook timeout on subscription renewal</h1>
+    <dl>
+      <dt>Kind</dt><dd>bug</dd>
+      <dt>Confidence</dt><dd>0.7</dd>
+      <dt>Date</dt><dd>2026-05-14</dd>
+    </dl>
+  </header>
+
+  <div><a href="#/acme">Acme</a> / <a href="#/acme/concepts">Concepts</a></div>
+
+  <section>
+    <p>Stripe webhook handler times out on subscription renewal events when the Supabase write takes more than 5 seconds.</p>
+  </section>
+
+  <section>
+    <p>Bug recorded 2026-05-14. Stripe requires webhook acknowledgement within 30 seconds, but the payment confirmation handler in onboarding.jsx triggers a synchronous database write with no timeout guard. When the Supabase connection pool is saturated, the webhook response is delayed past Stripe's limit, causing duplicate renewal events.</p>
+    <p>Fix: move the database write to a background queue and respond to Stripe immediately with HTTP 200.</p>
+  </section>
+
+  <section>
+    <h3>Related neurons</h3>
+    <ul>
+      <li><a href="#/file:acme-app/app/stripe/onboarding.jsx">acme-app/app/stripe/onboarding.jsx</a></li>
+    </ul>
+  </section>
+</article>

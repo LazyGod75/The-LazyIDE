@@ -1,0 +1,106 @@
+[package]
+name = "lazy-ide"
+version = "0.1.19"
+description = "Lazy IDE — AI-native code editor with LazyBrain"
+authors = ["David"]
+license = "MIT"
+repository = "https://github.com/david/lazy-ide"
+edition = "2021"
+rust-version = "1.77.2"
+default-run = "lazy-ide"  # second bin lazy_runnerd requires an explicit default
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "lazy_runnerd"
+path = "src/bin/lazy_runnerd.rs"
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.11.3", features = [] }
+tauri-plugin-log = "2"
+portable-pty = "0.8"
+uuid = { version = "1", features = ["v4"] }
+gix = { version = "0.70", default-features = false, features = ["revision", "status"] }
+tempfile = "3"
+reqwest = { version = "0.12", features = ["blocking", "stream", "json"] }
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread"] }
+futures-util = "0.3"
+tungstenite = { version = "0.24", features = ["native-tls"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-os = "2"
+tauri-plugin-updater = { version = "2", optional = false }
+cron = "0.12"
+urlencoding = "2"
+regex = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+tauri-plugin-deep-link = "2"
+tauri-plugin-process = "2"
+tauri-plugin-shell = "2"
+sha1_smol = "1"
+base64 = "0.22"
+sysinfo = "0.32"
+
+# lazy-runnerd HTTP server (P6.a — detached mission runtime)
+tiny_http = "0.12"
+
+# updater_service.rs (staged-update-at-next-boot model): sha2 verifies the
+# staged installer on disk still matches what was downloaded before ever
+# spawning it; semver compares `staged.version` against
+# `env!("CARGO_PKG_VERSION")` (never lexicographic string comparison); url
+# builds the `LAZY_UPDATER_ENDPOINT` dev/test override passed to
+# `UpdaterBuilder::endpoints`, so it must be the exact same `url::Url` type
+# `tauri-plugin-updater` itself expects. All three were already present in
+# Cargo.lock (transitively, via tauri/tauri-plugin-updater/reqwest) at
+# sha2 0.10.9 / semver 1.0.28 / url 2.5.8 — promoted to direct deps here
+# rather than added fresh, so this pins to whatever those already resolve to.
+sha2 = "0.10"
+semver = "1"
+url = "2"
+
+# secrets.rs — OS-native credential vault (BYOK API keys, GitHub OAuth token;
+# see SPEC audit 2026-08-12). Native backend per platform: Windows Credential
+# Manager (windows-native), macOS Keychain (apple-native), Linux Secret
+# Service over D-Bus (sync-secret-service — synchronous, matching every other
+# #[tauri::command] in this codebase, which are all blocking fns, e.g.
+# github_oauth.rs's reqwest::blocking::Client). Unused backends are inert
+# no-ops on platforms that don't match their cfg, same convention as keyring
+# itself uses internally — only the dev machine's actual platform (Windows)
+# is exercised by `cargo check`/`cargo test` here.
+keyring = { version = "3.6.3", features = ["windows-native", "apple-native", "sync-secret-service"] }
+
+# Crash resilience (lib.rs's install_webview_crash_restart_handler /
+# register_crash_restart, crash_guard.rs's host-process SEH marker): all
+# Windows-only APIs, so pinned under the same cfg(windows) target section
+# tauri/wry themselves use for the exact same crates (see their own
+# Cargo.toml). webview2-com is exact-pinned to match the version already
+# resolved transitively via wry in Cargo.lock — a direct dependency lets
+# lib.rs reach ICoreWebView2::add_ProcessFailed directly instead of only
+# through wry's own (unexposed) internals.
+#
+# Feature additions for crash_guard.rs: Win32_System_Diagnostics_Debug +
+# Win32_System_Kernel (SetUnhandledExceptionFilter, EXCEPTION_POINTERS,
+# LPTOP_LEVEL_EXCEPTION_FILTER), Win32_Foundation (HANDLE, CloseHandle,
+# GENERIC_WRITE), Win32_Storage_FileSystem (CreateFileW/WriteFile/
+# FlushFileBuffers) — the alloc-free last-gasp crash marker writer.
+[target.'cfg(windows)'.dependencies]
+webview2-com = "=0.38.2"
+windows = { version = "0.61.3", features = [
+    "Win32_System_Recovery",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Kernel",
+    "Win32_Foundation",
+    "Win32_Storage_FileSystem",
+    "Win32_Security",
+    "Win32_System_IO",
+] }

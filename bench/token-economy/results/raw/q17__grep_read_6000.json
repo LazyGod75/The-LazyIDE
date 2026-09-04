@@ -1,0 +1,51 @@
+{
+  "questionId": "q17",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 0,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [],
+    "filesMatched": 0,
+    "filesPicked": 0
+  },
+  "latencyMs": 18916,
+  "answer": "I'm unable to answer this question because:\n\n1. **No context was provided**: The prompt indicates \"CONTEXT: (no context provided)\" — the file contents weren't included in the context I can reference.\n\n2. **File reading is disabled**: The Read tool is disabled for this session, and I don't have access to other file-reading tools to fetch `engine/src/retrieval/router.ts`.\n\nTo answer your question, I would need either:\n- The file contents provided directly in the context, or\n- Access to file-reading tools to retrieve the file\n\nCould you either share the contents of the header comment from that file, or enable a file-reading tool so I can access it?",
+  "usage": {
+    "inputTokens": 44,
+    "outputTokens": 1172,
+    "cacheReadInputTokens": 100765,
+    "cacheCreationInputTokens": 12852,
+    "costUsd": 0.0423965
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 5,
+    "hits": [
+      {
+        "term": "l1.ts",
+        "present": false
+      },
+      {
+        "term": "l2.ts",
+        "present": false
+      },
+      {
+        "term": "l3.ts",
+        "present": false
+      },
+      {
+        "term": "l4.ts",
+        "present": false
+      },
+      {
+        "term": "hybrid.ts",
+        "present": false
+      }
+    ]
+  }
+}

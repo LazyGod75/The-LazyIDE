@@ -1,0 +1,36 @@
+<article id="sample-api-file"
+         data-cerveau-version="0.1.0"
+         data-cerveau-created="2026-05-15T09:00:00Z"
+         data-cerveau-type="file-neuron"
+         data-cerveau-topic="api"
+         data-cerveau-tier="working"
+         data-cerveau-importance="0.75"
+         data-cerveau-tags="api stripe payment integration webhook"
+         data-cerveau-valid-from="2026-05-15">
+
+  <header>
+    <h1>src/api/stripe.ts</h1>
+    <dl>
+      <dt>Type</dt><dd>file-neuron</dd>
+      <dt>Topic</dt><dd>api</dd>
+    </dl>
+  </header>
+
+  <section data-section="tldr">
+    <p>Stripe payment integration: webhook handler and checkout session creation.</p>
+  </section>
+
+  <section data-section="exports">
+    <h2>Exports</h2>
+    <ul>
+      <li><code>createCheckoutSession(priceId, userId)</code> — creates a Stripe checkout session</li>
+      <li><code>handleWebhook(req)</code> — validates and processes Stripe webhook events</li>
+    </ul>
+  </section>
+
+  <section data-section="decisions">
+    <h2>Decisions</h2>
+    <p>Uses Stripe webhooks for reliable payment confirmation instead of polling the API.</p>
+    <p>Webhook signature verified with <code>stripe.webhooks.constructEvent</code> to prevent spoofing.</p>
+  </section>
+</article>

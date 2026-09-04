@@ -1,0 +1,39 @@
+{
+  "questionId": "q11",
+  "category": "structural",
+  "variantId": "grep_read_6000",
+  "configId": "grep_read",
+  "budget": 6000,
+  "injectedTokens": 0,
+  "configMeta": {
+    "tokenBudget": 6000,
+    "terms": [],
+    "filesMatched": 0,
+    "filesPicked": 0
+  },
+  "latencyMs": 12711,
+  "answer": "The context provided does not contain information about the CLI command and flags in `engine/src/commands/repair.ts`. Additionally, I don't currently have access to read that file directly due to tool restrictions in this session.\n\nTo answer your specific question about:\n- The CLI command and flags added in `engine/src/commands/repair.ts`\n- The default value of the `--tags` flag\n\nI would need to read that file directly. Could you either:\n1. Share the contents of `engine/src/commands/repair.ts`, or\n2. Let me know if there's documentation elsewhere that describes the repair command\n\nAlternatively, if you can enable file reading tools for this session, I can retrieve the answer for you.",
+  "usage": {
+    "inputTokens": 34,
+    "outputTokens": 854,
+    "cacheReadInputTokens": 73806,
+    "cacheCreationInputTokens": 5550,
+    "costUsd": 0.0234956
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 2,
+    "hits": [
+      {
+        "term": "un-invalidate-noise",
+        "present": false
+      },
+      {
+        "term": "mission,agent,skill",
+        "present": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+<article id="sample-auth-concept"
+         data-cerveau-version="0.1.0"
+         data-cerveau-created="2026-05-20T11:00:00Z"
+         data-cerveau-type="concept-neuron"
+         data-cerveau-topic="auth"
+         data-cerveau-tier="working"
+         data-cerveau-importance="0.85"
+         data-cerveau-tags="auth authentication oauth security login session"
+         data-cerveau-valid-from="2026-05-20">
+
+  <header>
+    <h1>Auth — OAuth2 PKCE</h1>
+    <dl>
+      <dt>Type</dt><dd>concept-neuron</dd>
+      <dt>Topic</dt><dd>auth</dd>
+    </dl>
+  </header>
+
+  <section data-section="tldr">
+    <p>Authentication strategy: OAuth2 PKCE replacing custom JWT tokens after Q2 security audit.</p>
+  </section>
+
+  <section data-section="context">
+    <h2>Context</h2>
+    <p>Q2 2026 security audit found manual secret rotation. Migrated to OAuth2 PKCE flow.</p>
+    <p>All clients must re-onboard via the new PKCE flow before end of July.</p>
+  </section>
+
+  <section data-section="sessions">
+    <h2>Session Management</h2>
+    <p>Sessions are short-lived (1 hour) with silent refresh via refresh tokens stored in httpOnly cookies.</p>
+  </section>
+</article>

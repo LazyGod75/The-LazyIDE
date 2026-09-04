@@ -1,0 +1,787 @@
+/* canvas.css — W1b keyframes shared by every canvas node/edge component.
+
+   Imported exactly ONCE, from nodeChrome.tsx (the shared card shell every
+   node kind wraps itself in), so this file's keyframes never get pulled in
+   twice by the bundler. All animations are CSS-only (transform/opacity/
+   box-shadow/offset-distance) — no WebGL, per the spec's NVIDIA TDR
+   constraint (e2e runs `--disable-gpu`). Class names are prefixed
+   `canvas-` to stay distinct from the app-wide keyframes already declared
+   in `src/styles/design-system.css` (`blinkDot`, `pulseRed`, `pulse-drop`,
+   `focusFlash`) — reused directly where semantics already match (see
+   nodeChrome.tsx), duplicated here only where the canvas needs a shape
+   design-system.css doesn't already provide (halo ring, single bounce,
+   traveling dot, ellipsis).
+*/
+
+/* running: soft pulsing halo around the node card (spec §4.4) */
+@keyframes canvas-pulse-halo {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 92, 255, 0.35); }
+  50%      { box-shadow: 0 0 0 8px rgba(124, 92, 255, 0); }
+}
+.canvas-halo-running {
+  animation: canvas-pulse-halo 2.2s ease-in-out infinite;
+}
+
+/* failed: red halo pulse — same shape as design-system.css's pulseRed,
+   redeclared here so canvas node components don't need to reach outside
+   this directory for it (kept import-free, cheap to inline). */
+@keyframes canvas-pulse-danger {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.4); }
+  50%      { box-shadow: 0 0 0 8px rgba(248, 113, 113, 0); }
+}
+.canvas-halo-failed {
+  animation: canvas-pulse-danger 2s infinite;
+}
+
+/* pendingQuestion: ONE subtle bounce, not infinite (spec §4.4 "bounces
+   subtly once"). */
+@keyframes canvas-bounce-once {
+  0%   { transform: translateY(0); }
+  30%  { transform: translateY(-3px); }
+  55%  { transform: translateY(0); }
+  75%  { transform: translateY(-1.5px); }
+  100% { transform: translateY(0); }
+}
+.canvas-bounce-once {
+  animation: canvas-bounce-once 0.6s ease-out 1;
+}
+
+/* running live-action line: animated ellipsis suffix, no layout shift
+   (fixed-width via steps()). */
+@keyframes canvas-ellipsis-dots {
+  0%   { content: ''; }
+  25%  { content: '.'; }
+  50%  { content: '..'; }
+  75%  { content: '...'; }
+  100% { content: ''; }
+}
+.canvas-live-ellipsis::after {
+  content: '';
+  animation: canvas-ellipsis-dots 1.4s steps(1, end) infinite;
+}
+
+/* chain edge traveling dot (spec §4.4 "edge animates a traveling dot"):
+   plays ONCE per firing (element is only mounted while `data.firing` is
+   true — see ChainEdge.tsx), following the edge's own bezier path via
+   `offset-path` — CSS only, no JS timers. */
+@keyframes canvas-dot-travel {
+  0%   { offset-distance: 0%; opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+.canvas-chain-dot {
+  animation: canvas-dot-travel 900ms ease-in-out 1 forwards;
+}
+
+/* loop iteration mini-chip / mission dot: gentle blink while running —
+   reuses design-system.css's `blinkDot` keyframe by name (already global). */
+.canvas-blink {
+  animation: blinkDot 2s infinite;
+}
+
+/* merged/done nodes fade to 60% opacity after a delay (spec §4.4) — the
+   delay itself is driven by the caller (setTimeout flips a class), this
+   just gives the fade a smooth transition instead of a hard cut. */
+.canvas-fade-merged {
+  transition: opacity 0.6s ease;
+  opacity: 0.82;
+}
+
+/* draft ghost card: dashed border, slightly desaturated */
+.canvas-ghost-card {
+  border-style: dashed !important;
+  opacity: 0.92;
+}
+
+/* Chantier 3 (plan-first canvas) — a plan step proposed by the manager,
+   awaiting user validation. Deliberately MORE tentative-looking than the
+   already-dashed ghost draft card above (opacity 0.92): a proposed step
+   has not been decided at all yet, so it needs its own unmistakable
+   "not real yet" visual — a thicker warm-accent dashed border and a much
+   lower opacity. */
+.canvas-proposed-card {
+  border-style: dashed !important;
+  border-width: 2px !important;
+  border-color: var(--color-warning, #f5b942) !important;
+  opacity: 0.55;
+}
+
+/* ── W8a deliverable #1: hover quick-actions (n8n-inspired, reimplemented)
+   The strip is positioned by nodeChrome.tsx (top-right, absolute) and
+   fades in on card hover/focus-within — `focus-within` so a keyboard user
+   tabbing to a button inside the strip also reveals it (opacity: 0 would
+   otherwise hide a focused-but-unhovered button). 120ms fade per spec. */
+.canvas-hover-actions {
+  opacity: 0;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+.canvas-node-hoverable:hover .canvas-hover-actions,
+.canvas-node-hoverable:focus-within .canvas-hover-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.canvas-hover-action-btn {
+  transition: background 120ms ease, color 120ms ease;
+}
+.canvas-hover-action-btn:hover {
+  background: rgba(20, 20, 28, 0.85) !important;
+}
+
+/* W-CARDS: no semantic zoom (founder standing decision, restated verbatim
+   after an earlier wave violated it again — see canvasTypes.ts's
+   ZOOM_AGGREGATE doc comment for the full quote) — hover-reveal action
+   buttons must stay available at EVERY zoom, so the below-
+   HOVER_ACTIONS_MIN_ZOOM cutoff this rule used to enforce (fix/canvas-
+   header-overflow) is retired: no CSS rule keys off `data-canvas-hover-
+   chrome` anymore. CanvasLodBroadcaster.tsx still stamps the attribute
+   (harmless, cheap, a one-line revert if this is ever re-enabled) — this
+   was the only rule that ever turned it into actual hidden chrome. */
+
+/* ── W8a deliverable #2: orchestrator fold / loop expand chevrons ── */
+.canvas-fold-chevron {
+  transition: transform 150ms ease;
+}
+.canvas-fold-chevron[data-open='false'] {
+  transform: rotate(-90deg);
+}
+
+/* ── W8a deliverable #3: dry-run preview node pulse — plays once on
+   mount then holds its final (steady ring) frame, spec "sequenced
+   highlight pulse". Distinct name from canvas-pulse-halo (infinite) since
+   this must NOT loop.
+
+   W10b: the single 10px/400ms ring was "easy to miss even after zooming
+   in" (W10 verdict). Redone as TWO stacked ring waves via two box-shadow
+   layers (transform/box-shadow/opacity only — no WebGL, TDR-safe): wave 1
+   is a full-opacity accent ring that snaps out fast and dies by 30%; wave
+   2 picks up right as wave 1 fades, blooms out further than the old
+   single ring, then settles into a brighter steady halo than before.
+   `transform: scale` bumps the node itself by 3% for the beat so the
+   pulse reads as the node's own motion, not just a decal. */
+@keyframes canvas-dryrun-pulse {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(124, 92, 255, 1),
+      0 0 0 0 rgba(124, 92, 255, 0);
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  30% {
+    box-shadow:
+      0 0 0 14px rgba(124, 92, 255, 0),
+      0 0 0 3px rgba(124, 92, 255, 1);
+    opacity: 1;
+    transform: scale(1.03);
+  }
+  65% {
+    box-shadow:
+      0 0 0 14px rgba(124, 92, 255, 0),
+      0 0 0 20px rgba(124, 92, 255, 0.2);
+    opacity: 1;
+    transform: scale(1.03);
+  }
+  100% {
+    box-shadow:
+      0 0 0 14px rgba(124, 92, 255, 0),
+      0 0 6px 5px rgba(124, 92, 255, 0.75);
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.canvas-dryrun-node-pulse {
+  animation: canvas-dryrun-pulse 700ms ease-out 1 forwards;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   R2b visual overhaul (docs/superpowers/specs/2026-07-15-canvas-visual-
+   brief.txt) — node-card system, stage-rail v2, edge/connection polish.
+   Tokens first (mapped onto existing --color-* vars per the brief's own
+   instruction: "map to existing --color-* vars; if a needed token is
+   missing add a --canvas-* var"), then the shared card/rail/handle/edge
+   classes every node/edge component below opts into.
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Flat node background (nodeSpec: "#1a1d23 flat, one value for every
+     type") — --color-panel-2 (#1A1A24) is already near-identical, no new
+     hex needed, just a semantic alias so node/edge code never hardcodes
+     the raw color token name. */
+  --canvas-node-bg: var(--color-panel-2);
+  --canvas-node-border-resting: rgba(255, 255, 255, 0.1);
+  --canvas-node-border-hover: rgba(255, 255, 255, 0.22);
+  --canvas-node-error: #ff5c5c;
+
+  /* fix/canvas-graph-legibility — default ('always'-condition) chain edge
+     color (ChainEdge.tsx's CONDITION_STYLE). Aliased to --color-text-secondary
+     rather than the old --color-text-muted: noticeably higher contrast
+     against the dark canvas background, so the graph's own backbone (the
+     majority of real edges) reads as a real line, not a barely-there
+     hairline (founder: "les edges sont en pointillés fins"). */
+  --canvas-edge-default: var(--color-text-secondary);
+
+  /* Type-accent palette (nodeSpec seed values) — one per node KIND, never
+     per stage (chrome/StageRail.tsx's STAGE_COLORS is the separate stage-
+     progression palette; the two are deliberately non-overlapping so a
+     node's TYPE and its pipeline STAGE never read as the same signal). */
+  --canvas-type-mission: #5b9dff;
+  --canvas-type-loop: #ff9f5a;
+  --canvas-type-schedule: var(--canvas-state-review);
+  --canvas-type-draft: #b48cff;
+  --canvas-type-router: #ffd166;
+  /* Not in the brief's 5 seed values (mission/loop/schedule/draft/router
+     only) — picked here for the 6th kind (note) at a teal hue mutually
+     contrasting with all five above (~173° vs. the nearest neighbors:
+     schedule's green at ~132°, mission's blue at ~215°). */
+  --canvas-type-note: #2dd4bf;
+  /* W-JOIN — 7th kind (join/fan-in), a rose hue (~350°) distinct from every
+     neighbor above (router's amber ~45°, note's teal ~173°). */
+  --canvas-type-join: #fb7185;
+
+  /* ── P2 node visual language (cockpit-redesign mockup v3) — LIVENESS
+     state palette. Deliberately a SEPARATE scale from the TYPE-accent
+     palette above (a node's animated STATE never shares a "this is what
+     decides its color" role with its static KIND identity) — the one
+     exception is `--canvas-type-schedule` above, which intentionally
+     REUSES `--canvas-state-review` (the mockup's own cron swatch does the
+     same: a schedule is always "waiting for its amber moment", never
+     animated, see canvas-node-ring-* below which schedule never opts
+     into). Only `running`/`review` ever animate (motion budget) — every
+     other bucket is a flat, static accent. */
+  --canvas-state-running: #3fb6ff;
+  --canvas-state-running-hot: #bfe6ff;
+  --canvas-state-review: #f5a623;
+  --canvas-state-failed: #e5484d;
+  --canvas-state-merged: #3fb04f;
+  --canvas-state-idle: #5b6480;
+  /* Visual sweep #11 — `paused` no longer shares this grey with `queued`
+     (nodeChrome.tsx's statusAccentColor); same violet already used for
+     "awaiting you" elsewhere (PendingQuestionBadge's #A855F7). */
+  --canvas-state-paused: #a855f7;
+
+  /* Model-tier chip colors (mission/draft "model" chip, nodeChrome.tsx's
+     ModelTierChip) — one hue per Claude tier, distinct from both the state
+     and type-accent scales above. */
+  --canvas-tier-sonnet: #5e90ff;
+  --canvas-tier-haiku: #38d39f;
+  --canvas-tier-fable: #c084fc;
+  --canvas-tier-opus: #a78bff;
+  --canvas-dot-color: rgba(255, 255, 255, 0.055);
+}
+
+/* ── Node card resting/hover border (nodeSpec's #1 legibility fix) ─────
+   Applied ADDITIVELY alongside the existing liveness halo classes
+   (canvas-halo-running/canvas-halo-failed, above) rather than replacing
+   them — those whole-card pulse halos are a pre-existing, separately
+   tested signal (running/failed liveness); this class only governs the
+   neutral resting/hover border treatment nodeSpec asks for. */
+.canvas-node-card {
+  border-radius: 10px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.canvas-node-card:hover {
+  border-color: var(--canvas-node-border-hover) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+/* Selected halo ring (nodeSpec: "2px solid var(--type-accent) + 4px 18%
+   halo") — color is set inline per-card (it depends on that card's own
+   type accent), this just gives the ring a soft transition. */
+.canvas-node-card-selected {
+  transition: box-shadow 150ms ease, border-color 150ms ease;
+}
+
+/* Validation error ring — border geometry stays put (spec: "ring, not a
+   border-swap", keeps edges from jumping), so this is a box-shadow only,
+   layered on top of whatever border/halo classes are already active. */
+.canvas-node-error-ring {
+  box-shadow: 0 0 0 2px var(--canvas-node-error) !important;
+}
+
+/* Running: A SUBTLE INNER-BORDER pulse (nodeSpec: "not the whole card, so
+   busy fleets of running nodes don't strobe illegibly") — an inset ring
+   opacity-pulses, distinct from canvas-halo-running's outer glow above
+   (both may be present; this one is cheap/quiet enough not to compete). */
+@keyframes canvas-node-inner-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
+  50%      { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+}
+.canvas-node-inner-pulse {
+  animation: canvas-node-inner-pulse 1.6s ease-in-out infinite;
+}
+
+/* Corner badge outline (nodeSpec's "anti-illegibility trick"): a 2px
+   node-bg outline cuts a visible gap between a corner badge and whatever
+   busy content sits behind it on the canvas. */
+.canvas-corner-badge {
+  box-shadow: 0 0 0 2px var(--canvas-node-bg);
+}
+
+/* ── Stage rail v2 (chromePlan §2 — 28px band, 14px stops) ─────────────
+   `.canvas-stage-stop-active` gets a single outer pulse ring (the rail's
+   own run-status affordance, replacing any external chip bar); the
+   skipped hatch fill is a repeating-linear-gradient so it reads as
+   "skipped" from shape alone, not just a desaturated color. */
+@keyframes canvas-stage-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 var(--canvas-stage-pulse-color, rgba(124, 92, 255, 0.45)); }
+  100% { box-shadow: 0 0 0 6px transparent; }
+}
+.canvas-stage-stop-active {
+  animation: canvas-stage-pulse-ring 1.5s ease-out infinite;
+}
+/* W-UX3 core deliverable 1 — a genuinely RUNNING mission's current stop
+   pulses stronger/faster than the base "active stop" ring above (queued/
+   review/etc. current stops keep the calmer base pulse) — bigger spread,
+   brighter start, shorter cycle. */
+@keyframes canvas-stage-pulse-ring-running {
+  0%   { box-shadow: 0 0 0 0 var(--canvas-stage-pulse-color, rgba(124, 92, 255, 0.7)); }
+  100% { box-shadow: 0 0 0 9px transparent; }
+}
+.canvas-stage-stop-active-running {
+  animation: canvas-stage-pulse-ring-running 1s ease-out infinite;
+}
+.canvas-stage-stop-skipped {
+  background-image: repeating-linear-gradient(45deg, currentColor 0, currentColor 1px, transparent 1px, transparent 3px);
+  opacity: 0.55;
+}
+
+/* ── Handles (connectionUx — forgiving hit-area, subtle-until-hovered) ──
+   Visible dot fades in on node hover OR while a connection is actively
+   being dragged (RF's own `.connectingfrom`/`.connectingto` classes,
+   applied automatically to the endpoints of an in-progress connection —
+   see @xyflow/react's Handle component). Resting state stays present but
+   faint so a first-time user can still discover the port.
+
+   R11 UI polish (b) — 120ms, the SAME duration every other interactive
+   chrome element below now shares (buttons/chips/zone-header affordances),
+   for one uniform "how fast does this canvas react to touch" feel instead
+   of a handful of slightly different hand-picked durations. */
+.react-flow__handle {
+  opacity: 0.35;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.react-flow__node:hover .react-flow__handle,
+.react-flow__handle.connectingfrom,
+.react-flow__handle.connectingto {
+  opacity: 1;
+}
+
+/* Type-aware "search-light" connection feedback (connectionUx §2) — every
+   node card gets one of these two classes (chrome/connectionDragStore.ts)
+   the instant a connection drag starts, computed once against the real
+   validateChain rules for every live node (not per-hover-frame, cheap).
+   Incompatible targets shrink + grey + drop any glow; compatible targets
+   stay fully lit — the glow ITSELF (color-per-target-kind, W-BYO nit b) is
+   computed inline by nodeChrome.tsx's NodeCard/RouterNode (an inline
+   `style.boxShadow` always wins over a stylesheet box-shadow regardless of
+   specificity, so a generic box-shadow declared here would never actually
+   be visible on top of that inline style — this class intentionally only
+   owns the transition timing, not the shadow color itself). */
+.canvas-connect-incompatible {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+  transform: scale(0.97);
+  transition: opacity 120ms ease, filter 120ms ease, transform 120ms ease;
+}
+.canvas-connect-compatible {
+  transition: box-shadow 120ms ease;
+}
+
+/* ── Edges (edgeSpec) ───────────────────────────────────────────────────
+   Fat invisible hit-target (16px transparent stroke) stacked under the
+   visible path — forgiving click/hover without widening the visible
+   line. Running/active chain link: marching-ants dash-flow, direction
+   matches the gradient (source -> target). */
+.canvas-edge-hit-target {
+  cursor: pointer;
+}
+@keyframes canvas-edge-dash-flow {
+  to { stroke-dashoffset: -14; }
+}
+.canvas-edge-flowing {
+  stroke-dasharray: 8 6;
+  animation: canvas-edge-dash-flow 0.8s linear infinite;
+}
+
+/* Edge hover delete button — CSS-only reveal (imperative-style, zero
+   re-render cost per edgeSpec's own "avoid re-render cost on a canvas
+   with hundreds of edges" note) via a parent group class toggled by
+   :hover, not React state. */
+.canvas-edge-group .canvas-edge-delete-btn {
+  opacity: 0;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.canvas-edge-group:hover .canvas-edge-delete-btn {
+  opacity: 1;
+}
+.canvas-edge-delete-btn:hover {
+  transform: scale(1.2);
+}
+
+/* R11 UI polish (d) — the edge line itself brightens on hover (the delete
+   button reveal above only ever covered discoverability of the DELETE
+   affordance, never gave the edge itself any hover feedback at all — a
+   hovered chain among a dozen crossing edges looked identical to every
+   other resting one until the cursor happened to land close enough to pop
+   the delete button). CSS-only, filter-only (no re-render, TDR-safe),
+   targets ONLY the visible path (`.react-flow__edge-path`) — the
+   invisible fat interactionWidth hit-path stays untouched. */
+.canvas-edge-group {
+  transition: filter 120ms ease;
+}
+.canvas-edge-group:hover .react-flow__edge-path {
+  filter: brightness(1.35);
+}
+
+/* ── W-UX3 core deliverable 1 — RUNNING CARD = HERO ──────────────────────
+   A running mission's full card is deliberately made the visual "hero" of
+   the canvas: elevated (slight scale-up + a stronger drop shadow, on top
+   of — not instead of — the existing canvas-halo-running/inner-pulse) and
+   an animated sweep travelling around the card's own border (Langflow's
+   own per-node build-progress border, reimplemented here with the
+   standard CSS "animated conic-gradient border" technique: a `::before`
+   sized to the card's own border-radius, masked down to just the ring
+   band via mask-composite, so it never paints over the card's interior
+   content). `!important` on box-shadow only to win over NodeCard's own
+   inline `boxShadow` (selected/error rings) — a running card outranks
+   those visually while it's the hero; `transform: scale` is left as a
+   plain (non-important) declaration since nothing else sets a competing
+   inline `transform` on this element.
+   Paint cost note: this animates a CSS custom property driving a
+   conic-gradient repaint, the SAME cost class as the box-shadow
+   animations already in this file (canvas-pulse-halo et al) — no WebGL,
+   no new category of GPU/TDR risk (see this file's own header). */
+@property --canvas-sweep-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes canvas-sweep-rotate {
+  to { --canvas-sweep-angle: 360deg; }
+}
+.canvas-node-hero {
+  transform: scale(1.02);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), 2px 2px 0 rgba(0, 0, 0, 0.35) !important;
+  z-index: 5;
+}
+.canvas-node-hero::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--canvas-sweep-angle), transparent 0%, var(--color-accent) 16%, transparent 34%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: canvas-sweep-rotate 2.2s linear infinite;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   P2 node visual language (cockpit-redesign mockup v3) — the running/
+   review ROTATING RING (nodeChrome.tsx's `statusHaloClassName`): the
+   card's single "this is live" signal, applied to EVERY node kind that
+   passes a `liveness` to NodeCard (mission/loop), not just the full-zoom
+   mission hero above. Superseses canvas-node-hero's own partial-arc sweep
+   for that purpose (canvas-node-hero is left defined above, just no
+   longer applied by MissionNode.tsx) for one concrete reason: hero's
+   `inset:-2px` bleeds OUTSIDE the card's own border box, which a full-zoom
+   card's inline `overflow:hidden` (set once body content can exceed
+   FULL_CARD_MAX_HEIGHT) silently clips to nothing. This ring instead sits
+   at `inset:0` with an INWARD padding-carved band — the visible ring
+   pixels stay INSIDE the card's own box, so `overflow:hidden` never
+   clips them.
+   Motion budget (spec: "only live work moves"): ONLY running/review
+   animate here — queued/paused/failed/merged resolve to no ring class at
+   all (statusHaloClassName), a flat static accent via statusAccentColor
+   instead. `review` spins 3x slower (4.5s vs 1.5s) — a calmer cue for
+   "waiting on a verdict" vs. "actively working". */
+@property --canvas-ring-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes canvas-ring-rotate {
+  to { --canvas-ring-angle: 360deg; }
+}
+.canvas-node-ring-running::before,
+.canvas-node-ring-review::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1.5px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.canvas-node-ring-running::before {
+  background: conic-gradient(
+    from var(--canvas-ring-angle),
+    transparent 55%,
+    var(--canvas-state-running) 78%,
+    var(--canvas-state-running-hot) 88%,
+    transparent 92%
+  );
+  animation: canvas-ring-rotate 1.5s linear infinite;
+}
+.canvas-node-ring-review::before {
+  background: conic-gradient(
+    from var(--canvas-ring-angle),
+    transparent 62%,
+    var(--canvas-state-review) 86%,
+    transparent 92%
+  );
+  animation: canvas-ring-rotate 4.5s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .canvas-node-ring-running::before,
+  .canvas-node-ring-review::before {
+    animation: none;
+  }
+  .canvas-node-ring-running::before {
+    background: var(--canvas-state-running);
+  }
+  .canvas-node-ring-review::before {
+    background: var(--canvas-state-review);
+  }
+}
+
+/* ── W-UX3 three-tier fleet view — aggregate tier (extreme dezoom) ───────
+   W-CARDS: no semantic zoom (founder standing decision) — ZOOM_AGGREGATE
+   (canvasTypes.ts) is now forced to `0`, so `data-canvas-tier` can never
+   actually read `'aggregate'` (a live zoom is never negative) and every
+   selector below is permanently dormant. Left in place, unrewritten,
+   rather than deleted: it documents the OLD design faithfully and is a
+   one-line revert (undo the ZOOM_AGGREGATE change) away from mattering
+   again — see that constant's own doc comment for the full "why".
+
+   Below ZOOM_AGGREGATE (canvasTypes.ts) the broadcaster stamps
+   data-canvas-tier='aggregate' on the canvas container: every non-mission
+   node kind (loop/draft/note/router/schedule/iteration dots AND the
+   un-zoom-gated terminal/preview/frame node frames) hides, plus all edges
+   — the project zones' own constant-size summary chips (ProjectGroupNode.tsx)
+   render ADDITIONALLY as header info at this tier. Targeting the React Flow
+   node/edge wrappers (rather than just `.canvas-lod-dot`) guarantees NO
+   child node kind leaks through at this zoom — the W-UX3 audit found
+   terminal/preview frames still painting inside a zone with the dot-only
+   rule. CSS-only: crossing the threshold never re-renders a single node.
+   `visibility` (not display) so React Flow's node measurement/layout is
+   untouched.
+
+   W-CARDS (product owner, 2026-07-18) — `:not(.react-flow__node-mission)`
+   added: this rule used to ALSO hide every mission card at this tier
+   (compensated for by the old chip-tier billboard rendering INSTEAD, now
+   retired — see MissionNode.tsx's header). That made agents genuinely
+   invisible while zoomed out ("on voit pas les fenêtres en entier ...
+   je vois tout pareil" — the literal bug this excludes). A COLLAPSED
+   zone never has this problem in the first place: its children are
+   structurally absent from the node list (reconcilerZones.ts's
+   `isCollapsed -> placed: []`), so this exclusion only ever affects an
+   EXPANDED zone's real mission children, which must stay visible at
+   every zoom.
+
+   W-LOOP-VIS (2026-07-19) — `:not(.react-flow__node-loop)` added for the
+   same reason as the mission exclusion above: a mission with a
+   `loopConfig` renders as node kind 'loop' instead of 'mission'
+   (reconcilerZones.ts's `zoneMissionDots`/loop aggregation, spec §4.2),
+   so without this exclusion a RUNNING loop mission vanished on dezoom
+   even though its plain-mission siblings stayed visible. */
+[data-canvas-tier='aggregate'] .react-flow__node:not(.react-flow__node-project):not(.react-flow__node-mission):not(.react-flow__node-loop):not(.react-flow__node-draft),
+[data-canvas-tier='aggregate'] .react-flow__edge,
+/* Edge LABELS (condition chips, pin glyphs) render in a SEPARATE
+   `edgelabel-renderer` container, not inside `.react-flow__edge` — the
+   W-UX3 audit found « Succès »/« Toujours »/pin fragments still painting
+   at 10% until this line hid that container too. */
+[data-canvas-tier='aggregate'] .react-flow__edgelabel-renderer > * {
+  /* `!important` is load-bearing: React Flow writes `visibility` INLINE on
+     its node/edge wrappers (visible once measured), and an inline style
+     outranks a class rule — without it the mission/terminal/preview/frame
+     frames kept painting at 10% (the W-UX3 audit leak). The tier attribute
+     flips back to 'normal' above ZOOM_AGGREGATE, so RF's own inline
+     visibility resumes control the instant the user zooms back in. */
+  visibility: hidden !important;
+}
+
+/* ── W-UX3 core deliverable 2 — zone work signal ─────────────────────────
+   A project zone with N running missions should read as "busy" at a
+   glance, even collapsed/zoomed far enough that individual cards are
+   unreadable: a tiny 3-bar equalizer icon (canvas-zone-equalizer) next to
+   the "N actifs" chip, each bar on its own staggered animation-delay so
+   they read as "bouncing", plus the zone's own border breathing (opacity
+   pulse only — never a layout-affecting property, so it can never nudge
+   child node positions) while work is happening inside it. */
+@keyframes canvas-equalizer-bounce {
+  0%, 100% { transform: scaleY(0.35); }
+  50%      { transform: scaleY(1); }
+}
+.canvas-zone-equalizer {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+.canvas-zone-equalizer > span {
+  flex: 1;
+  background: var(--color-success);
+  border-radius: 1px;
+  transform-origin: bottom;
+  animation: canvas-equalizer-bounce 0.9s ease-in-out infinite;
+}
+.canvas-zone-equalizer > span:nth-child(1) { animation-delay: 0ms; }
+.canvas-zone-equalizer > span:nth-child(2) { animation-delay: 200ms; }
+.canvas-zone-equalizer > span:nth-child(3) { animation-delay: 100ms; }
+
+@keyframes canvas-zone-breathe {
+  0%, 100% { border-color: var(--canvas-zone-breathe-color, rgba(124, 92, 255, 0.35)); }
+  50%      { border-color: var(--canvas-zone-breathe-color, rgba(124, 92, 255, 0.7)); }
+}
+.canvas-zone-active-breathe {
+  animation: canvas-zone-breathe 3s ease-in-out infinite;
+}
+
+/* ── W-UX3 core deliverable 1 — running dot pulse ring (fleet/dot zoom) ──
+   A running mission/loop/iteration's dot needs to read as "alive" even at
+   extreme dezoom, where the card itself has already collapsed to a 20px
+   (LOD-compensated, see lod.ts) status dot with no room for a live-action
+   line. box-shadow (not transform) so it composes cleanly with the dot's
+   own inline `transform: scale(var(--canvas-lod-dot-scale, 1))` — the ring
+   itself is drawn in the dot's own local (already LOD-compensated) box
+   space, so it stays a constant, legible size right alongside the dot at
+   any zoom, exactly like canvas-pulse-halo already does for the full card. */
+@keyframes canvas-dot-running-pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 2px var(--color-panel), 0 0 0 3.5px var(--color-accent), 0 0 0 3.5px var(--color-accent); }
+  50%      { box-shadow: 0 0 0 2px var(--color-panel), 0 0 0 3.5px var(--color-accent), 0 0 0 7px transparent; }
+}
+.canvas-dot-running-pulse {
+  animation: canvas-dot-running-pulse-ring 1.6s ease-in-out infinite;
+}
+
+/* ── fix/canvas-legibility — mission billboard chip (MissionNode.tsx's
+   'chip' zoom tier) ───────────────────────────────────────────────────────
+   Replaces the old bare status dot: status glyph + type glyph + truncated
+   title + stage/progress hint, at a constant screen size via the inline
+   `transform: scale(var(--canvas-lod-mission-chip-scale, 1))` the component
+   itself sets. No `!important` needed (unlike the old `.canvas-lod-dot`
+   convention) — this class carries no conflicting RF inline style. */
+.canvas-mission-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--color-panel-2);
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  cursor: default;
+}
+.canvas-mission-chip-title {
+  font-size: 10px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+.canvas-mission-chip-hint {
+  font-size: 8.5px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* ── Project zone header (R11 UI polish (a)) — subtle hover affordance on
+   the collapse-toggle header row and the « Voir le rapport » icon button,
+   uniform 120ms with everything else above. Neither previously had ANY
+   hover feedback despite both being clickable — a purely visual affordance,
+   the click handlers themselves are unchanged. */
+.canvas-zone-header {
+  transition: background-color 120ms ease;
+}
+.canvas-zone-header:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+.canvas-zone-report-btn {
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.canvas-zone-report-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--color-text);
+}
+
+/* ── Auto-dismiss: summary mode + exit animation ───────────────────────
+   When a one-time mission reaches 'done', after a delay it transforms
+   into a compact summary card (canvas-summary-mode), stays visible for
+   a configurable period, then fades out (canvas-fade-exit) before being
+   removed from the canvas. */
+
+/* Summary mode: the card shrinks slightly and gets a calm green accent,
+   signaling "task completed" without the full card chrome. */
+.canvas-summary-mode {
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  transform: scale(0.92);
+  opacity: 0.85;
+}
+.canvas-summary-mode:hover {
+  opacity: 1;
+  transform: scale(0.95);
+}
+
+/* Exit animation: fade out + scale down + blur, then the node is
+   removed from the reconciled set. 600ms to match the existing
+   canvas-fade-merged transition duration. */
+@keyframes canvas-fade-exit {
+  0%   { opacity: 0.85; transform: scale(0.92); filter: blur(0); }
+  100% { opacity: 0; transform: scale(0.7); filter: blur(2px); }
+}
+.canvas-fade-exit {
+  animation: canvas-fade-exit 0.6s ease-in forwards;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .canvas-fade-exit {
+    animation: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+}
+
+/* ── Visual sweep #10 — minimap viewport mask visibility ────────────────
+   React Flow's <MiniMap> (CanvasView.tsx) draws the "outside the current
+   viewport" dim overlay as a single evenodd `path.react-flow__minimap-mask`
+   (outer rect XOR the viewport rect — see @xyflow/react's MiniMap source),
+   filled via its own `maskColor` prop, which that component wires through
+   as an INLINE `--xy-minimap-mask-background-color-props` custom property
+   on the minimap container (@xyflow/react/dist/style.css's own
+   `.react-flow__minimap-mask` rule reads that var, non-`!important`). The
+   prop was set to `rgba(10,10,16,0.75)` — nearly identical to the minimap's
+   own dark panel background, so the dimmed frame and the clear viewport
+   rectangle painted as the same near-black on near-black with no visible
+   edge between them (the sweep's literal finding). `!important` here is
+   load-bearing: it is the only way to override that prop-driven fill from
+   a stylesheet without touching CanvasView.tsx's own maskColor prop.
+   `stroke` draws along BOTH sub-paths of that single mask path (the outer
+   frame and the inner viewport rect), so it doubles as the ask's "1px
+   accent border" around the viewport rectangle. */
+.react-flow__minimap-mask {
+  fill: rgba(255, 255, 255, 0.08) !important;
+  stroke: var(--color-accent) !important;
+  stroke-width: 1px !important;
+  /* The mask path lives in the minimap's own viewBox coordinate space,
+     scaled down to the small on-screen svg (arbitrarily, depending on the
+     real flow's extent) — a plain `stroke-width` would shrink to
+     sub-pixel/invisible on a large canvas. `non-scaling-stroke` keeps this
+     border a constant 1 SCREEN pixel regardless of that scale. */
+  vector-effect: non-scaling-stroke;
+}
+
+.react-flow__node-project {
+  overflow: visible !important;
+}
+.react-flow__background {
+  background: transparent !important;
+}

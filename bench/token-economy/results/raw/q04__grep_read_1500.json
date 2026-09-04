@@ -1,0 +1,38 @@
+{
+  "questionId": "q04",
+  "category": "behavioral",
+  "variantId": "grep_read_1500",
+  "configId": "grep_read",
+  "budget": 1500,
+  "injectedTokens": 1141,
+  "configMeta": {
+    "tokenBudget": 1500,
+    "terms": [
+      "resolveExistingInbound",
+      "relPath"
+    ],
+    "filesMatched": 6,
+    "filesPicked": 1
+  },
+  "latencyMs": 7247,
+  "answer": "I can see the context provided is from `engine/src/commands/enrich.ts`, which covers TLDR validation and note metadata detection, but it doesn't contain information about the file-neuron lookup bug fix you're asking about.\n\nTo answer your question about the new exported function in `engine/src/annotator/blocks/composers/file-neuron.ts` that fixed the issue with resolving file-neurons by persisted ID (rather than logical graph ID), I would need to read that specific file. The context you've provided doesn't include it.\n\nWould you like me to read `engine/src/annotator/blocks/composers/file-neuron.ts` to find the function name and understand what it computes?",
+  "usage": {
+    "inputTokens": 10,
+    "outputTokens": 392,
+    "cacheReadInputTokens": 14624,
+    "cacheCreationInputTokens": 6244,
+    "costUsd": 0.0181294
+  },
+  "correct": false,
+  "grade": {
+    "correct": false,
+    "presentCount": 0,
+    "totalTerms": 1,
+    "hits": [
+      {
+        "term": "fileNeuronArticleId",
+        "present": false
+      }
+    ]
+  }
+}
