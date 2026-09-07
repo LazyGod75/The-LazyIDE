@@ -2,7 +2,6 @@
    Consumers call addUsage() after each model call; useCostStore() subscribes.
 */
 
-import { usdToCredits } from '../billing/credits.js';
 import { recordUsageSpendCents } from '../agents/budgetTracker.js';
 import { recordUsage as historyRecordUsage, recordBrainSavings as historyRecordBrainSavings } from './usageHistory.js';
 import { estimateUsageUsd } from './estimateUsageUsd.js';
@@ -91,7 +90,12 @@ export function addUsage(record: UsageRecord): void {
   } catch { /* best-effort forwarding — must never throw into callers */ }
 
   notify();
-  recordUsageSpendCents(usdToCredits(cost));
+  // Convert USD → cents ONCE here, but feed UNROUNDED cents to the tracker.
+  // usdToCredits() rounds per call (Math.round(usd * 100)), which drops
+  // fractional cents on cheap calls — e.g. 1000 × $0.004 → 1000 × 0¢ == 0
+  // instead of 400¢. recordUsageSpendCents accumulates the fractional
+  // remainder and only books whole cents, so sub-cent spend is preserved.
+  recordUsageSpendCents(cost * 100);
 }
 
 export function addBrainSavings(tokensSaved: number): void {

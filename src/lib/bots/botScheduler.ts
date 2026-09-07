@@ -142,19 +142,26 @@ export function startBotScheduler(deps: BotSchedulerDeps): BotSchedulerHandle {
       const now = new Date();
       for (const bot of bots) {
         if (!bot.enabled) continue;
-        for (const routine of bot.routines) {
-          if (!isRoutineDue(routine, now)) continue;
+        const dueRoutines = bot.routines.filter((r) => isRoutineDue(r, now));
+        if (dueRoutines.length === 0) continue;
 
-          // Advance lastRunAt BEFORE launching so a crash doesn't re-fire.
-          const updatedRoutine: BotRoutine = { ...routine, lastRunAt: now.toISOString() };
-          const updatedBot: BotConfig = {
-            ...bot,
-            routines: bot.routines.map((r) => (r.id === routine.id ? updatedRoutine : r)),
-            updatedAt: now.toISOString(),
-          };
-          await saveBot(updatedBot);
+        // Advance lastRunAt for ALL due routines in a single write so saving
+        // one routine never erases another's just-saved lastRunAt (stale
+        // snapshot overwrite). lastRunAt is advanced BEFORE launching so a
+        // crash doesn't re-fire the same tick.
+        const dueIds = new Set(dueRoutines.map((r) => r.id));
+        const updatedBot: BotConfig = {
+          ...bot,
+          routines: bot.routines.map((r) =>
+            dueIds.has(r.id) ? { ...r, lastRunAt: now.toISOString() } : r,
+          ),
+          updatedAt: now.toISOString(),
+        };
+        await saveBot(updatedBot);
 
-          // Launch the run (fire-and-forget — the engine tracks it).
+        // Launch each due run (fire-and-forget — the engine tracks it).
+        for (const routine of dueRoutines) {
+          const updatedRoutine = updatedBot.routines.find((r) => r.id === routine.id)!;
           void launchBotRun(updatedBot, routine.task, {
             createMission: deps.createMission,
             model: deps.defaultModelId(),

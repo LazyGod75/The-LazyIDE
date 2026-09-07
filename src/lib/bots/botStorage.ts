@@ -100,20 +100,24 @@ function normalizeStore(raw: unknown): BotsStore {
 
 // ── Store IO ───────────────────────────────────────────────────────
 
-async function readStore(waitForRoot = true): Promise<BotsStore> {
+async function readStore(waitForRoot = true): Promise<{ store: BotsStore; root: string }> {
   const root = await rootPath(waitForRoot);
-  if (!root) return emptyStore();
+  if (!root) return { store: emptyStore(), root: '' };
   const platform = getPlatform();
   try {
     const content = await platform.fs.readFile(joinPath(root, BOTS_FILE));
-    return normalizeStore(JSON.parse(content));
+    return { store: normalizeStore(JSON.parse(content)), root };
   } catch {
-    return emptyStore();
+    return { store: emptyStore(), root };
   }
 }
 
-async function writeStore(store: BotsStore): Promise<void> {
-  const root = await rootPath();
+/** Write the store back to the SAME root the read used. Re-resolving the
+ *  active root here would let a project switch mid-operation overwrite
+ *  project B with project A's bots (the read captured A, the write hits B).
+ *  The root is captured once at the start of the read-modify-write and bound
+ *  to the whole op. */
+async function writeStore(root: string, store: BotsStore): Promise<void> {
   if (!root) throw new Error('LazyBots: no active project root — open a project before saving a bot.');
   const platform = getPlatform();
   await platform.fs.createDir?.(root);
@@ -125,7 +129,7 @@ async function writeStore(store: BotsStore): Promise<void> {
 /** Read all bots from the store. Returns [] when the store is missing/corrupt. */
 export async function listBots(opts?: ListBotsOptions): Promise<BotConfig[]> {
   return enqueueStoreOp(async () => {
-    const store = await readStore(opts?.waitForRoot ?? true);
+    const { store } = await readStore(opts?.waitForRoot ?? true);
     return store.bots;
   });
 }
@@ -133,15 +137,17 @@ export async function listBots(opts?: ListBotsOptions): Promise<BotConfig[]> {
 /** Get a single bot by id, or undefined. */
 export async function getBot(id: string): Promise<BotConfig | undefined> {
   return enqueueStoreOp(async () => {
-    const store = await readStore();
+    const { store } = await readStore();
     return store.bots.find((b) => b.id === id);
   });
 }
 
-/** Upsert a bot (add or update by id). */
+/** Upsert a bot (add or update by id). The root is captured once at the start
+ *  of the read-modify-write so a project switch mid-op cannot redirect the
+ *  write into another project's bot file. */
 export async function saveBot(bot: BotConfig): Promise<void> {
   return enqueueStoreOp(async () => {
-    const store = await readStore();
+    const { store, root } = await readStore();
     const idx = store.bots.findIndex((b) => b.id === bot.id);
     if (idx >= 0) {
       store.bots = [...store.bots];
@@ -149,7 +155,7 @@ export async function saveBot(bot: BotConfig): Promise<void> {
     } else {
       store.bots = [...store.bots, bot];
     }
-    await writeStore(store);
+    await writeStore(root, store);
     emit('lazybots:changed', { botId: bot.id });
   });
 }
@@ -157,9 +163,9 @@ export async function saveBot(bot: BotConfig): Promise<void> {
 /** Delete a bot by id. Idempotent. */
 export async function deleteBot(id: string): Promise<void> {
   return enqueueStoreOp(async () => {
-    const store = await readStore();
+    const { store, root } = await readStore();
     store.bots = store.bots.filter((b) => b.id !== id);
-    await writeStore(store);
+    await writeStore(root, store);
     emit('lazybots:changed', { botId: id });
   });
 }
@@ -167,12 +173,12 @@ export async function deleteBot(id: string): Promise<void> {
 /** Update the enabled flag on a bot. */
 export async function setBotEnabled(id: string, enabled: boolean): Promise<void> {
   return enqueueStoreOp(async () => {
-    const store = await readStore();
+    const { store, root } = await readStore();
     const idx = store.bots.findIndex((b) => b.id === id);
     if (idx < 0) return;
     store.bots = [...store.bots];
     store.bots[idx] = { ...store.bots[idx], enabled, updatedAt: new Date().toISOString() };
-    await writeStore(store);
+    await writeStore(root, store);
     emit('lazybots:changed', { botId: id });
   });
 }

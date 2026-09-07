@@ -571,6 +571,12 @@ function isWorktreeScriptBypassEligible(
  * verdict — see this module's header comment for the full precedence
  * rationale, and isWorktreeScriptBypassEligible's doc comment for the
  * bypass itself.
+ *
+ * Precedence (audit CRITICAL fix): an explicit `exclude` rule is enforced
+ * BEFORE the worktree-script bypass. The bypass is a narrow escape hatch
+ * for ask/allow-tier Bash rules, NOT a way around a human-authored "never
+ * run this" decision — so resolvePermission's exclude > ask > allow order
+ * is consulted first, and only a non-exclude verdict may be bypassed.
  */
 export function checkToolExecution(
   action: string,
@@ -581,6 +587,21 @@ export function checkToolExecution(
 ): string | null {
   const policyBlock = checkToolPolicy(action, policy);
   if (policyBlock) return policyBlock;
+
+  // An explicit exclude rule (or the readonly mode ceiling, which
+  // resolvePermission maps to 'exclude' for non-read tools) takes absolute
+  // priority over the worktree-script bypass below — a hard "never run
+  // this" decision must never be bypassed, even by the narrow acceptEdits/
+  // full script escape hatch. Only ask/allow verdicts may be bypassed.
+  const patternName = TOOL_PATTERN_NAME[action];
+  if (patternName) {
+    const toolArg = toolPermissionArg(action, args);
+    const level = resolvePermission(patternName, toolArg, rules, agentMode);
+    if (level === 'exclude') {
+      return checkToolPermission(action, args, agentMode, rules);
+    }
+  }
+
   if (isWorktreeScriptBypassEligible(action, args, policy)) return null;
   return checkToolPermission(action, args, agentMode, rules);
 }

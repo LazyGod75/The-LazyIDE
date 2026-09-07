@@ -42,12 +42,28 @@ describe('classifyAction — read-only tools', () => {
 });
 
 describe('classifyAction — publish/send path', () => {
-  it('a compose URL with a Post click classifies as compose (drafting is safe)', () => {
-    expect(classifyAction('cloud_browser_click', {}, { url: 'https://x.com/compose', targetText: 'Post' })).toBe('compose');
-  });
-
   it('a Post click on a non-compose URL classifies as send', () => {
     expect(classifyAction('cloud_browser_click', {}, { url: 'https://x.com/home', targetText: 'Post' })).toBe('send');
+  });
+
+  it('a Send click on a compose URL classifies as send, not compose (publication requires approval)', () => {
+    expect(classifyAction('cloud_browser_click', {}, { url: 'https://mail.example.com/compose', targetText: 'Send' })).toBe('send');
+  });
+
+  it('a Post click on a compose URL classifies as send, not compose', () => {
+    expect(classifyAction('cloud_browser_click', {}, { url: 'https://x.com/compose', targetText: 'Post' })).toBe('send');
+  });
+
+  it('a Publish click on a /publish URL classifies as send, not compose', () => {
+    expect(classifyAction('cloud_browser_click', {}, { url: 'https://blog.example.com/publish', targetText: 'Publish' })).toBe('send');
+  });
+
+  it('a Submit click on a compose URL classifies as send, not compose', () => {
+    expect(classifyAction('cloud_browser_click', {}, { url: 'https://forum.example.com/compose', targetText: 'Submit' })).toBe('send');
+  });
+
+  it('an ambiguous click on a compose URL with no publication text falls back to compose', () => {
+    expect(classifyAction('cloud_browser_click', {}, { url: 'https://x.com/compose', targetText: 'Attach file' })).toBe('compose');
   });
 });
 

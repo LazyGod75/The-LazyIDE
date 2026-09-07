@@ -128,6 +128,41 @@ describe('startBotScheduler', () => {
     handle.stop();
   });
 
+  it('persists lastRunAt for ALL due routines in the same tick (no stale-snapshot overwrite)', async () => {
+    const { listBots } = await import('../lib/bots/botStorage');
+    const { saveBot } = await import('../lib/bots/botStorage');
+    const bot: BotConfig = {
+      id: 'bot_1', name: 'Test', description: 'test',
+      systemPrompt: 'You are a bot.', autonomy: 'supervised',
+      capabilities: { browser: true, desktop: false, sandbox: false, maxConcurrentSessions: 1 },
+      routines: [
+        { id: 'r1', name: 'R1', schedule: '* * * * *', task: 't1', enabled: true, lastRunAt: null },
+        { id: 'r2', name: 'R2', schedule: '* * * * *', task: 't2', enabled: true, lastRunAt: null },
+      ],
+      profileIds: [], enabled: true,
+      createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+    vi.mocked(listBots).mockResolvedValue([bot]);
+
+    const onRoutineFired = vi.fn();
+    const handle = startBotScheduler({
+      createMission: async () => 'M1',
+      defaultModelId: () => 'test-model',
+      onRoutineFired,
+    });
+    await handle.tickNow();
+    handle.stop();
+
+    expect(onRoutineFired).toHaveBeenCalledTimes(2);
+    // The final persisted bot must carry lastRunAt for BOTH routines —
+    // saving r2 must not erase the lastRunAt just saved for r1.
+    const lastSave = vi.mocked(saveBot).mock.calls.at(-1)?.[0] as BotConfig;
+    const r1 = lastSave.routines.find((r) => r.id === 'r1');
+    const r2 = lastSave.routines.find((r) => r.id === 'r2');
+    expect(r1?.lastRunAt).not.toBeNull();
+    expect(r2?.lastRunAt).not.toBeNull();
+  });
+
   it('surfaces launch failures via onRoutineFailed (C76)', async () => {
     const { listBots } = await import('../lib/bots/botStorage');
     const { launchBotRun } = await import('../lib/bots/botEngine');

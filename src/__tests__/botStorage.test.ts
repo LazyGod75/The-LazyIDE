@@ -94,6 +94,52 @@ describe('saveBot', () => {
   });
 });
 
+describe('saveBot — active root switched mid-operation', () => {
+  // Regression: saveBot() re-reads the active root at write time. If the
+  // active project changes during the async read-modify-write, the content
+  // of project A can be written into project B's bot file. The root must be
+  // captured at the START of the operation and reused for both read and write.
+  it('writes to the root captured at read time, not the root active at write time', async () => {
+    setBotsRoot('/repoA');
+    memFs.set('/repoA/.lazy/bots.json', JSON.stringify({ version: '1.0.0', bots: [makeBot({ id: 'bot_a' })] }));
+
+    // Stall readFile so we can switch the active root while saveBot is in
+    // flight (after the read resolved /repoA but before writeStore runs).
+    let resolveRead!: () => void;
+    const readGate = new Promise<void>((r) => {
+      resolveRead = r;
+    });
+    readFile.mockImplementationOnce(async (path: string) => {
+      const content = memFs.get(path);
+      if (content === undefined) throw new Error(`not found: ${path}`);
+      // Hold the read result until the test flips the root.
+      await readGate;
+      return content;
+    });
+
+    const pending = saveBot(makeBot({ id: 'bot_new', name: 'New Bot' }));
+    // Let the op start and block on the gated read.
+    await Promise.resolve();
+    await Promise.resolve();
+    // Switch the active root to project B mid-operation.
+    setBotsRoot('/repoB');
+    memFs.set('/repoB/.lazy/bots.json', JSON.stringify({ version: '1.0.0', bots: [makeBot({ id: 'bot_b' })] }));
+    resolveRead();
+    await pending;
+
+    // The new bot must land in /repoA (the root captured at read time), and
+    // /repoB must be untouched.
+    const aRaw = memFs.get('/repoA/.lazy/bots.json');
+    const bRaw = memFs.get('/repoB/.lazy/bots.json');
+    expect(aRaw).toBeDefined();
+    expect(bRaw).toBeDefined();
+    const aBots = JSON.parse(aRaw!).bots as BotConfig[];
+    const bBots = JSON.parse(bRaw!).bots as BotConfig[];
+    expect(aBots.map((b) => b.id).sort()).toEqual(['bot_a', 'bot_new']);
+    expect(bBots.map((b) => b.id)).toEqual(['bot_b']);
+  });
+});
+
 describe('deleteBot', () => {
   it('removes the bot', async () => {
     await saveBot(makeBot());

@@ -369,7 +369,14 @@ describe('checkToolExecution — scoped worktree-script bypass', () => {
     expect(result).toBeNull();
   });
 
-  it('bypasses an excluded Bash rule for an allowlisted script command under full', () => {
+  // REGRESSION (audit CRITICAL): an explicit `exclude` rule must NEVER be
+  // bypassed by the worktree-script escape hatch. Previously the bypass was
+  // checked BEFORE the general permission resolution, so an allowlisted
+  // script command under acceptEdits/full sailed straight through even when
+  // a human-authored `exclude` rule blocked Bash — a hard "never run this"
+  // decision silently ignored. The fix enforces exclude > ask > allow
+  // priority BEFORE the bypass, so an explicit exclude always wins.
+  it('does NOT bypass an explicit exclude rule for an allowlisted script command under full', () => {
     const rules = [rule('Bash', 'exclude')];
     const result = checkToolExecution(
       'run_command',
@@ -378,7 +385,23 @@ describe('checkToolExecution — scoped worktree-script bypass', () => {
       'auto',
       rules,
     );
-    expect(result).toBeNull();
+    expect(result).not.toBeNull();
+    expect(result!.toLowerCase()).toContain('excluded');
+  });
+
+  it('does NOT bypass a command-pattern exclude rule even for an allowlisted script under acceptEdits', () => {
+    // A narrower exclude (the script name itself) must also win over the
+    // bypass — the bypass only narrows ask/allow, never exclude.
+    const rules = [rule('Bash(npm test)', 'exclude'), ...buildManagedPermissionRules()];
+    const result = checkToolExecution(
+      'run_command',
+      { command: 'npm test' },
+      { permissionMode: 'acceptEdits' },
+      'default',
+      rules,
+    );
+    expect(result).not.toBeNull();
+    expect(result!.toLowerCase()).toContain('excluded');
   });
 
   it('does NOT bypass for a non-allowlisted command even under acceptEdits — general gate still applies', () => {

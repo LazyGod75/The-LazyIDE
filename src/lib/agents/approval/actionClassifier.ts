@@ -4,9 +4,12 @@
 
    The priority order matters (see classifyAction): password targets and
    exec/file_write tools are recognised first, read-only tools are always
-   'browse', then URL path markers, then interactive target-text markers.
-   Anything else — including a genuine "Read more" link — is honestly
-   'unknown', which the gate treats as REQUIRE (the intended fail-safe).
+   'browse', then interactive target-text markers, then URL path markers.
+   The action's actual effect (e.g. a "Send" button) takes priority over the
+   URL context (e.g. a /compose page) so a publication can never slip through
+   as a low-risk 'compose' just because the page is a draft view. Anything
+   else — including a genuine "Read more" link — is honestly 'unknown',
+   which the gate treats as REQUIRE (the intended fail-safe).
 
    classifyAction is pure and synchronous and never calls any model; the
    fallback can only ADD signal, never weaken a confident class.
@@ -55,7 +58,18 @@ export function classifyAction(tool: string, args: Record<string, unknown>, page
   //    world-changing actions.
   if (CLOUD_READONLY_TOOLS.has(tool)) return 'browse';
 
-  // 5. URL path patterns (case-insensitive).
+  // 5. Interactive target text patterns (case-insensitive). The action's
+  //    actual effect is checked BEFORE the URL context so that a publication
+  //    button (Send/Post/Publish/Submit) is never masked by a /compose URL
+  //    and allowed without approval.
+  const targetText = page.targetText?.toLowerCase() ?? '';
+  if (TARGET_SEND.test(targetText)) return 'send';
+  if (TARGET_PAY.test(targetText)) return 'pay';
+  if (TARGET_DELETE.test(targetText)) return 'delete';
+
+  // 6. URL path patterns (case-insensitive). Only used when the action text
+  //    itself is ambiguous, so a /compose page with no publication button is
+  //    still treated as low-risk drafting.
   const url = page.url?.toLowerCase();
   if (url) {
     if (URL_COMPOSE_MARKERS.some((marker) => url.includes(marker))) return 'compose';
@@ -63,13 +77,6 @@ export function classifyAction(tool: string, args: Record<string, unknown>, page
     if (URL_CREDENTIALS_MARKERS.some((marker) => url.includes(marker))) return 'credentials';
     if (URL_DELETE_MARKERS.some((marker) => url.includes(marker))) return 'delete';
   }
-
-  // 6. Interactive target text patterns (case-insensitive). The compose URL
-  //    check already returned above, so a Post click here is 'send'.
-  const targetText = page.targetText?.toLowerCase() ?? '';
-  if (TARGET_SEND.test(targetText)) return 'send';
-  if (TARGET_PAY.test(targetText)) return 'pay';
-  if (TARGET_DELETE.test(targetText)) return 'delete';
 
   // 7. Interactive target with no recognized pattern, or unmatched — be
   //    honest: unknown is gated, and that is the intended fail-safe.

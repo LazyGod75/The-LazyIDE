@@ -15,6 +15,7 @@ import {
   listActiveRunsForBot,
   resetBotEngineState,
   restoreBotRuntime,
+  pruneBotRunsNotLive,
   toBotNewMissionInput,
   BOT_LOCAL_TOOLS,
   botIdForMission,
@@ -264,6 +265,32 @@ describe('launchBotRun', () => {
     expect(String((rejected[0] as PromiseRejectedResult).reason)).toMatch(/concurrent/);
   });
 
+  it('refuses a second launch when a reservation has been pending for >30s', async () => {
+    // Regression: a still-pending launch reservation older than 30s used to
+    // expire, letting a second run bypass maxConcurrentSessions. The
+    // reservation must persist for the entire launch phase and only be
+    // released on a confirmed result (success/failure/cancellation).
+    vi.useFakeTimers();
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    const createMission = async () => {
+      await gate;
+      return 'M1';
+    };
+    const bot = makeBot({ capabilities: { browser: true, desktop: false, sandbox: false, maxConcurrentSessions: 1 } });
+    const p1 = launchBotRun(bot, 'one', { createMission, model: 'm' });
+    // The pending slot is created synchronously; flush the first launch's
+    // async loadBotLastTime so it is parked on the createMission gate.
+    await vi.advanceTimersByTimeAsync(0);
+    // Advance past the old 30s reservation expiry window — the first launch
+    // is still pending (createMission has not resolved).
+    await vi.advanceTimersByTimeAsync(31_000);
+    await expect(launchBotRun(bot, 'two', { createMission, model: 'm' })).rejects.toThrow(/concurrent/);
+    release();
+    await p1;
+    vi.useRealTimers();
+  });
+
   it('denies disabled capabilities on the created mission', async () => {
     const store = makeFakeStore();
     const bot = makeBot({ capabilities: { browser: true, desktop: false, sandbox: false, maxConcurrentSessions: 1 } });
@@ -333,5 +360,68 @@ describe('restoreBotRuntime', () => {
     await restoreBotRuntime();
     expect(listActiveRunsForBot('bot_1').map((r) => r.missionId)).toEqual(['M9']);
     expect(botIdForMission('M9')).toBe('bot_1');
+  });
+});
+
+describe('restoreBotRuntime / pruneBotRunsNotLive serialization', () => {
+  it('does not leave a zombie in memory when restore and prune run concurrently', async () => {
+    // A zombie run persisted from a prior crash — its mission is NOT in the
+    // live set, so prune must clear it. Without the boot lock, restore can
+    // rehydrate the zombie into activeBotRuns AFTER prune's snapshot but
+    // BEFORE prune's delete, or restore can read the disk file BEFORE prune
+    // removes it — either way the zombie survives in memory and blocks all
+    // future launches (M105-class lockout). The lock serializes the two so
+    // the final state is consistent regardless of interleaving.
+    await persistActiveRuns([{
+      id: 'run_MZ', botId: 'bot_1', missionId: 'MZ', status: 'running',
+      startedAt: '2026-01-01T00:00:00.000Z',
+    }]);
+    resetBotEngineState();
+    // Fire both concurrently (no await between them) — this is the exact
+    // pattern from BotBootService (restore) + agentsStore (prune, fire-and-
+    // forget) running in parallel at boot.
+    const live = new Set<string>(); // MZ is NOT live — it is a zombie
+    await Promise.all([
+      restoreBotRuntime(),
+      pruneBotRunsNotLive(live),
+    ]);
+    // Invariant: the zombie must NOT survive in memory.
+    expect(listActiveRunsForBot('bot_1')).toEqual([]);
+    expect(botIdForMission('MZ')).toBeUndefined();
+  });
+
+  it('keeps a genuinely live run when restore and prune run concurrently', async () => {
+    // A run whose mission IS in the live set must survive both operations.
+    await persistActiveRuns([{
+      id: 'run_ML', botId: 'bot_1', missionId: 'ML', status: 'running',
+      startedAt: '2026-01-01T00:00:00.000Z',
+    }]);
+    resetBotEngineState();
+    const live = new Set<string>(['ML']);
+    await Promise.all([
+      restoreBotRuntime(),
+      pruneBotRunsNotLive(live),
+    ]);
+    expect(listActiveRunsForBot('bot_1').map((r) => r.missionId)).toEqual(['ML']);
+    expect(botIdForMission('ML')).toBe('bot_1');
+  });
+
+  it('serializes: prune does not run until a prior restore completes', async () => {
+    // If restore is in flight, a concurrent prune must wait for it to finish
+    // before touching activeBotRuns or the persisted file. We verify by
+    // checking that prune's result reflects the state restore produced.
+    await persistActiveRuns([{
+      id: 'run_MW', botId: 'bot_1', missionId: 'MW', status: 'running',
+      startedAt: '2026-01-01T00:00:00.000Z',
+    }]);
+    resetBotEngineState();
+    const live = new Set<string>(); // MW is a zombie
+    const restoreP = restoreBotRuntime();
+    const pruneP = pruneBotRunsNotLive(live);
+    const [restoredCount, cleared] = await Promise.all([restoreP, pruneP]);
+    // restore rehydrated 1 run, then prune cleared that 1 zombie.
+    expect(restoredCount).toBeGreaterThanOrEqual(1);
+    expect(cleared).toBe(1);
+    expect(listActiveRunsForBot('bot_1')).toEqual([]);
   });
 });

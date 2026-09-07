@@ -50,17 +50,25 @@ async function waitForChildAgent(opts: {
   const childDoneEvent = `agent://done/${opts.childId}`;
   const childErrorEvent = `agent://error/${opts.childId}`;
   let resolveChild!: () => void;
-  const childFinished = new Promise<void>((resolve) => { resolveChild = resolve; });
+  let rejectChild!: (err: Error) => void;
+  const childFinished = new Promise<void>((resolve, reject) => {
+    resolveChild = resolve;
+    rejectChild = reject;
+  });
   let childDoneUnsub: () => void = () => undefined;
   let childErrorUnsub: () => void = () => undefined;
-  const childCleanupAndResolve = (): void => {
+  const childCleanup = (): void => {
     try { childDoneUnsub(); } catch { /* ignore */ }
     try { childErrorUnsub(); } catch { /* ignore */ }
-    resolveChild();
+  };
+  const childCleanupAndResolve = (): void => { childCleanup(); resolveChild(); };
+  const childCleanupAndReject = (): void => {
+    childCleanup();
+    rejectChild(new Error(`child_agent_error: ${opts.childId}`));
   };
   [childDoneUnsub, childErrorUnsub] = await Promise.all([
     listen(childDoneEvent, childCleanupAndResolve),
-    listen(childErrorEvent, childCleanupAndResolve),
+    listen(childErrorEvent, childCleanupAndReject),
   ]);
   await invoke('agent_run', {
     req: {
@@ -106,6 +114,8 @@ async function mergeAndCleanupChild(opts: {
       actor: 'system',
       payload: { reason: `sub_agent_merge_failed: ${String(err)}` },
     });
+    // Preserve the worktree on merge conflict so it can be inspected or retried.
+    return;
   }
   try {
     await discardWorktree(opts.repoPath, opts.childWorktreePath, opts.childBranch);

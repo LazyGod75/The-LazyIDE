@@ -65,7 +65,7 @@ describe('dispatch — budget gate', () => {
       expect.objectContaining({
         type: 'scheduler.queued',
         missionId: 'M1',
-        payload: expect.objectContaining({ reason: 'pool_full' }),
+        payload: expect.objectContaining({ reason: 'budget_blocked' }),
       }),
     );
   });
@@ -98,5 +98,63 @@ describe('dispatch — budget gate', () => {
     expect(mockedEmitEvent).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: 'scheduler.queued' }),
     );
+  });
+});
+
+describe('dispatch — budget-blocked queue stays blocked across dispatch() calls', () => {
+  it('does not drain a budget-blocked mission on a later dispatch() while the budget is still at 0', async () => {
+    // First dispatch: budget exceeded -> mission queued (budget-blocked).
+    mockedIsOverBudget.mockReturnValue(true);
+    mockedWouldExceedBudget.mockReturnValue(false);
+    const launchFn1 = vi.fn().mockReturnValue(new Promise<void>(() => {}));
+    await dispatch(makeMission({ id: 'M1' }), launchFn1, { projectId: 'proj-1' });
+
+    expect(launchFn1).not.toHaveBeenCalled();
+    expect(mockedEmitEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'scheduler.queued',
+        missionId: 'M1',
+        payload: expect.objectContaining({ reason: 'budget_blocked' }),
+      }),
+    );
+
+    // Second dispatch: budget STILL exceeded. drain() at the top of this
+    // call must NOT launch the budget-blocked M1 even though a pool/global
+    // slot is numerically free.
+    const launchFn2 = vi.fn().mockReturnValue(new Promise<void>(() => {}));
+    await dispatch(makeMission({ id: 'M2' }), launchFn2, { projectId: 'proj-1' });
+
+    expect(launchFn1).not.toHaveBeenCalled();
+    expect(launchFn2).not.toHaveBeenCalled();
+
+    // Budget released: a third dispatch() should now drain and launch M1.
+    mockedIsOverBudget.mockReturnValue(false);
+    const launchFn3 = vi.fn().mockReturnValue(new Promise<void>(() => {}));
+    await dispatch(makeMission({ id: 'M3' }), launchFn3, { projectId: 'proj-1' });
+
+    expect(launchFn1).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not drain a wouldExceedBudget-blocked mission while the budget still forbids it', async () => {
+    // isOverBudget false, but wouldExceedBudget true -> queued (budget-blocked).
+    mockedIsOverBudget.mockReturnValue(false);
+    mockedWouldExceedBudget.mockReturnValue(true);
+    const launchFn1 = vi.fn().mockReturnValue(new Promise<void>(() => {}));
+    await dispatch(makeMission({ id: 'M1' }), launchFn1, { projectId: 'proj-1' });
+
+    expect(launchFn1).not.toHaveBeenCalled();
+
+    // Still blocked: a second dispatch() must not launch M1.
+    const launchFn2 = vi.fn().mockReturnValue(new Promise<void>(() => {}));
+    await dispatch(makeMission({ id: 'M2' }), launchFn2, { projectId: 'proj-1' });
+
+    expect(launchFn1).not.toHaveBeenCalled();
+
+    // Budget now allows it: drain launches M1.
+    mockedWouldExceedBudget.mockReturnValue(false);
+    const launchFn3 = vi.fn().mockReturnValue(new Promise<void>(() => {}));
+    await dispatch(makeMission({ id: 'M3' }), launchFn3, { projectId: 'proj-1' });
+
+    expect(launchFn1).toHaveBeenCalledTimes(1);
   });
 });

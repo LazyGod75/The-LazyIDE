@@ -25,6 +25,8 @@ export interface OpenRouterModel {
   priceIn: number;
   /** USD per 1M output tokens */
   priceOut: number;
+  /** Max context window length (input + output) for this model */
+  contextLength?: number;
   /** Max output tokens for this model */
   maxTokens: number;
   /** Whether this model supports the web search plugin */
@@ -34,7 +36,7 @@ export interface OpenRouterModel {
 }
 
 /** OpenRouter id of the free rail's default model. Retired aliases map here. */
-export const FREE_OPENROUTER_MODEL_ID = 'z-ai/glm-5.2:free';
+export const FREE_OPENROUTER_MODEL_ID = 'minimax/minimax-m3:free';
 
 const RETIRED_OPENROUTER_IDS: ReadonlySet<string> = new Set([
   'stealth/ox-alpha',
@@ -54,32 +56,9 @@ export const OPENROUTER_MODELS: readonly OpenRouterModel[] = [
   // and every client gate below treats them as always-ready. The privacy
   // trade-off (upstream provider may train on submitted data) is surfaced by
   // FreeModelPrivacyNotice at the point of selection.
+  // Confirmed working in real-app testing — used as the free rail default.
   {
     id: FREE_OPENROUTER_MODEL_ID,
-    label: 'GLM 5.2 (free)',
-    provider: 'Z.ai',
-    tier: 'free',
-    reasoning: true,
-    priceIn: 0,
-    priceOut: 0,
-    maxTokens: 8192,
-    webSearch: true,
-    isFree: true,
-  },
-  {
-    id: 'google/gemma-4-31b-it:free',
-    label: 'Gemma 4 31B (free)',
-    provider: 'Google',
-    tier: 'free',
-    reasoning: false,
-    priceIn: 0,
-    priceOut: 0,
-    maxTokens: 8192,
-    webSearch: false,
-    isFree: true,
-  },
-  {
-    id: 'minimax/minimax-m3:free',
     label: 'MiniMax M3 (free)',
     provider: 'MiniMax',
     tier: 'free',
@@ -90,52 +69,17 @@ export const OPENROUTER_MODELS: readonly OpenRouterModel[] = [
     webSearch: false,
     isFree: true,
   },
+  // Kept in catalog despite current provider errors — may come back online.
   {
-    id: 'nvidia/nemotron-3-ultra-550b-a55b:free',
-    label: 'Nemotron 3 Ultra (free)',
-    provider: 'NVIDIA',
+    id: 'z-ai/glm-5.2:free',
+    label: 'GLM 5.2 (free)',
+    provider: 'Z.ai',
     tier: 'free',
     reasoning: true,
     priceIn: 0,
     priceOut: 0,
     maxTokens: 8192,
-    webSearch: false,
-    isFree: true,
-  },
-  {
-    id: 'poolside/laguna-s-2.1:free',
-    label: 'Laguna S 2.1 (free)',
-    provider: 'Poolside',
-    tier: 'free',
-    reasoning: false,
-    priceIn: 0,
-    priceOut: 0,
-    maxTokens: 8192,
-    webSearch: false,
-    isFree: true,
-  },
-  {
-    id: 'thinkingmachines/inkling:free',
-    label: 'Inkling (free)',
-    provider: 'Thinking Machines',
-    tier: 'free',
-    reasoning: false,
-    priceIn: 0,
-    priceOut: 0,
-    maxTokens: 8192,
-    webSearch: false,
-    isFree: true,
-  },
-  {
-    id: 'cohere/north-mini-code:free',
-    label: 'North Mini Code (free)',
-    provider: 'Cohere',
-    tier: 'free',
-    reasoning: false,
-    priceIn: 0,
-    priceOut: 0,
-    maxTokens: 8192,
-    webSearch: false,
+    webSearch: true,
     isFree: true,
   },
   // ── Z.ai — PAID (the bare `z-ai/glm-5.2` route requires credits; the free
@@ -204,6 +148,20 @@ export const OPENROUTER_MODELS: readonly OpenRouterModel[] = [
     webSearch: true,
     isFree: false,
   },
+  {
+    id: 'anthropic/claude-fable-5.1',
+    label: 'Claude Fable 5.1',
+    provider: 'Anthropic',
+    tier: 'max',
+    reasoning: true,
+    maxEffort: true,
+    priceIn: 10,
+    priceOut: 50,
+    contextLength: 1000000,
+    maxTokens: 65536,
+    webSearch: true,
+    isFree: false,
+  },
   // ── OpenAI ────────────────────────────────────────────────────────
   {
     id: 'openai/gpt-5.6-luna',
@@ -239,6 +197,20 @@ export const OPENROUTER_MODELS: readonly OpenRouterModel[] = [
     maxEffort: true,
     priceIn: 5,
     priceOut: 30,
+    maxTokens: 65536,
+    webSearch: true,
+    isFree: false,
+  },
+  {
+    id: 'openai/gpt-6-astra',
+    label: 'GPT-6 Astra',
+    provider: 'OpenAI',
+    tier: 'max',
+    reasoning: true,
+    maxEffort: true,
+    priceIn: 10,
+    priceOut: 50,
+    contextLength: 1050000,
     maxTokens: 65536,
     webSearch: true,
     isFree: false,

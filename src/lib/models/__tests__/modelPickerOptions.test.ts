@@ -194,10 +194,17 @@ describe('buildModelPickerOptions', () => {
     );
   });
 
-  it('pro no-credits (plan active, wallet empty): lockedProGroup is NOT set — an "upgrade to Pro" pitch would be dishonest here', () => {
+  it('pro no-credits (plan active, wallet empty): lockedProGroup carries the FULL (non-free) Pro catalog — the user owns Pro, the models must stay VISIBLE (grayed out) so they can see what they are missing', () => {
     const result = buildModelPickerOptions({ claudeSub: true, pro: 'no-credits', codexManaged: false });
 
-    expect(result.lockedProGroup).toBeUndefined();
+    expect(result.lockedProGroup).toBeDefined();
+    // isFree entries are excluded — they're already usable, unlocked, in the
+    // 'free' group; the locked group is only for the PAID catalog.
+    expect(result.lockedProGroup!.models.map((m) => m.id)).toEqual(
+      OPENROUTER_MODELS.filter((m) => !m.isFree).map((m) => m.id),
+    );
+    // proExhausted still distinguishes the messaging (recharge vs upgrade).
+    expect(result.proExhausted).toBe(true);
   });
 
   it('pro active: lockedProGroup is NOT set — the real group already covers it', () => {

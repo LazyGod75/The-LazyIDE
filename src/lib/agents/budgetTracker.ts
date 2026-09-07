@@ -33,6 +33,13 @@ const listeners = new Set<() => void>();
 /** Session ledger ids for costStore.addUsage → spend() (not a real mission). */
 const USAGE_LEDGER_ID = '__usage__';
 
+/** Fractional-cent accumulator for recordUsageSpendCents. costStore feeds
+ *  UNROUNDED cents (usd * 100) per call; cheap calls (e.g. $0.004 = 0.4¢)
+ *  would otherwise round to 0 and evaporate — 1000 × $0.004 recorded 0¢
+ *  instead of 400¢. We bank the remainder here and only book whole cents
+ *  to spend(), so sub-cent spend accumulates across calls. */
+let _usageSpendCentsAccum = 0;
+
 function notifyBudget(): void {
   for (const fn of listeners) {
     try { fn(); } catch { /* listeners must not break the tracker */ }
@@ -132,10 +139,20 @@ export function hydrateGlobalSpentCents(historyCents: number): void {
   notifyBudget();
 }
 
-/** Record settled USD from costStore.addUsage on the session ledger. */
+/** Record settled USD from costStore.addUsage on the session ledger.
+ *  Accepts UNROUNDED cents (usd * 100); fractional cents accumulate in
+ *  _usageSpendCentsAccum and only whole cents are booked to spend(), so a
+ *  stream of sub-cent calls (e.g. 1000 × $0.004) converges to the correct
+ *  total instead of rounding each call down to 0. */
 export function recordUsageSpendCents(cents: number): void {
   if (!Number.isFinite(cents) || cents <= 0) return;
-  spend(USAGE_LEDGER_ID, USAGE_LEDGER_ID, Math.round(cents));
+  _usageSpendCentsAccum += cents;
+  // Floor with a tiny epsilon to absorb float drift (e.g. 399.9999999999
+  // → 400) without ever crossing a real integer boundary.
+  const whole = Math.floor(_usageSpendCentsAccum + 1e-9);
+  if (whole <= 0) return;
+  _usageSpendCentsAccum -= whole;
+  spend(USAGE_LEDGER_ID, USAGE_LEDGER_ID, whole);
 }
 
 export function _resetBudgetTrackerForTests(): void {
@@ -143,6 +160,7 @@ export function _resetBudgetTrackerForTests(): void {
   projectBudgets.clear();
   globalLimitCents = undefined;
   globalSpentCents = 0;
+  _usageSpendCentsAccum = 0;
   listeners.clear();
 }
 

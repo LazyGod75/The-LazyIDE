@@ -281,6 +281,22 @@ interface QueuedEntry {
    *  has left _runningMissionIds. Absent for ordinary pool_full entries,
    *  which conflictsResolved always treats as immediately eligible. */
   conflictsWith?: string[];
+  /** Set ONLY when this entry was queued because a budget gate
+   *  (isOverBudget / wouldExceedBudget) refused the launch, rather than a
+   *  full pool or a scope conflict. The entry must stay queued until the
+   *  budget is explicitly released or increased — drain() re-checks the
+   *  gate (see budgetResolved) before launching, so a later dispatch()
+   *  call cannot launch it just because a pool/global slot is numerically
+   *  free. Absent for ordinary pool_full and scope_conflict entries, which
+   *  budgetResolved always treats as immediately eligible. */
+  budgetBlocked?: boolean;
+  /** projectId threaded through from dispatch() so a budgetBlocked entry
+   *  can re-run isOverBudget/wouldExceedBudget in budgetResolved without
+   *  re-deriving it. */
+  projectId?: string;
+  /** Estimated cost (cents) captured at queue time so a budgetBlocked entry
+   *  can re-run wouldExceedBudget in budgetResolved identically. */
+  estimatedCostCents?: number;
   /** Wall-clock time this entry was enqueued — the basis for
    *  emitStalledSignals' wait-time check and missionQueueWait's reported
    *  waitedMs (root-cause fix's "never silent" requirement). */
@@ -644,17 +660,34 @@ function conflictsResolved(entry: QueuedEntry): boolean {
   return !entry.conflictsWith.some((id) => _runningMissionIds.has(id));
 }
 
+/** True when a budgetBlocked entry's budget gate has cleared (the budget
+ *  was explicitly released or increased) — re-runs the SAME isOverBudget /
+ *  wouldExceedBudget checks dispatch() used to queue it, so a later
+ *  dispatch()/drain() cannot launch it just because a pool/global slot is
+ *  numerically free. Entries without budgetBlocked are always eligible
+ *  here, so this is a pure no-op addition to pickNextIndex's existing
+ *  filter. */
+function budgetResolved(entry: QueuedEntry): boolean {
+  if (!entry.budgetBlocked) return true;
+  const projectId = entry.projectId ?? 'unknown';
+  if (isOverBudget(entry.mission.id, projectId)) return false;
+  const estimatedCost = entry.estimatedCostCents ?? estimateMissionCostCents(entry.mission.model ?? '', 10);
+  if (wouldExceedBudget(entry.mission.id, projectId, estimatedCost)) return false;
+  return true;
+}
+
 /** Index of the highest-priority, earliest-enqueued eligible entry, or -1
  *  when every candidate's pool is at cap, backed off, still scope-conflicted,
- *  or the global cap is saturated. Mirrors missionQueue.ts's dequeue()
- *  comparator (`priority desc, enqueuedAt asc`), using an incrementing `seq`
- *  for a stable tie-break. */
+ *  budget-blocked, or the global cap is saturated. Mirrors missionQueue.ts's
+ *  dequeue() comparator (`priority desc, enqueuedAt asc`), using an
+ *  incrementing `seq` for a stable tie-break. */
 function pickNextIndex(): number {
   let bestIdx = -1;
   for (let i = 0; i < _queue.length; i += 1) {
     const entry = _queue[i];
     if (!canLaunch(entry.pool, entry.mission)) continue;
     if (!conflictsResolved(entry)) continue;
+    if (!budgetResolved(entry)) continue;
     if (bestIdx === -1) {
       bestIdx = i;
       continue;
@@ -692,13 +725,27 @@ function enqueue(
   priority: number,
   projectId: string,
   conflictsWith?: string[],
+  budgetBlocked?: boolean,
+  estimatedCostCents?: number,
 ): void {
-  const entry: QueuedEntry = { mission, pool, launchFn, priority, seq: _seq, conflictsWith, queuedAtMs: Date.now() };
+  const entry: QueuedEntry = {
+    mission,
+    pool,
+    launchFn,
+    priority,
+    seq: _seq,
+    conflictsWith,
+    budgetBlocked,
+    projectId,
+    estimatedCostCents,
+    queuedAtMs: Date.now(),
+  };
   _seq += 1;
   _queue = [..._queue, entry];
 
   const depth = _queue.filter((e) => e.pool === pool).length;
   const isConflict = conflictsWith !== undefined && conflictsWith.length > 0;
+  const reason = isConflict ? 'scope_conflict' : budgetBlocked ? 'budget_blocked' : 'pool_full';
   emitEvent({
     type: 'scheduler.queued',
     tsMs: Date.now(),
@@ -707,7 +754,7 @@ function enqueue(
     actor: 'system',
     payload: isConflict
       ? { reason: 'scope_conflict', pool, depth, conflictsWith }
-      : { reason: 'pool_full', pool, depth },
+      : { reason, pool, depth },
   });
 }
 
@@ -726,7 +773,7 @@ const STALLED_QUEUE_WAIT_MS = 3 * 60_000;
 
 export interface QueueWaitInfo {
   pool: string;
-  reason: 'pool_full' | 'scope_conflict';
+  reason: 'pool_full' | 'scope_conflict' | 'budget_blocked';
   /** When this entry was enqueued (Date.now()-style epoch ms). */
   queuedAtMs: number;
   /** Date.now() - queuedAtMs, computed at call time. */
@@ -754,9 +801,10 @@ export function missionQueueWait(missionId: string): QueueWaitInfo | undefined {
   const entry = _queue.find((e) => e.mission.id === missionId);
   if (!entry) return undefined;
   const isConflict = entry.conflictsWith !== undefined && entry.conflictsWith.length > 0;
+  const reason = isConflict ? 'scope_conflict' : entry.budgetBlocked ? 'budget_blocked' : 'pool_full';
   return {
     pool: entry.pool,
-    reason: isConflict ? 'scope_conflict' : 'pool_full',
+    reason,
     queuedAtMs: entry.queuedAtMs,
     waitedMs: Date.now() - entry.queuedAtMs,
   };
@@ -776,6 +824,7 @@ function emitStalledSignals(): void {
     if (waitedMs < STALLED_QUEUE_WAIT_MS) continue;
     _stalledEmitted.add(entry.mission.id);
     const isConflict = entry.conflictsWith !== undefined && entry.conflictsWith.length > 0;
+    const reason = isConflict ? 'scope_conflict' : entry.budgetBlocked ? 'budget_blocked' : 'pool_full';
     emitEvent({
       type: 'scheduler.stalled',
       tsMs: now,
@@ -784,7 +833,7 @@ function emitStalledSignals(): void {
       actor: 'system',
       payload: {
         pool: entry.pool,
-        reason: isConflict ? 'scope_conflict' : 'pool_full',
+        reason,
         waitedMs,
       },
     });
@@ -837,12 +886,12 @@ export async function dispatch(
   // queued (not dropped) so a later budget increase can still drain it.
   const projectId = opts.projectId ?? 'unknown';
   if (isOverBudget(mission.id, projectId)) {
-    enqueue(mission, pool, launchFn, opts.priority ?? 0, projectId);
+    enqueue(mission, pool, launchFn, opts.priority ?? 0, projectId, undefined, true);
     return;
   }
   const estimatedCost = estimateMissionCostCents(mission.model ?? '', 10);
   if (wouldExceedBudget(mission.id, projectId, estimatedCost)) {
-    enqueue(mission, pool, launchFn, opts.priority ?? 0, projectId);
+    enqueue(mission, pool, launchFn, opts.priority ?? 0, projectId, undefined, true, estimatedCost);
     return;
   }
 

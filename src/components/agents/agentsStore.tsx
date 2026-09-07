@@ -8032,7 +8032,13 @@ export function AgentsStoreProvider({ children }: Props) {
     const repoPath = explicitRepo ?? await resolveProjectRoot(input.repo);
     launchPhaseExit(id, 'resolveProjectRoot', `root="${repoPath}"`);
 
-    const newMission: Mission = {
+    // Tool allowlist/denylist are persisted onto the stored Mission (even
+    // though Mission's canonical type does not declare them) so retryMission
+    // can re-thread the SAME restriction on a retry instead of silently
+    // widening a tool-restricted mission to full access (SECURITY — see
+    // retryMission's own runMission call). The intersection type keeps
+    // TypeScript honest without editing lib/agents/types.ts.
+    const newMission: Mission & { allowedTools?: string[]; deniedTools?: string[] } = {
       id,
       repoRoot: repoPath,
       title: input.title,
@@ -8106,6 +8112,10 @@ export function AgentsStoreProvider({ children }: Props) {
       parentMissionId: input.parentMissionId,
       isolated: input.isolated,
       originConversationId: input.originConversationId,
+      // Persisted for retryMission (see the intersection type above) — a
+      // retry re-threads these instead of dropping them.
+      allowedTools: input.allowedTools,
+      deniedTools: input.deniedTools,
     };
 
     setState(prev => ({
@@ -9066,6 +9076,26 @@ export function AgentsStoreProvider({ children }: Props) {
     pauseFlags.current.set(newId, pauseFlag);
     const interveneQueue = { items: [] as string[] };
     interveneQueues.current.set(newId, interveneQueue);
+    // T1.3/W-GUARD parity with addMission (SECURITY fix — retryMission used
+    // to omit these entirely, so a retried mission ran with NO budget cap
+    // and NO wall-clock limit even when its contract specified one). Same
+    // live-getter/pause-bridge contract as addMission: read stateRef.current
+    // (not the clone const) so a cap raised via updateMission mid-run is
+    // visible on the loop's next check, and onBudgetPaused/onDurationPaused
+    // reuse this EXACT pauseFlag cell so a budget/duration-triggered pause is
+    // resumable via the existing Resume button.
+    const getBudgetCapUsd = () =>
+      stateRef.current.missions.find((m) => m.id === newId)?.contract?.budgetCapUsd;
+    const onBudgetPaused = () => {
+      pauseFlag.paused = true;
+      updateMission({ id: newId, patch: { paused: true } });
+    };
+    const getMaxDurationMs = () =>
+      stateRef.current.missions.find((m) => m.id === newId)?.contract?.maxDurationMs;
+    const onDurationPaused = () => {
+      pauseFlag.paused = true;
+      updateMission({ id: newId, patch: { paused: true } });
+    };
     setState((prev) => ({ ...prev, missions: pruneMissions([...prev.missions, clone]) }));
 
     // LazyBot retry — the clone carries botId via the {...original} spread;
@@ -9094,6 +9124,21 @@ export function AgentsStoreProvider({ children }: Props) {
         // 'acceptEdits' when the original never carried one (e.g. a
         // pre-T1.2 mission, or one launched via a path with no contract).
         permissionMode: clone.contract?.permissionMode ?? 'acceptEdits',
+        // SECURITY fix: retryMission used to transmit ONLY permissionMode,
+        // silently dropping allowedTools/deniedTools (a tool-restricted
+        // mission could use ALL tools after retry) and the budget/duration
+        // getters (caps disabled on retry). The clone inherits the ORIGINAL
+        // mission's stored allowedTools/deniedTools via the {...original}
+        // spread (addMission now persists them), so a retry re-threads the
+        // SAME restriction — never a silent widening. Falls back to
+        // undefined (addMission's own default) when the original never
+        // carried any.
+        allowedTools: (clone as Mission & { allowedTools?: string[] }).allowedTools,
+        deniedTools: (clone as Mission & { deniedTools?: string[] }).deniedTools,
+        getBudgetCapUsd,
+        onBudgetPaused,
+        getMaxDurationMs,
+        onDurationPaused,
         t,
       }).then(() => {
         if (clone.botId) void finishBotRun(newId);
@@ -9142,7 +9187,7 @@ export function AgentsStoreProvider({ children }: Props) {
           /* best-effort — mirrors interveneMission's own journal write */
         });
     }
-  }, [applyRunUpdate, t]);
+  }, [applyRunUpdate, updateMission, t]);
 
   /**
    * Boot-resilience auto-retry (product requirement — agents must succeed,
@@ -12731,8 +12776,8 @@ stopAll(action.filter);
           // (force-failed on a restart / HMR crash without finishBotRun) —
           // clear them and retry once. Conservative by design: a run is only
           // treated as stale when its mission is PRESENT in state.missions
-          // with a terminal status. A genuinely live run (running/queued/
-          // paused mission, possibly of another open project) is never
+          // with a terminal status. A genuinely live run (running/queued
+          // mission, possibly of another open project) is never
           // touched — maxConcurrentSessions is a real cap, not a bug.
           if (reason.includes('concurrent run')) {
             const byId = new Map(stateRef.current.missions.map((m) => [m.id, m] as const));
@@ -12743,7 +12788,7 @@ stopAll(action.filter);
               // that is not the active one — leave those runs alone here
               // (stop_lazybot / the next boot sweep handle them).
               return mission !== undefined && mission.status !== 'running'
-                && mission.status !== 'queued' && mission.status !== 'paused';
+                && mission.status !== 'queued';
             });
             if (staleRuns.length > 0) {
               for (const run of staleRuns) {

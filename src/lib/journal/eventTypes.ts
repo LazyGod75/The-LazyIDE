@@ -453,7 +453,7 @@ export interface LoopStoppedPayload {
  * not on every mission.
  */
 export interface SchedulerQueuedPayload {
-  reason: 'pool_full' | 'scope_conflict';
+  reason: 'pool_full' | 'scope_conflict' | 'budget_blocked';
   /** Pool id — 'claude-cli', 'managed', or 'byok:<8-char-hash>' (see
    *  scheduler.ts's resolveProvider). */
   pool: string;
@@ -491,7 +491,7 @@ export interface SchedulerThrottledPayload {
  * guard.
  */
 export interface SchedulerStalledPayload {
-  reason: 'pool_full' | 'scope_conflict';
+  reason: 'pool_full' | 'scope_conflict' | 'budget_blocked';
   /** Pool id — 'claude-cli', 'managed', or 'byok:<8-char-hash>' (see
    *  scheduler.ts's resolveProvider). */
   pool: string;

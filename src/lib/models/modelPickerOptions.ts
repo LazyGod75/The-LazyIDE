@@ -126,13 +126,14 @@ export interface ModelPickerOptions {
       preflight even though ox alpha was fully usable. */
   defaultModelId: string;
   /** W-MODELSEL fix: the full Pro catalog to render as a visually distinct,
-   *  NON-selectable group with an upsell line — populated ONLY when Pro is
-   *  not active AT ALL (entitlements.pro === 'inactive', no plan). Deliberately
-   *  NOT populated for 'no-credits': that user already owns Pro, so an
-   *  "upgrade to Pro" pitch would be dishonest — see proExhausted instead,
-   *  which covers the recharge/wait-for-refill messaging for that case.
-   *  Kept separate from `groups` (rather than added to it with a `locked`
-   *  flag) so every existing groups-based assertion/consumer is unaffected. */
+   *  NON-selectable group with an upsell line — populated when Pro is NOT
+   *  actively usable, i.e. entitlements.pro === 'inactive' (no plan at all)
+   *  OR 'no-credits' (plan active, wallet exhausted). In both cases the Pro
+   *  models must stay VISIBLE (grayed out) so the user can see what they're
+   *  missing — the UI distinguishes the two via proExhausted for the messaging
+   *  (recharge/wait-for-refill vs upgrade). Kept separate from `groups`
+   *  (rather than added to it with a `locked` flag) so every existing
+   *  groups-based assertion/consumer is unaffected. */
   lockedProGroup?: ModelOptionGroup;
 }
 
@@ -376,7 +377,7 @@ export function buildModelPickerOptions(entitlements: ModelEntitlements, t?: Tra
             // bug this replaces.
             : DEFAULT_FREE_MODEL_ID,
     lockedProGroup:
-      entitlements.pro === 'inactive'
+      entitlements.pro === 'inactive' || entitlements.pro === 'no-credits'
         ? { id: 'pro' as const, label: proLabel, models: managedOptions() }
         : undefined,
   };

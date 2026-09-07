@@ -320,18 +320,19 @@ function assertBotCanLaunch(bot: BotConfig): void {
   // Count REAL running runs from activeBotRuns (the source of truth),
   // not activeRuns which can hold stale ids after HMR/crash. Pending
   // launch slots (__pending_) still count to prevent double-launch races.
+  // A reservation is idempotent and persists for the entire launch phase:
+  // it is released ONLY on a confirmed result (success, definitive
+  // failure, or explicit cancellation via abortLaunchSlot) — never by a
+  // wall-clock timeout, which would let a slow createMission leak a slot
+  // and admit a second run past the concurrency cap.
   const realRunning = [...activeBotRuns.values()].filter(
     (r) => r.botId === bot.id && r.status === 'running',
   ).length;
-  const pendingSlots = state.activeRuns.filter((id) => {
-    if (!id.startsWith('__pending_')) return false;
-    const ts = parseInt(id.slice('__pending_'.length, '__pending_'.length + 8), 36);
-    return Date.now() - ts < 30_000;
-  }).length;
+  const pendingSlots = state.activeRuns.filter((id) => id.startsWith('__pending_')).length;
   // Sync activeRuns to reality so listActiveRunsForBot and the UI stay honest.
   state.activeRuns = [
     ...[...activeBotRuns.values()].filter((r) => r.botId === bot.id && r.status === 'running').map((r) => r.missionId),
-    ...state.activeRuns.filter((id) => id.startsWith('__pending_') && Date.now() - parseInt(id.slice('__pending_'.length, '__pending_'.length + 8), 36) < 30_000),
+    ...state.activeRuns.filter((id) => id.startsWith('__pending_')),
   ];
   const active = realRunning + pendingSlots;
   if (active >= max) {
@@ -447,6 +448,21 @@ export function listActiveRunsForBot(botId: string): BotRun[] {
   return [...activeBotRuns.values()].filter((r) => r.botId === botId && r.status === 'running');
 }
 
+// ── Boot serialization lock ────────────────────────────────────────
+// restoreBotRuntime and pruneBotRunsNotLive both mutate activeBotRuns and
+// the persisted runtime file. Without serialization they race: prune
+// snapshots [...activeBotRuns.values()] while restore is mid-set, or
+// restore rehydrates a run prune just removed from disk — leaving a zombie
+// in memory that blocks all future launches (M105-class lockout). This
+// promise-chain lock makes the two operations mutually exclusive. Callers
+// are unchanged (both are async and already awaited or fire-and-forget).
+let bootLock: Promise<unknown> = Promise.resolve();
+function withBootLock<T>(op: () => Promise<T>): Promise<T> {
+  const run = bootLock.then(op, op);
+  bootLock = run.then(() => undefined, () => undefined);
+  return run;
+}
+
 /** Boot-time zombie prune (root-cause fix for the "already has N concurrent
  *  run(s)" lockout). When the app restarts mid-run, the runMission chain that
  *  would have called finishBotRun dies with the process: the boot recovery
@@ -463,44 +479,48 @@ export function listActiveRunsForBot(botId: string): BotRun[] {
  *  the in-memory maps (restoreBotRuntime may already have run) AND the
  *  persisted file (restoreBotRuntime may not have run yet), so no later
  *  restore can resurrect the zombie. Best-effort, never throws. Returns how
- *  many runs were cleared (in-memory + disk, each logical run counted once). */
+ *  many runs were cleared (in-memory + disk, each logical run counted once).
+ *  Serialized against restoreBotRuntime via bootLock to prevent the
+ *  concurrent-mutation race. */
 export async function pruneBotRunsNotLive(liveMissionIds: ReadonlySet<string>): Promise<number> {
-  const isLive = (missionId: string) => liveMissionIds.has(missionId);
-  let cleared = 0;
-  const inMemoryClearedIds = new Set<string>();
-  // 1. In-memory runs — restoreBotRuntime may already have rehydrated the
-  //    persisted zombies by the time agentsStore's recovery pass runs.
-  for (const run of [...activeBotRuns.values()]) {
-    if (run.status !== 'running' || isLive(run.missionId)) continue;
-    inMemoryClearedIds.add(run.missionId);
-    cleared += 1;
-    const state = runtimeStates.get(run.botId);
-    if (state) {
-      state.activeRuns = state.activeRuns.filter((id) => id !== run.missionId);
-    }
-    run.status = 'cancelled';
-    run.completedAt = new Date().toISOString();
-    activeBotRuns.delete(run.missionId);
-    // Visible in the bot's RunHistory (same shape stopBotRun uses) — a swept
-    // run must not vanish without a trace.
-    void appendBotRunHistory({ ...run });
-    await releaseAll(run.missionId).catch(() => {});
-  }
-  // 2. Persisted runs — without this a later restoreBotRuntime would re-add
-  //    exactly the zombie we just cleared (restore may not have run yet).
-  const persistedRuns = await loadPersistedRuns();
-  const diskZombies = persistedRuns.filter((r) => !isLive(r.missionId));
-  if (diskZombies.length > 0) {
-    await removePersistedRuns(new Set(diskZombies.map((r) => r.missionId)));
-    for (const run of diskZombies) {
-      if (inMemoryClearedIds.has(run.missionId)) continue; // already counted above
+  return withBootLock(async () => {
+    const isLive = (missionId: string) => liveMissionIds.has(missionId);
+    let cleared = 0;
+    const inMemoryClearedIds = new Set<string>();
+    // 1. In-memory runs — restoreBotRuntime may already have rehydrated the
+    //    persisted zombies by the time agentsStore's recovery pass runs.
+    for (const run of [...activeBotRuns.values()]) {
+      if (run.status !== 'running' || isLive(run.missionId)) continue;
+      inMemoryClearedIds.add(run.missionId);
       cleared += 1;
-      const cancelled = { ...run, status: 'cancelled' as const, completedAt: new Date().toISOString() };
-      void appendBotRunHistory(cancelled);
+      const state = runtimeStates.get(run.botId);
+      if (state) {
+        state.activeRuns = state.activeRuns.filter((id) => id !== run.missionId);
+      }
+      run.status = 'cancelled';
+      run.completedAt = new Date().toISOString();
+      activeBotRuns.delete(run.missionId);
+      // Visible in the bot's RunHistory (same shape stopBotRun uses) — a swept
+      // run must not vanish without a trace.
+      void appendBotRunHistory({ ...run });
       await releaseAll(run.missionId).catch(() => {});
     }
-  }
-  return cleared;
+    // 2. Persisted runs — without this a later restoreBotRuntime would re-add
+    //    exactly the zombie we just cleared (restore may not have run yet).
+    const persistedRuns = await loadPersistedRuns();
+    const diskZombies = persistedRuns.filter((r) => !isLive(r.missionId));
+    if (diskZombies.length > 0) {
+      await removePersistedRuns(new Set(diskZombies.map((r) => r.missionId)));
+      for (const run of diskZombies) {
+        if (inMemoryClearedIds.has(run.missionId)) continue; // already counted above
+        cleared += 1;
+        const cancelled = { ...run, status: 'cancelled' as const, completedAt: new Date().toISOString() };
+        void appendBotRunHistory(cancelled);
+        await releaseAll(run.missionId).catch(() => {});
+      }
+    }
+    return cleared;
+  });
 }
 
 /** Clear all runtime state — tests and hot-reload only. */
@@ -509,14 +529,19 @@ export function resetBotEngineState(): void {
   activeBotRuns.clear();
 }
 
-/** Rehydrate in-memory maps from `.lazy/bot-runtime.json` after a crash. */
+/** Rehydrate in-memory maps from `.lazy/bot-runtime.json` after a crash.
+ *  Serialized against pruneBotRunsNotLive via bootLock to prevent the
+ *  concurrent-mutation race (restore re-adding a run prune is clearing, or
+ *  prune snapshotting mid-restore). */
 export async function restoreBotRuntime(): Promise<number> {
-  const runs = await loadPersistedRuns();
-  for (const run of runs) {
-    if (run.status !== 'running') continue;
-    activeBotRuns.set(run.missionId, run);
-    const state = getOrCreateState(run.botId);
-    if (!state.activeRuns.includes(run.missionId)) state.activeRuns.push(run.missionId);
-  }
-  return activeBotRuns.size;
+  return withBootLock(async () => {
+    const runs = await loadPersistedRuns();
+    for (const run of runs) {
+      if (run.status !== 'running') continue;
+      activeBotRuns.set(run.missionId, run);
+      const state = getOrCreateState(run.botId);
+      if (!state.activeRuns.includes(run.missionId)) state.activeRuns.push(run.missionId);
+    }
+    return activeBotRuns.size;
+  });
 }

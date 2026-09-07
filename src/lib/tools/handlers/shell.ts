@@ -40,25 +40,48 @@ export async function runCommand(args: Record<string, unknown>, ctx: ToolExecuti
   // do we execute via run_worktree_script; otherwise this falls straight
   // through to the ordinary run_shell path below, unchanged from before
   // this fix — every non-qualifying call behaves exactly as it always did.
+  //
+  // SECURITY (audit CRITICAL): "not eligible" (eligible === false) is
+  // safe to fall through to run_shell — the command was never confirmed
+  // to need confinement, so the general path is its default. But once
+  // eligibility is confirmed and the scoped run_worktree_script itself
+  // fails (timeout, IPC error, or the command started then failed), the
+  // call MUST NOT degrade to the unconfined run_shell path — a command
+  // that was meant to be confined can never end up running unconfined.
+  // The eligibility check and the scoped execution are therefore in
+  // SEPARATE try blocks: only the eligibility check may fall through; a
+  // confirmed-eligible-but-failed scoped execution returns an honest
+  // error instead.
   const permissionMode = ctx.policy.permissionMode;
   if (permissionMode === 'acceptEdits' || permissionMode === 'full') {
+    let eligible = false;
     try {
-      const eligible = await invoke<boolean>('is_worktree_script_eligible', {
+      eligible = await invoke<boolean>('is_worktree_script_eligible', {
         command,
         cwd: rootPath,
         permissionMode,
       });
-      if (eligible) {
+    } catch {
+      // Eligibility check itself failed (e.g. IPC hiccup) — cannot
+      // confirm eligibility, so fall through to the general run_shell
+      // path below, the default unconfined path this command would have
+      // used anyway when the scoped mechanism is unavailable.
+    }
+    if (eligible) {
+      try {
         const scoped = await invoke<{ stdout: string; stderr: string; exitCode: number }>(
           'run_worktree_script',
           { command, cwd: rootPath, timeoutMs, permissionMode },
         );
         return formatRunCommandResult(scoped);
+      } catch (err) {
+        // Scoped execution started (eligibility was confirmed) but then
+        // failed — timeout, IPC error, or the command itself failed after
+        // starting. Do NOT fall through to run_shell: a command that was
+        // meant to be confined must never degrade to unconfined execution.
+        // Return an honest error so the model sees a real failed step.
+        return `ERROR: scoped worktree-script execution failed (command was eligible but confined execution errored): ${String(err)}`;
       }
-    } catch {
-      // Eligibility check or scoped execution itself failed (e.g. IPC
-      // hiccup) — fall through to the general-purpose run_shell path
-      // below rather than surfacing a confusing intermediate error.
     }
   }
 
