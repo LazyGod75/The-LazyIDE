@@ -80,27 +80,29 @@ interface UseOnboardingResult {
 }
 
 export function useOnboarding(): UseOnboardingResult {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const userId = user?.id ?? null;
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  // Desktop only, and only once an authenticated user is known. Reading happens
-  // here (not on every render) and re-evaluates when the account changes.
+  // Desktop only. Guest mode gets its own onboarded flag (`:guest`) — a
+  // first-run guest is exactly the user who needs the wizard most (nothing
+  // is configured yet). `loading` gates the check so a signed-in user never
+  // flashes the guest onboarding while their session is still resolving.
   useEffect(() => {
-    if (!isTauri() || !userId) {
+    if (!isTauri() || loading) {
       setShowOnboarding(false);
       return;
     }
-    setShowOnboarding(!readOnboarded(userId));
-  }, [userId]);
+    setShowOnboarding(!readOnboarded(userId ?? 'guest'));
+  }, [userId, loading]);
 
   const completeOnboarding = useCallback(() => {
-    if (userId) writeOnboarded(userId);
+    writeOnboarded(userId ?? 'guest');
     setShowOnboarding(false);
   }, [userId]);
 
   const rerunOnboarding = useCallback(() => {
-    if (userId) resetOnboarding(userId);
+    resetOnboarding(userId ?? 'guest');
     setShowOnboarding(true);
   }, [userId]);
 

@@ -56,6 +56,10 @@ import { startMemoryGuardian } from './lib/agents/memoryGuardian'
 // "negligible in practice" is a claim about parallel fan-out shape, not a
 // verified millisecond figure for a real cold boot.
 import { initByokVault } from './lib/models/byokProviders'
+// i18n flash fix: preload the detected locale's dictionary in parallel with
+// the vault warm so a non-eager locale (de/es/ja/zh) never paints the fr
+// fallback for a few hundred ms — see preloadDetectedLocale's doc comment.
+import { preloadDetectedLocale } from './i18n'
 // Pre-warm manager critical-path dependencies (core prompt + project root)
 // AFTER first render — see prewarm.ts's doc comment for what/why.
 import { prewarmManager } from './lib/agents/prewarm'
@@ -73,7 +77,10 @@ async function bootstrap(): Promise<void> {
   // produces the number instead of another unverified assertion.
   const byokVaultStart = performance.now()
   try {
-    await initByokVault()
+    // Parallel: the locale chunk fetch is pure web I/O, the vault warm is
+    // Tauri IPC — no shared dependency, so neither should serialize behind
+    // the other on the first-paint path.
+    await Promise.all([initByokVault(), preloadDetectedLocale()])
   } catch (err: unknown) {
     console.error('[main] initByokVault failed', err instanceof Error ? err.message : String(err))
   } finally {

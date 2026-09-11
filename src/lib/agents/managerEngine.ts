@@ -210,7 +210,7 @@ const MANAGER_NATIVE_MODEL_ID = 'claude-sonnet-5';
  * nothing valid was ever explicitly selected).
  */
 export function getManagerDefaultModelId(mode: ProviderMode): string {
-  if (mode === 'managed' || mode === 'pro' || mode === 'codex') {
+  if (mode === 'managed' || mode === 'pro' || mode === 'codex' || mode === 'devin') {
     return getDefaultModelIdForMode(mode);
   }
   if (mode === 'mock') {

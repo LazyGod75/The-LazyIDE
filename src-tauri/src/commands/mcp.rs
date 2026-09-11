@@ -99,6 +99,15 @@ pub(crate) fn kill_all_mcp_servers() {
 }
 
 /// Spawns a stdio MCP server process.
+///
+/// The `command`/`args`/`env` triple comes from the user's own MCP server
+/// configuration (mcpRegistry.ts — Settings > MCP); executing it is the
+/// feature, not a bug — same trust model as every other MCP host
+/// (Cursor, Claude Desktop). The guards below therefore only strip what a
+/// config CANNOT legitimately need: env vars that inject code INTO the
+/// spawned process (NODE_OPTIONS, LD_PRELOAD & friends), empty ids, and
+/// pathological sizes — defense in depth against a corrupted config or a
+/// stray webview caller, never a capability boundary.
 #[tauri::command]
 pub fn mcp_spawn_server(
     id: String,
@@ -106,9 +115,62 @@ pub fn mcp_spawn_server(
     args: Vec<String>,
     env: HashMap<String, String>,
 ) -> Result<(), String> {
+    if id.trim().is_empty() {
+        return Err("mcp_spawn_server: empty server id".to_string());
+    }
+    if command.trim().is_empty() {
+        return Err("mcp_spawn_server: empty command".to_string());
+    }
+    // Hard caps — a server needs dozens of args at most, never thousands;
+    // anything past this is malformed input, not a real config.
+    const MAX_ARGS: usize = 64;
+    const MAX_ENV: usize = 64;
+    const MAX_FIELD_LEN: usize = 4096;
+    if args.len() > MAX_ARGS || env.len() > MAX_ENV {
+        return Err("mcp_spawn_server: too many args/env entries".to_string());
+    }
+    if args.iter().any(|a| a.len() > MAX_FIELD_LEN)
+        || env.iter().any(|(k, v)| k.len() > 256 || v.len() > MAX_FIELD_LEN)
+    {
+        return Err("mcp_spawn_server: arg/env value too long".to_string());
+    }
+    // Interpreter-level env injection — each of these executes attacker-
+    // controlled code inside the spawned process (or its dynamic loader)
+    // regardless of what `command` is. No MCP server config ever needs them.
+    const BLOCKED_ENV: &[&str] = &[
+        "LD_PRELOAD",
+        "LD_LIBRARY_PATH",
+        "LD_AUDIT",
+        "DYLD_INSERT_LIBRARIES",
+        "DYLD_LIBRARY_PATH",
+        "DYLD_PRINT_LIBRARIES",
+        "NODE_OPTIONS",
+        "PYTHONSTARTUP",
+        "PYTHONINSPECT",
+        "PERL5OPT",
+        "PERL5LIB",
+        "RUBYOPT",
+        "RUBYLIB",
+        "BASH_ENV",
+        "ENV",
+        "SHELLOPTS",
+        "PS4",
+        "PROMPT_COMMAND",
+        "JAVA_TOOL_OPTIONS",
+        "_JAVA_OPTIONS",
+        "JDK_JAVA_OPTIONS",
+        "DOTNET_STARTUP_HOOKS",
+        "RUSTC_WRAPPER",
+    ];
     let mut cmd = Command::new(&command);
     cmd.args(&args);
     for (k, v) in &env {
+        if BLOCKED_ENV.iter().any(|b| b.eq_ignore_ascii_case(k)) {
+            return Err(format!(
+                "mcp_spawn_server: env var '{}' is not allowed (interpreter/loader injection vector)",
+                k
+            ));
+        }
         cmd.env(k, v);
     }
     cmd.stdin(Stdio::piped())
@@ -280,7 +342,46 @@ pub fn mcp_sse_call(
     let client = shared_http_client();
 
     let mut req = client.post(&url).timeout(Duration::from_millis(timeout_ms));
+    // Header allowlist-by-exclusion: the MCP server's configured headers
+    // (Authorization, api keys, Accept...) pass through, but transport-
+    // framing and hop-by-hop headers are refused — a config-controlled
+    // `Host`/`Content-Length`/`Transfer-Encoding`/`Connection` override
+    // would enable request smuggling against whatever server the URL
+    // points at, and `Proxy-*`/`Sec-*`/`Forwarded` variants are spoofing
+    // vectors no MCP server needs from its client.
+    const BLOCKED_HEADERS: &[&str] = &[
+        "host",
+        "content-length",
+        "transfer-encoding",
+        "connection",
+        "keep-alive",
+        "upgrade",
+        "te",
+        "trailer",
+        "proxy-authorization",
+        "proxy-authenticate",
+        "forwarded",
+        "x-forwarded-for",
+        "x-forwarded-host",
+        "x-real-ip",
+        "expect",
+        "content-encoding",
+        "content-type", // set explicitly below — never overridden
+    ];
     for (k, v) in &headers {
+        if BLOCKED_HEADERS.iter().any(|b| b.eq_ignore_ascii_case(k)) {
+            return Err(format!(
+                "mcp_sse_call: header '{}' is not allowed (transport/framing control is the client's job)",
+                k
+            ));
+        }
+        // Reject values with CR/LF — header injection into the raw request.
+        if v.contains('\r') || v.contains('\n') {
+            return Err(format!(
+                "mcp_sse_call: header '{}' contains a newline (header injection)",
+                k
+            ));
+        }
         req = req.header(k, v);
     }
     req = req.header("Content-Type", "application/json");

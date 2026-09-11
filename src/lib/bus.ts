@@ -624,6 +624,11 @@ export type BusEvents = {
   /** LazyBot roster persisted (create/update/delete/enable). The canvas and
    *  botsStore subscribe so a manager-created bot appears without a reload. */
   'lazybots:changed': { botId?: string };
+  /** A bot's RUNTIME state changed (run registered/finished/stopped/launch
+   *  slot reserved or released) — emitted by botEngine.ts at each mutation
+   *  site so consumers (the canvas bot-node halo) can refresh on event
+   *  instead of polling getBotRuntimeState on a fixed interval. */
+  'lazybots:runtimeChanged': { botId?: string };
   /** Emitted by projectRootCache.setCachedProjectRoot the first time the
    *  project root is resolved after boot, so listeners (useCanvasFlowGraph's
    *  bot loader) can reload without polling. */

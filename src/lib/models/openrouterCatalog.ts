@@ -41,6 +41,14 @@ export const FREE_OPENROUTER_MODEL_ID = 'minimax/minimax-m3:free';
 const RETIRED_OPENROUTER_IDS: ReadonlySet<string> = new Set([
   'stealth/ox-alpha',
   'z-ai/glm-5.3-flash',
+  // Removed from the catalog in the verified-free rail rebuild — a persisted
+  // selection of any of these must migrate to the current free default
+  // instead of failing launches with OpenRouter invalid_model.
+  'google/gemma-4-31b-it:free',
+  'nvidia/nemotron-3-ultra-550b-a55b:free',
+  'poolside/laguna-s-2.1:free',
+  'thinkingmachines/inkling:free',
+  'cohere/north-mini-code:free',
 ]);
 
 /** Rewrite a persisted / in-flight id that OpenRouter no longer serves. */

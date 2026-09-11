@@ -13,7 +13,12 @@ default-run = "lazy-ide"  # second bin lazy_runnerd requires an explicit default
 
 [lib]
 name = "app_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+# Desktop-only app: rlib is the only crate type anything consumes. The
+# template default's staticlib+cdylib exist solely for Tauri mobile
+# embedding (no mobile targets here) — and the cdylib forces rustc to
+# generate a ~218k-export .def, which MinGW's ld rejects outright
+# ("export ordinal too large"), blocking any non-MSVC toolchain build.
+crate-type = ["rlib"]
 
 [[bin]]
 name = "lazy_runnerd"

@@ -54,7 +54,7 @@ function isTauriRuntime(): boolean {
 function isLiveAgentAvailable(): boolean {
   if (!isTauriRuntime()) return false;
   const mode = getProviderMode();
-  return mode === 'claude-code' || mode === 'codex';
+  return mode === 'claude-code' || mode === 'codex' || mode === 'devin';
 }
 
 /** True when the managed (Pro) backend is the active provider mode.

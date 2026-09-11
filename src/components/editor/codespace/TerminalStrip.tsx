@@ -26,11 +26,15 @@
    only when the user explicitly closes it or the whole space unmounts.
 */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, lazy, Suspense } from 'react';
 import { useI18n } from '../../../i18n';
 import { useEditorStore } from '../editorStore';
 import { useAppContext } from '../../../app/AppContext';
-import { TerminalView } from '../../terminal/TerminalView';
+// @xterm is ~250KB — the strip only needs it once the user actually opens
+// the terminal tab. Same lazy boundary as TerminalNode.tsx's.
+const TerminalView = lazy(() =>
+  import('../../terminal/TerminalView').then((m) => ({ default: m.TerminalView })),
+);
 import { ProblemsPanel as ProblemsPanelComponent } from '../ProblemsPanel';
 import { TestsPanel } from '../TestsPanel';
 import { PortForwardingPanel } from '../../platform/PortForwardingPanel';
@@ -259,7 +263,9 @@ export function TerminalStrip({ height }: { height: number }) {
       <div style={{ flex: expanded ? 1 : 0, overflow: 'hidden', display: expanded && activeTab === 'terminal' ? 'flex' : 'none' }}>
         {sessions.map((session) => (
           <div key={session.id} style={{ display: session.id === activeSessionId ? 'flex' : 'none', flex: 1, minHeight: 0 }}>
-            <TerminalView terminalId={session.id} cwd={session.cwd} />
+            <Suspense fallback={null}>
+              <TerminalView terminalId={session.id} cwd={session.cwd} />
+            </Suspense>
           </div>
         ))}
       </div>

@@ -6,6 +6,7 @@ import type { Platform } from '../../lib/platform';
 import { ALL_MODELS } from '../../lib/models';
 import { getProviderMode } from '../../lib/models/index';
 import { loadAccessSettings, saveAccessSettings } from '../../lib/models/accessSettings';
+import { isDevinModel, findDevinModel } from '../../lib/models/devinCatalog';
 import {
   DEFAULT_OPENROUTER_MODEL_ID,
   findOpenRouterModel,
@@ -181,6 +182,7 @@ function ComposerReady({
   const pickerOptions = getModelPickerOptions(t);
   const showNative = pickerOptions.claudeSub;
   const showOpenRouter = pickerOptions.pro === 'active';
+  const showDevin = pickerOptions.groups.some((g) => g.id === 'devin');
 
   // In managed/pro mode the displayed model comes from accessSettings, not the store
   const managedDisplay = isManagedMode ? getManagedModelDisplay() : null;
@@ -270,6 +272,13 @@ function ComposerReady({
       if (orEntry) {
         setModel({ id: orEntry.id, label: orEntry.label, provider: orEntry.provider });
       }
+    } else if (isDevinModel(id)) {
+      // Devin catalog id — CLI mode pinned to the devin tool, not the
+      // ambient cliTool (a devin id sent to the claude/codex binary would
+      // just fail).
+      saveAccessSettings({ ...current, accessMode: 'cli', cliTool: 'devin', model: id });
+      const devinEntry = findDevinModel(id);
+      if (devinEntry) setModel(devinEntry);
     } else {
       // Switch to CLI mode and persist the chosen native model id
       saveAccessSettings({ ...current, accessMode: 'cli', model: id });
@@ -283,7 +292,7 @@ function ComposerReady({
    *  unrecognized id reports failure instead of silently no-op-ing. */
   const applyModelById = useCallback((id: string): { applied: boolean; label?: string } => {
     const isOpenRouter = id.includes('/');
-    const found = isOpenRouter ? findOpenRouterModel(id) : ALL_MODELS.find(m => m.id === id);
+    const found = isOpenRouter ? findOpenRouterModel(id) : (ALL_MODELS.find(m => m.id === id) ?? findDevinModel(id));
     if (!found) return { applied: false };
     handleModelSelect(id);
     return { applied: true, label: found.label };
@@ -619,6 +628,7 @@ function ComposerReady({
               currentId={displayModelId}
               showNative={showNative}
               showOpenRouter={showOpenRouter}
+              showDevin={showDevin}
               emptyMessage={
                 pickerOptions.emptyReadiness?.reason
                   ? t(engineReasonKey(pickerOptions.emptyReadiness.reason))

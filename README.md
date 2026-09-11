@@ -154,8 +154,9 @@ Three ways to run:
    pricing.
 2. **BYOK** — bring your own key (Anthropic, OpenAI, OpenRouter, DeepSeek, …).
    No account needed.
-3. **Use your existing subscription** — already paying for Claude or ChatGPT?
-   Use the `claude` CLI or your API key directly.
+3. **Use your existing subscription** — already paying for Claude, ChatGPT,
+   or Devin? Use the `claude`, `codex`, or `devin` CLI directly — Lazy
+   detects whichever is installed and logged in.
 
 No lock-in. No forced plan. Use what works for you.
 

@@ -23,6 +23,7 @@ import {
 import { loadAccessSettings } from './accessSettings.js';
 import { DEFAULT_MODEL, findModelById } from './registry.js';
 import { DEFAULT_OPENROUTER_MODEL_ID, findOpenRouterModel, isOpenRouterFreeModel, migrateRetiredOpenRouterId } from './openrouterCatalog.js';
+import { DEFAULT_DEVIN_MODEL_ID, findDevinModel, isDevinModel, refreshDevinCatalog } from './devinCatalog.js';
 import { withFallback } from './providerFallback.js';
 import { localProvider } from './localProvider.js';
 import {
@@ -50,6 +51,7 @@ export * from './accessSettings.js';
 // the modules above (stripInvisibleLines stays defined in
 // brainSearchLoop.ts, re-exported only via managedProvider.ts as before).
 export * from './streamEvents.js';
+export * from './devinCatalog.js';
 
 // ── No-model provider (desktop only) ─────────────────────────────
 //
@@ -149,10 +151,15 @@ export function isManagedActive(): boolean {
 export async function initProviderMode(): Promise<void> {
   if (!isTauriRuntime()) return;
   try {
-    // Detect all CLI backends (claude, codex, ...)
+    // Detect all CLI backends (claude, codex, devin, ...)
     await detectAllCliBackends();
     // Keep legacy flag in sync
     _claudeCodeAvailable = isCliBackendAvailable('claude') ?? false;
+    // Devin detected: refresh its live model catalog in the background —
+    // one short-lived `devin acp` process, results cached for pickers.
+    if (isCliBackendAvailable('devin') === true) {
+      void refreshDevinCatalog();
+    }
   } catch {
     _claudeCodeAvailable = false;
   }
@@ -173,6 +180,7 @@ export async function initProviderMode(): Promise<void> {
 export type ProviderMode =
   | 'claude-code'    // CLI subscription via Claude Code
   | 'codex'         // CLI subscription via Codex
+  | 'devin'         // Devin CLI over ACP (SWE-2 + account catalog)
   | 'live-key'      // BYOK Anthropic key
   | 'local'         // Local LLM (Ollama / LM Studio)
   | 'managed'       // Lazy managed Pro — active subscription, serving via ai-proxy
@@ -194,7 +202,9 @@ export function getProviderMode(): ProviderMode {
 
   if (settings.accessMode === 'cli') {
     const tool = settings.cliTool ?? 'claude';
-    return tool === 'codex' ? 'codex' : 'claude-code';
+    if (tool === 'codex') return 'codex';
+    if (tool === 'devin') return 'devin';
+    return 'claude-code';
   }
 
   // Auto-detect: managed subscription takes priority when no explicit mode is set.
@@ -202,6 +212,10 @@ export function getProviderMode(): ProviderMode {
 
   if (_claudeCodeAvailable === true) return 'claude-code';
   if (isCliBackendAvailable('codex') === true) return 'codex';
+  // Devin auto-detect sits after claude/codex so an existing setup's engine
+  // never silently changes on upgrade — explicit selection (Settings >
+  // Models, or picking a Devin model) is the primary path anyway.
+  if (isCliBackendAvailable('devin') === true) return 'devin';
   if (hasAnthropicKey()) return 'live-key';
   if (_claudeCodeAvailable === null) return 'claude-code';
   return 'mock';
@@ -237,6 +251,7 @@ export function getProviderMode(): ProviderMode {
 export function getDefaultModelIdForMode(mode: ProviderMode): string {
   if (mode === 'managed' || mode === 'pro') return DEFAULT_OPENROUTER_MODEL_ID;
   if (mode === 'codex') return '';
+  if (mode === 'devin') return DEFAULT_DEVIN_MODEL_ID;
   if (mode === 'live-key') {
     // BYOK wave: the default model belongs to the SELECTED BYOK provider's
     // catalog (e.g. deepseek-chat for DeepSeek), never an Anthropic id.
@@ -304,6 +319,9 @@ export function getActiveModel(): ModelInfo {
     if (entry) return { id: entry.id, label: entry.label, provider: entry.provider };
   } else if (mode === 'codex') {
     return CODEX_MANAGED_MODEL;
+  } else if (mode === 'devin') {
+    const entry = findDevinModel(settings.model) ?? findDevinModel(DEFAULT_DEVIN_MODEL_ID);
+    if (entry) return entry;
   } else if (mode === 'live-key') {
     // BYOK wave: resolve against the selected provider's own catalog.
     const def = resolveByokDef(settings.byokProvider);
@@ -406,6 +424,14 @@ export function getProvider(t?: Translate): ModelProvider {
     return managedProvider;
   }
 
+  // Devin model routing: a picked Devin-catalog id (e.g. 'swe-2-medium')
+  // ALWAYS goes through the Devin backend — same model-driven short-circuit
+  // contract as the free-OpenRouter pick above, so the picker's Devin group
+  // keeps working even while accessMode still names another engine.
+  if (isDevinModel(settings.model)) {
+    return cliBackendProvider('devin');
+  }
+
   if (settings.accessMode === 'cli') {
     const tool = settings.cliTool ?? 'claude';
     return cliBackendProvider(tool);
@@ -454,6 +480,7 @@ export function getProvider(t?: Translate): ModelProvider {
 function autoDetectProvider(t?: Translate): ModelProvider {
   if (_claudeCodeAvailable === true) return claudeCodeProvider;
   if (isCliBackendAvailable('codex') === true) return cliBackendProvider('codex');
+  if (isCliBackendAvailable('devin') === true) return cliBackendProvider('devin');
   if (hasAnthropicKey()) return anthropicProvider;
   // BYOK wave: any configured OpenAI-compatible BYOK key activates its rail.
   for (const def of BYOK_PROVIDER_DEFS) {

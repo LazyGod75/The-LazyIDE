@@ -94,8 +94,12 @@ describe('registry — OpenRouter catalog (managed Pro path)', () => {
   // 21 -> 20: stealth/ox-alpha was retired (OpenRouter 502); GLM 5.2 is the
   //           free rail, not a second Z.ai paid entry.
   // 20 -> 27: free-tier wave expanded to seven verified :free ids (2026-09).
-  it('OPENROUTER_MODELS contains 27 entries', () => {
-    expect(OPENROUTER_MODELS.length).toBe(27);
+  // 27 -> 24: free rail rebuilt around verified-working entries only —
+  //           MiniMax M3 became the default free id (GLM 5.2 kept but its
+  //           provider errors were confirmed in real-app testing), and
+  //           Fable 5.1 / GPT-6 Astra joined the paid tiers.
+  it('OPENROUTER_MODELS contains 24 entries', () => {
+    expect(OPENROUTER_MODELS.length).toBe(24);
   });
 
   it('has no duplicate model ids', () => {
@@ -135,9 +139,9 @@ describe('registry — OpenRouter catalog (managed Pro path)', () => {
   });
 
   it('OPENROUTER_MODELS_BY_PROVIDER groups correctly', () => {
-    expect(OPENROUTER_MODELS_BY_PROVIDER['Anthropic']).toHaveLength(4);
-    expect(OPENROUTER_MODELS_BY_PROVIDER['OpenAI']).toHaveLength(3);
-    expect(OPENROUTER_MODELS_BY_PROVIDER['Google']).toHaveLength(3);
+    expect(OPENROUTER_MODELS_BY_PROVIDER['Anthropic']).toHaveLength(5);
+    expect(OPENROUTER_MODELS_BY_PROVIDER['OpenAI']).toHaveLength(4);
+    expect(OPENROUTER_MODELS_BY_PROVIDER['Google']).toHaveLength(2);
     expect(OPENROUTER_MODELS_BY_PROVIDER['Moonshot']).toHaveLength(2);
     expect(OPENROUTER_MODELS_BY_PROVIDER['xAI']).toHaveLength(2);
     expect(OPENROUTER_MODELS_BY_PROVIDER['DeepSeek']).toHaveLength(2);
@@ -145,6 +149,7 @@ describe('registry — OpenRouter catalog (managed Pro path)', () => {
     expect(OPENROUTER_MODELS_BY_PROVIDER['Mistral']).toHaveLength(1);
     expect(OPENROUTER_MODELS_BY_PROVIDER['Qwen']).toHaveLength(2);
     expect(OPENROUTER_MODELS_BY_PROVIDER['Z.ai']).toHaveLength(2);
+    expect(OPENROUTER_MODELS_BY_PROVIDER['MiniMax']).toHaveLength(1);
     expect(OPENROUTER_MODELS_BY_PROVIDER['Groq']).toBeUndefined();
     expect(OPENROUTER_MODELS_BY_PROVIDER['Free']).toBeUndefined();
   });
@@ -168,9 +173,9 @@ describe('registry — OpenRouter catalog (managed Pro path)', () => {
 
   it('every isFree catalog entry uses tier free and includes the default free id', () => {
     const freeModels = OPENROUTER_MODELS.filter(m => m.isFree);
-    expect(freeModels).toHaveLength(7);
+    expect(freeModels).toHaveLength(2);
     expect(freeModels.some(m => m.id === FREE_OPENROUTER_MODEL_ID)).toBe(true);
-    expect(OPENROUTER_MODELS.filter(m => m.tier === 'free')).toHaveLength(7);
+    expect(OPENROUTER_MODELS.filter(m => m.tier === 'free')).toHaveLength(2);
     for (const m of freeModels) {
       expect(m.tier).toBe('free');
       expect(m.id.endsWith(':free') || m.id === FREE_OPENROUTER_MODEL_ID).toBe(true);

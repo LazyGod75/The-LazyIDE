@@ -52,7 +52,7 @@ describe('listBrainProjects — alias dedup', () => {
     expect(projects[0].project).toBe('lazy-backoffice');
     expect(projects[0].noteCount).toBe(2);
     expect(projects[0].rawValues.sort()).toEqual(
-      ['lazy-backoffice', 'c-users-david-documents-cerveau-lazy-backoffice'].sort(),
+      ['lazy-backoffice', 'c-users-user-documents-cerveau-lazy-backoffice'].sort(),
     );
   });
 

@@ -15,7 +15,8 @@ use crate::commands::util::{quiet_command, resolve_cli_program, spawn_stderr_tai
 /// Request payload for agent_cli_chat_stream (dispatches by tool name).
 #[derive(Deserialize, Debug)]
 pub struct AgentCliChatRequest {
-    /// Which CLI tool to use: "claude" | "codex"
+    /// Which CLI tool to use: "claude" | "codex" | "devin" (ACP — see the
+    /// Devin section at the bottom of this file)
     pub tool: String,
     /// Caller-assigned correlation id (used in event names: model://chunk/{id}, etc.)
     pub id: String,
@@ -35,12 +36,16 @@ pub struct AgentCliChatRequest {
 /// Runs `<tool> --version` (best-effort).
 #[tauri::command]
 pub(crate) fn agent_cli_available(tool: String) -> bool {
-    let binary = match tool.as_str() {
-        "claude" => "claude",
-        "codex"  => "codex",
+    // Devin ships as devin.exe under a per-user install dir that is not
+    // always on the PATH a Tauri app inherits — resolve_devin_program()
+    // covers those well-known locations (see its own doc comment).
+    let program = match tool.as_str() {
+        "claude" => resolve_cli_program("claude"),
+        "codex"  => resolve_cli_program("codex"),
+        "devin"  => resolve_devin_program(),
         _        => return false,
     };
-    match quiet_command(resolve_cli_program(binary))
+    match quiet_command(program)
         .arg("--version")
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -78,6 +83,9 @@ pub(crate) async fn agent_cli_chat_stream(
         }
         "codex" => {
             codex_chat_stream_inner(app, req, agent_pids).await
+        }
+        "devin" => {
+            devin_chat_stream_inner(app, req, agent_pids).await
         }
         other => {
             let msg = format!("agent_cli_chat_stream: unknown tool '{}'", other);
@@ -1181,6 +1189,537 @@ async fn stream_anthropic(app: tauri::AppHandle, req: ModelChatRequest) -> Resul
         "outputTokens": total_output,
     });
     let _ = app.emit(&done_event, usage);
+    Ok(())
+}
+
+// ── Devin CLI (ACP) backend ─────────────────────────────────────────────
+//
+// Unlike claude/codex, the Devin CLI does not stream a single prompt on
+// stdout: `devin -p` buffers the whole reply and only prints at exit, which
+// would give the UI zero progress for turns that routinely take 30-120s.
+// The supported streaming surface is `devin acp` — the Agent Client
+// Protocol, a newline-delimited JSON-RPC server over stdio (the same
+// protocol Zed/JetBrains use to embed the agent). Verified end-to-end
+// against devin 3000.x:
+//
+//   -> initialize            {protocolVersion:1, clientCapabilities, ...}
+//   -> authenticate          {methodId:"devin-browser", apiKey}   (see below)
+//   -> session/new           {cwd, mcpServers:[]}                 -> sessionId
+//   -> session/set_mode      {sessionId, modeId}  ("ask"/"accept-edits"/"plan")
+//   -> session/prompt        {sessionId, prompt:[{type:"text",...}]}
+//   <- session/update notifications: agent_message_chunk (text),
+//      agent_thought_chunk (reasoning), tool_call, config_option_update, ...
+//   <- session/prompt result: {stopReason, usage:{inputTokens,outputTokens}}
+//
+// One ACP process per turn (same per-turn lifecycle as codex — deliberately
+// NOT a persistent server, which would keep an idle agent resident between
+// turns and complicate crash/cancel recovery; spawn cost is ~300-400ms).
+// ACP intentionally ignores the CLI's interactive login state — auth comes
+// from an explicit `authenticate` call carrying the api key read LOCALLY
+// from the Devin CLI's own credentials store. The key never enters a log,
+// an event, or a frontend payload.
+//
+// Cancellation reuses the same contract as the other chat backends: the
+// child pid is tracked under "chat-devin-{id}" and devin_chat_stream_cancel
+// tree-kills it; killing the process also ends the JSON-RPC loop (stdout
+// EOF), so no explicit session/cancel is required on the abort path.
+
+/// Hard cap on bytes read for an fs/read_text_file agent->client request.
+/// Large enough for any real source file; protects the stdio channel from
+/// an accidental multi-GB dump (e.g. the agent probing a binary artifact).
+const ACP_READ_FILE_CAP_BYTES: usize = 1_000_000;
+
+/// Resolves the devin CLI executable. PATH first (devin's installer adds it
+/// for most setups), then the two well-known per-user install locations —
+/// the standalone CLI (%LOCALAPPDATA%\devin\cli\bin) and the copy bundled
+/// inside the Devin IDE — because a Tauri app launched from Explorer often
+/// inherits a stale PATH from before the install.
+fn resolve_devin_program() -> std::ffi::OsString {
+    let on_path = resolve_cli_program("devin");
+    if std::path::Path::new(&on_path).exists() {
+        return on_path;
+    }
+    if let Ok(local) = std::env::var("LOCALAPPDATA") {
+        for rel in [
+            r"devin\cli\bin\devin.exe",
+            r"Programs\Devin\resources\app\extensions\windsurf\devin\bin\devin.exe",
+        ] {
+            let candidate = format!("{local}\\{rel}");
+            if std::path::Path::new(&candidate).exists() {
+                return candidate.into();
+            }
+        }
+    }
+    // Fall back to the bare name — CreateProcess may still resolve it via
+    // its own search order (e.g. a shim in the user's PATH that our cached
+    // env snapshot missed).
+    "devin".into()
+}
+
+/// Reads the api key the Devin CLI itself stores at
+/// %APPDATA%\devin\credentials.toml (`windsurf_api_key = "..."`). We never
+/// log or forward this value — it is only placed into the `authenticate`
+/// JSON-RPC call written to the child's own stdin. Returns None when the
+/// file or key is absent (user not logged in) so the caller can surface a
+/// precise "run `devin auth login`" error instead of an opaque ACP failure.
+fn read_devin_api_key() -> Option<String> {
+    let appdata = std::env::var("APPDATA").ok()?;
+    let content = std::fs::read_to_string(format!("{appdata}\\devin\\credentials.toml")).ok()?;
+    for line in content.lines() {
+        let l = line.trim();
+        let Some(rest) = l.strip_prefix("windsurf_api_key") else { continue };
+        let value = rest.trim_start().strip_prefix('=')?.trim().trim_matches('"');
+        if !value.is_empty() {
+            return Some(value.to_string());
+        }
+    }
+    None
+}
+
+/// True when the Devin CLI is installed AND has a stored credential the ACP
+/// backend can authenticate with. Surfaced in Settings so the Devin option
+/// can distinguish "not installed" from "installed but not logged in".
+#[tauri::command]
+pub(crate) fn devin_auth_status() -> bool {
+    read_devin_api_key().is_some()
+}
+
+/// A single option from the model config_option_update — one entry in the
+/// account's real catalog (values like "swe-2-medium", "claude-opus-5-max").
+#[derive(serde::Serialize)]
+pub struct DevinModelOption {
+    pub id: String,
+    pub label: String,
+}
+
+/// Live model catalog for the Devin backend. Spawns a short-lived
+/// `devin acp`, runs initialize -> authenticate -> session/new, captures the
+/// `config_option_update` notification's "model" select options (the real,
+/// account-specific catalog — ~80 entries covering every model family the
+/// plan can run), then kills the process. Falls back to an empty list on
+/// any failure — the frontend keeps a static fallback list so the picker
+/// still offers SWE-2 while detection is offline.
+#[tauri::command]
+pub(crate) async fn devin_list_models(app: tauri::AppHandle) -> Result<Vec<DevinModelOption>, String> {
+    let project_root: String = app.state::<ProjectState>()
+        .0.lock()
+        .map(|g| g.clone())
+        .unwrap_or_default();
+    tokio::task::spawn_blocking(move || {
+        let result = std::panic::catch_unwind(move || devin_list_models_blocking(&project_root));
+        result.unwrap_or_else(|_| Ok(Vec::new()))
+    })
+    .await
+    .map_err(|e| format!("devin_list_models task failed: {e}"))?
+}
+
+fn devin_list_models_blocking(project_root: &str) -> Result<Vec<DevinModelOption>, String> {
+    let Some(api_key) = read_devin_api_key() else {
+        return Err("Devin CLI not authenticated — run `devin auth login` first.".to_string());
+    };
+    let mut cmd = quiet_command(resolve_devin_program());
+    cmd.arg("acp")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null());
+    if !project_root.is_empty() {
+        cmd.current_dir(project_root);
+    }
+    let mut child = match cmd.spawn() {
+        Ok(c) => c,
+        Err(e) => return Err(format!("failed to spawn `devin acp`: {e}")),
+    };
+    let pid = child.id();
+    // Watchdog: this command has no frontend abort path, so a hung child
+    // must be reaped internally — 30s is far beyond the observed ~400ms.
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(30));
+        let _ = quiet_command("taskkill").args(tree_kill_args(pid)).output();
+    });
+
+    let models = {
+        let mut conn = AcpConn::new(&mut child);
+        conn.project_root = project_root.to_string();
+        (|| -> Result<Vec<DevinModelOption>, String> {
+            conn.call("initialize", serde_json::json!({
+                "protocolVersion": 1,
+                "clientCapabilities": {},
+                "clientInfo": { "name": "lazy-ide", "version": "0" },
+            }), &mut |_| {})?;
+            conn.call("authenticate", serde_json::json!({
+                "methodId": "devin-browser",
+                "apiKey": api_key,
+            }), &mut |_| {})?;
+            let mut found: Vec<DevinModelOption> = Vec::new();
+            conn.call("session/new", serde_json::json!({
+                "cwd": if project_root.is_empty() { "." } else { project_root },
+                "mcpServers": [],
+            }), &mut |update| {
+                if update.get("sessionUpdate").and_then(|v| v.as_str()) == Some("config_option_update") {
+                    if let Some(options) = update.get("configOptions").and_then(|v| v.as_array()) {
+                        for opt in options {
+                            if opt.get("id").and_then(|v| v.as_str()) != Some("model") { continue }
+                            if let Some(entries) = opt.get("options").and_then(|v| v.as_array()) {
+                                for e in entries {
+                                    if let (Some(id), Some(name)) = (
+                                        e.get("value").and_then(|v| v.as_str()),
+                                        e.get("name").and_then(|v| v.as_str()),
+                                    ) {
+                                        found.push(DevinModelOption { id: id.to_string(), label: name.to_string() });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            })?;
+            Ok(found)
+        })()
+        // conn dropped here — its stdin closes, letting `devin acp` exit on EOF
+    };
+    let _ = child.kill();
+    let _ = child.wait();
+    models
+}
+
+/// Minimal ACP JSON-RPC plumbing over the child's stdio. Requests are
+/// sequential (initialize -> authenticate -> session/new -> ... -> prompt),
+/// matching how the ACP session lifecycle is specified — no pipelining is
+/// needed for a per-turn client and it keeps error attribution exact.
+struct AcpConn {
+    stdin: std::process::ChildStdin,
+    reader: std::io::BufReader<std::process::ChildStdout>,
+    next_id: u64,
+    /// Project root the session was opened on — the read_text_file jail.
+    project_root: String,
+}
+
+impl AcpConn {
+    fn new(child: &mut std::process::Child) -> Self {
+        Self {
+            stdin: child.stdin.take().expect("acp stdin piped"),
+            reader: std::io::BufReader::new(child.stdout.take().expect("acp stdout piped")),
+            next_id: 1,
+            project_root: String::new(),
+        }
+    }
+
+    fn send(&mut self, msg: &serde_json::Value) -> Result<(), String> {
+        use std::io::Write;
+        let line = serde_json::to_string(msg).map_err(|e| e.to_string())?;
+        self.stdin
+            .write_all(line.as_bytes())
+            .and_then(|_| self.stdin.write_all(b"\n"))
+            .and_then(|_| self.stdin.flush())
+            .map_err(|e| format!("acp write failed: {e}"))
+    }
+
+    /// Send a request and block until ITS response arrives. Notifications
+    /// (session/update) are folded through `on_update`; agent->client
+    /// requests (fs/read_text_file, session/request_permission) are answered
+    /// inline so the agent never stalls waiting on us mid-turn.
+    fn call(
+        &mut self,
+        method: &str,
+        params: serde_json::Value,
+        on_update: &mut dyn FnMut(&serde_json::Value),
+    ) -> Result<serde_json::Value, String> {
+        use std::io::BufRead;
+        let id = self.next_id;
+        self.next_id += 1;
+        self.send(&serde_json::json!({
+            "jsonrpc": "2.0", "id": id, "method": method, "params": params,
+        }))?;
+        let mut line = String::new();
+        loop {
+            line.clear();
+            let n = self.reader.read_line(&mut line).map_err(|e| format!("acp read failed: {e}"))?;
+            if n == 0 {
+                return Err("devin acp closed its output stream".to_string());
+            }
+            let Ok(msg) = serde_json::from_str::<serde_json::Value>(line.trim()) else { continue };
+            // Our response: id matches and carries result|error.
+            if msg.get("id").and_then(|v| v.as_u64()) == Some(id)
+                && (msg.get("result").is_some() || msg.get("error").is_some())
+            {
+                if let Some(err) = msg.get("error") {
+                    let text = err.get("message").and_then(|m| m.as_str()).unwrap_or("unknown acp error");
+                    return Err(format!("{method} failed: {text}"));
+                }
+                return Ok(msg.get("result").cloned().unwrap_or(serde_json::Value::Null));
+            }
+            // An agent->client REQUEST carries both method and id.
+            if let (Some(m), Some(rid)) = (msg.get("method").and_then(|v| v.as_str()), msg.get("id").cloned()) {
+                self.answer_client_request(m, &rid, msg.get("params").cloned().unwrap_or(serde_json::Value::Null));
+                continue;
+            }
+            // session/update notification.
+            if msg.get("method").and_then(|v| v.as_str()) == Some("session/update") {
+                if let Some(update) = msg.pointer("/params/update") {
+                    on_update(update);
+                }
+            }
+        }
+    }
+
+    /// Answers a JSON-RPC request the AGENT sent us. Only the two request
+    /// kinds a read/edit agent legitimately needs are implemented; every
+    /// other method (terminal/*, fs/write_text_file — which we did not
+    /// advertise) gets Method not found.
+    fn answer_client_request(&mut self, method: &str, id: &serde_json::Value, params: serde_json::Value) {
+        let response = match method {
+            "fs/read_text_file" => self.acp_read_text_file(&params),
+            "session/request_permission" => acp_auto_permission(&params),
+            _ => Err(-32601),
+        };
+        let msg = match response {
+            Ok(result) => serde_json::json!({ "jsonrpc": "2.0", "id": id, "result": result }),
+            Err(code) => serde_json::json!({
+                "jsonrpc": "2.0", "id": id,
+                "error": { "code": code, "message": "lazy-ide: not supported" },
+            }),
+        };
+        let _ = self.send(&msg);
+    }
+
+    /// fs/read_text_file — the agent asks the client (us) for file content.
+    /// Jailed to the session's project root: the agent's own sandbox already
+    /// constrains what it wants to read, and serving arbitrary paths (e.g.
+    /// ~/.ssh) would route that content into the model's context via our
+    /// process. Case/separator-tolerant prefix check, matching the TS-side
+    /// normalizeForPathCompare convention.
+    fn acp_read_text_file(&self, params: &serde_json::Value) -> Result<serde_json::Value, i64> {
+        let path = params.get("path").and_then(|v| v.as_str()).unwrap_or("");
+        let norm = |p: &str| p.trim().trim_start_matches(r"\\?\").replace('/', "\\").to_lowercase();
+        let (root, target) = (norm(&self.project_root), norm(path));
+        if self.project_root.is_empty() || !(target == root || target.starts_with(&(root + "\\"))) {
+            return Err(-32602);
+        }
+        let bytes = std::fs::read(path).map_err(|_| -32602)?;
+        let capped = if bytes.len() > ACP_READ_FILE_CAP_BYTES { &bytes[..ACP_READ_FILE_CAP_BYTES] } else { &bytes[..] };
+        Ok(serde_json::json!({ "content": String::from_utf8_lossy(capped) }))
+    }
+}
+
+impl Drop for AcpConn {
+    /// Closing stdin lets `devin acp` see EOF and exit cleanly — the polite
+    /// counterpart to the explicit child.kill() callers still issue.
+    fn drop(&mut self) {
+        use std::io::Write;
+        let _ = self.stdin.flush();
+    }
+}
+
+/// Auto-answer for session/request_permission. The user already granted
+/// LazyIDE the launch; per-tool-call prompting inside a CLI-driven chat turn
+/// would deadlock the stream (there is no UI for it), so we pick the
+/// narrowest allow option the agent offered — 'allow_once' first, then
+/// 'allow_always', then the first listed option — or report 'cancelled'
+/// when the options list is empty (the spec's legal escape).
+fn acp_auto_permission(params: &serde_json::Value) -> Result<serde_json::Value, i64> {
+    let options = params.get("options").and_then(|v| v.as_array());
+    let pick = options.and_then(|opts| {
+        opts.iter()
+            .find(|o| o.get("kind").and_then(|k| k.as_str()) == Some("allow_once"))
+            .or_else(|| opts.iter().find(|o| o.get("kind").and_then(|k| k.as_str()) == Some("allow_always")))
+            .or_else(|| opts.first())
+            .and_then(|o| o.get("optionId").and_then(|v| v.as_str()))
+    });
+    match pick {
+        Some(option_id) => Ok(serde_json::json!({
+            "outcome": { "outcome": "selected", "optionId": option_id },
+        })),
+        None => Ok(serde_json::json!({ "outcome": { "outcome": "cancelled" } })),
+    }
+}
+
+/// Maps LazyIDE's chat mode to Devin's ACP session modes (seen live in
+/// session/new's modes.availableModes: accept-edits/smart/ask/plan/bypass).
+/// "edit" maps to accept-edits (write code, apply edits) — NOT bypass,
+/// which auto-approves everything and is deliberately never chosen here.
+fn acp_mode_id(mode: Option<&str>) -> Option<&'static str> {
+    match mode {
+        Some("ask") => Some("ask"),
+        Some("edit") => Some("accept-edits"),
+        Some("plan") => Some("plan"),
+        _ => None,
+    }
+}
+
+/// Spawn `devin acp` and drive one prompt turn over JSON-RPC, emitting the
+/// same model:// events as the other chat backends.
+async fn devin_chat_stream_inner(
+    app: tauri::AppHandle,
+    req: AgentCliChatRequest,
+    agent_pids: tauri::State<'_, AgentPidState>,
+) -> Result<(), String> {
+    let chunk_event = format!("model://chunk/{}", req.id);
+    let done_event  = format!("model://done/{}", req.id);
+    let error_event = format!("model://error/{}", req.id);
+    let action_event = format!("model://action/{}", req.id);
+    let pid_key = format!("chat-devin-{}", req.id);
+
+    let Some(api_key) = read_devin_api_key() else {
+        let msg = "Devin CLI is not authenticated — run `devin auth login` once, then retry.".to_string();
+        let _ = app.emit(&error_event, &msg);
+        return Err(msg);
+    };
+
+    let prompt = build_claude_prompt(req.system.as_deref(), &req.messages);
+    let project_root: String = app.state::<ProjectState>()
+        .0.lock()
+        .map(|g| g.clone())
+        .unwrap_or_default();
+    let model = req.model.clone().unwrap_or_default();
+    let mode = req.mode.clone();
+    let app2 = app.clone();
+    // Same tracking contract as codex_chat_stream_inner — the clone shares
+    // AgentPidState's map with kill_tracked_agent_pids' app-exit sweep.
+    let pids_clone = agent_pids.0.clone();
+
+    tokio::task::spawn_blocking(move || {
+        let mut args: Vec<String> = vec!["acp".to_string()];
+        if !model.is_empty() {
+            args.push("--model".to_string());
+            args.push(model.clone());
+        }
+        let mut cmd = quiet_command(resolve_devin_program());
+        cmd.args(&args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        if !project_root.is_empty() {
+            cmd.current_dir(&project_root);
+        }
+        let mut child = match cmd.spawn() {
+            Ok(c) => c,
+            Err(e) => return Err(format!("failed to spawn `devin acp`: {e}")),
+        };
+        track_agent_pid(&pids_clone, &pid_key, child.id());
+        // Drain stderr concurrently (pipe-buffer deadlock guard), tail-capped.
+        let stderr_handle = child.stderr.take().map(|se| spawn_stderr_tail(se, STDERR_TAIL_CAP_BYTES));
+
+        let result = devin_acp_turn(&mut child, api_key, &project_root, mode.as_deref(), &prompt, &app2, &chunk_event, &action_event);
+        // AcpConn (dropped with devin_acp_turn's scope) owned stdin — its
+        // close already let the child see EOF. kill() is the belt-and-braces
+        // for a turn that ended on error before stdin closed.
+        let _ = child.kill();
+        let _ = child.wait();
+        untrack_agent_pid(&pids_clone, &pid_key);
+        let stderr_text = stderr_handle.and_then(|h| h.join().ok()).unwrap_or_default();
+
+        match result {
+            Ok(usage) => {
+                let _ = app2.emit(&done_event, &usage);
+                Ok(())
+            }
+            Err(e) => {
+                let msg = if stderr_text.is_empty() { e } else { format!("{e}\n\n{stderr_text}") };
+                let _ = app2.emit(&error_event, &msg);
+                Err(msg)
+            }
+        }
+    })
+    .await
+    .map_err(|e| format!("devin acp task failed: {e}"))?
+}
+
+/// One full ACP turn on an already-spawned `devin acp` child: handshake,
+/// session, mode, prompt. Returns the session/prompt result's usage object
+/// for the done event. All text arrives via on_update -> the emit closures.
+fn devin_acp_turn(
+    child: &mut std::process::Child,
+    api_key: String,
+    project_root: &str,
+    mode: Option<&str>,
+    prompt: &str,
+    app: &tauri::AppHandle,
+    chunk_event: &str,
+    action_event: &str,
+) -> Result<serde_json::Value, String> {
+    let mut conn = AcpConn::new(child);
+    conn.project_root = project_root.to_string();
+
+    let emit_update = |update: &serde_json::Value| {
+        match update.get("sessionUpdate").and_then(|v| v.as_str()) {
+            Some("agent_message_chunk") => {
+                if let Some(text) = update.pointer("/content/text").and_then(|v| v.as_str()) {
+                    let _ = app.emit(chunk_event, text);
+                }
+            }
+            Some("agent_thought_chunk") => {
+                if let Some(text) = update.pointer("/content/text").and_then(|v| v.as_str()) {
+                    let _ = app.emit(chunk_event, &mark_reasoning_lines(text));
+                }
+            }
+            Some("tool_call") => {
+                let tool = update.get("title").and_then(|v| v.as_str())
+                    .or_else(|| update.get("kind").and_then(|v| v.as_str()))
+                    .unwrap_or("tool");
+                let file = update.get("locations")
+                    .and_then(|v| v.as_array())
+                    .and_then(|locs| locs.first())
+                    .and_then(|loc| loc.get("path").and_then(|v| v.as_str()));
+                let _ = app.emit(action_event, &serde_json::json!({ "tool": tool, "file": file }));
+            }
+            _ => {}
+        }
+    };
+
+    conn.call("initialize", serde_json::json!({
+        "protocolVersion": 1,
+        // readTextFile advertised so the agent can pull project files
+        // through us in ask mode instead of needing its own fs tools.
+        "clientCapabilities": { "fs": { "readTextFile": true, "writeTextFile": false } },
+        "clientInfo": { "name": "lazy-ide", "version": env!("CARGO_PKG_VERSION") },
+    }), &mut |_| {})?;
+
+    conn.call("authenticate", serde_json::json!({
+        "methodId": "devin-browser",
+        "apiKey": api_key,
+    }), &mut |_| {})?;
+
+    // session/new requires a valid cwd — "." (the child's inherited cwd)
+    // when no project is open yet.
+    let session = conn.call("session/new", serde_json::json!({
+        "cwd": if project_root.is_empty() { "." } else { project_root },
+        "mcpServers": [],
+    }), &mut |_| {})?;
+    let session_id = session.get("sessionId").and_then(|v| v.as_str())
+        .ok_or_else(|| "session/new returned no sessionId".to_string())?
+        .to_string();
+
+    if let Some(mode_id) = acp_mode_id(mode) {
+        // Best-effort: an older CLI without set_mode support must not kill
+        // the turn — the mode default (accept-edits) still streams fine.
+        let _ = conn.call("session/set_mode", serde_json::json!({
+            "sessionId": session_id, "modeId": mode_id,
+        }), &mut |_| {});
+    }
+
+    let result = conn.call("session/prompt", serde_json::json!({
+        "sessionId": session_id,
+        "prompt": [{ "type": "text", "text": prompt }],
+    }), &mut |update| emit_update(update))?;
+
+    // Each turn is its own session; deleting it keeps the user's
+    // `devin list` / session DB free of one-shot chat junk. Best-effort —
+    // older CLIs without session/delete must not fail a completed turn.
+    let _ = conn.call("session/delete", serde_json::json!({ "sessionId": session_id }), &mut |_| {});
+
+    let usage = result.get("usage").cloned().unwrap_or_else(|| serde_json::json!({}));
+    Ok(serde_json::json!({
+        "inputTokens": usage.get("inputTokens").and_then(|v| v.as_u64()).unwrap_or(0),
+        "outputTokens": usage.get("outputTokens").and_then(|v| v.as_u64()).unwrap_or(0),
+    }))
+}
+
+/// Cancel an in-flight devin ACP turn — same contract as
+/// claude_chat_stream_cancel/codex_chat_stream_cancel, targeting the
+/// "chat-devin-{id}" tracking key devin_chat_stream_inner registers.
+#[tauri::command]
+pub(crate) fn devin_chat_stream_cancel(id: String, agent_pids: tauri::State<'_, AgentPidState>) -> Result<(), String> {
+    cancel_tracked_chat_pid(&format!("chat-devin-{}", id), &agent_pids);
     Ok(())
 }
 

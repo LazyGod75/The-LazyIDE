@@ -34,7 +34,7 @@ import {
 type AgentsStoreValue = ReturnType<typeof useAgentsStore>;
 import { I18nProvider } from '../i18n';
 import { ToastProvider } from '../components/ui/Toast';
-import { runManagerTurn, MANAGER_LLM_CALL_TIMEOUT_MS } from '../lib/agents/managerEngine';
+import { runManagerTurn, MANAGER_TURN_TIMEOUT_MS } from '../lib/agents/managerEngine';
 
 vi.mock('../lib/brain/capture', () => ({
   captureAgentMission: vi.fn(),
@@ -105,12 +105,14 @@ beforeEach(() => {
   vi.mocked(runManagerTurn).mockReset();
 });
 
-describe('AgentsStoreProvider — split action-only Context skips the elapsedMs re-render storm', () => {
-  it('an actions-only consumer does not re-render across 5 ticks of an active manager turn, while a full-store consumer keeps re-rendering', async () => {
+describe('AgentsStoreProvider — no elapsedMs re-render storm during an active manager turn', () => {
+  it('a long-running manager turn writes state only at start/end — no per-second elapsedMs ticks re-render ANY consumer', async () => {
     // Hangs until the turn's own per-call AbortSignal fires — same pattern
-    // as agentsStore.test.tsx's "hang forever" timeout-recovery tests, so
-    // the elapsedTicker keeps running (never cleared by an early resolve)
-    // for as many ticks as the test advances.
+    // as agentsStore.test.tsx's "hang forever" timeout-recovery tests. With
+    // the elapsedTicker removed (perf fix: managerElapsedMs is now derived
+    // from turnStartedAt at read time), advancing 5s of fake time must
+    // produce ZERO extra renders — the previous contract was "only the
+    // narrow action-only consumer skips the storm"; now nobody renders.
     vi.mocked(runManagerTurn).mockImplementationOnce(
       (opts) =>
         new Promise((_resolve, reject) => {
@@ -150,45 +152,44 @@ describe('AgentsStoreProvider — split action-only Context skips the elapsedMs 
     const fullStoreBeforeTicks = counts.fullStore;
     const missionsOnlyBeforeTicks = counts.missionsOnly;
 
-    // 5 ticks of the 1s elapsedMs ticker while the turn is still in flight —
-    // ONE act() per tick (matching real setInterval macrotask separation),
-    // never one act() spanning all 5s: batching every tick's state update
-    // into a SINGLE act() would merge them into one React commit and hide
-    // the exact re-render-per-tick behavior this test exists to prove.
+    // Advance 5s of fake time in 1s steps — under the old per-second
+    // elapsedMs ticker each step produced a setState; under the derived
+    // turnStartedAt model NONE of them does. ONE act() per step keeps the
+    // macrotask separation honest (same shape as before the fix, so a
+    // regression that reintroduces a ticker is caught, not batched away).
     for (let tick = 0; tick < 5; tick += 1) {
       await act(async () => {
         await vi.advanceTimersByTimeAsync(1_000);
       });
     }
 
-    // Sanity check: the ticks genuinely happened (proves this isn't a
-    // trivially-passing test because nothing fired at all).
-    expect(storeBox.current!.managerElapsedMs).toBeGreaterThanOrEqual(5_000);
-    // The full-store consumer re-rendered on (at least most of) those
-    // ticks — unchanged, pre-existing behavior for the ~70 untouched call
-    // sites.
-    expect(counts.fullStore).toBeGreaterThan(fullStoreBeforeTicks + 3);
-    // The actions-only consumer saw (at most) ONE extra render across the
-    // whole 5-tick window — the manager-persistence sync effect
-    // (managerPersistence.ts) saves the just-sent user message on the FIRST
-    // post-send render and legitimately bumps `managerPersistedSessions`
-    // once, which loadManagerSession's own pre-existing dependency array
-    // depends on; every subsequent tick finds nothing new to persist and
-    // touches nothing this Context depends on. The bar this test exists to
-    // prove is the delta: 5 renders collapsed to at most 1, not "5 renders
-    // collapsed to exactly 0" (that second bar isn't real given the code
-    // this Context wraps, unchanged by this fix).
+    // The whole point of the fix: no consumer re-rendered across the 5s
+    // window — the manager-persistence sync effect (managerPersistence.ts)
+    // may still legitimately bump `managerPersistedSessions` once on the
+    // first post-send render (saving the just-sent user message), so the
+    // bar is at most one extra render each, not exactly zero.
+    expect(counts.fullStore).toBeLessThanOrEqual(fullStoreBeforeTicks + 1);
     expect(counts.actionsOnly).toBeLessThanOrEqual(actionsOnlyBeforeTicks + 1);
     expect(counts.missionsOnly).toBeLessThanOrEqual(missionsOnlyBeforeTicks + 1);
 
-    // Let the turn's own per-call budget abort it so the promise settles
-    // cleanly and no timer/promise leaks into a later test.
+    // Let the turn's own budgets abort it so the promise settles cleanly
+    // and no timer/promise leaks into a later test. Advance past the
+    // exchange-wide backstop (MANAGER_TURN_TIMEOUT_MS), not just the
+    // per-call inactivity budget: context-fetch timeouts scheduled during
+    // this same advance can delay when runManagerTurn's own inactivity
+    // timer starts, so its 300s deadline can land past a 300s advance —
+    // the 600s backstop is the guaranteed settle point either way.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(MANAGER_LLM_CALL_TIMEOUT_MS + 100);
+      await vi.advanceTimersByTimeAsync(MANAGER_TURN_TIMEOUT_MS + 1_000);
     });
     await act(async () => {
       await sendPromise;
     });
+
+    // Post-settle: elapsedMs holds the REAL final duration (written once
+    // in the finally, not per-second) — the elapsed-time contract
+    // managerElapsedMs still honors for any reader.
+    expect(storeBox.current!.managerElapsedMs).toBeGreaterThanOrEqual(5_000);
     vi.useRealTimers();
   }, 20_000);
 });

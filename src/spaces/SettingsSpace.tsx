@@ -352,6 +352,12 @@ function ProviderSection({ def, models, defaultModelId, onSelectDefault, apiKey,
 interface CliStatus {
   claude: boolean | null;
   codex: boolean | null;
+  devin: boolean | null;
+  /** Devin-specific: binary present is not enough — the ACP backend
+   *  authenticates from the CLI's own credentials.toml, so a detected-but-
+   *  not-logged-in install is a distinct, actionable state. null until
+   *  checked / not applicable (devin not detected). */
+  devinAuthed: boolean | null;
 }
 
 function StatusDot({ available }: { available: boolean | null }) {
@@ -371,7 +377,7 @@ function AccessModeSection({ settings, onChange }: {
   onChange: (next: AccessSettings) => void;
 }) {
   const { t } = useI18n();
-  const [cliStatus, setCliStatus] = useState<CliStatus>({ claude: null, codex: null });
+  const [cliStatus, setCliStatus] = useState<CliStatus>({ claude: null, codex: null, devin: null, devinAuthed: null });
   const cliTool = settings.cliTool ?? 'claude';
   // Money incident (2026-08-14) — switching AWAY from the Pro rail here only
   // ever affects the manager's own next turn and any NEW mission launched
@@ -415,7 +421,7 @@ function AccessModeSection({ settings, onChange }: {
     const live = getProviderMode();
     if (live === 'managed' || live === 'pro') return 'pro';
     if (live === 'live-key') return 'byok';
-    if (live === 'claude-code' || live === 'codex') return 'cli';
+    if (live === 'claude-code' || live === 'codex' || live === 'devin') return 'cli';
     return null;
   })();
   const mode = settings.accessMode ?? autoEquivalent ?? undefined;
@@ -425,11 +431,13 @@ function AccessModeSection({ settings, onChange }: {
     // Detect CLI availability via Tauri (best-effort)
     const detect = async () => {
       try {
-        const [claude, codex] = await Promise.all([
+        const [claude, codex, devin, devinAuthed] = await Promise.all([
           invoke<boolean>('claude_available').catch(() => false),
           invoke<boolean>('agent_cli_available', { tool: 'codex' }).catch(() => false),
+          invoke<boolean>('agent_cli_available', { tool: 'devin' }).catch(() => false),
+          invoke<boolean>('devin_auth_status').catch(() => false),
         ]);
-        setCliStatus({ claude, codex });
+        setCliStatus({ claude, codex, devin, devinAuthed: devin ? devinAuthed : null });
       } catch {
         // Not in Tauri — leave as null
       }
@@ -563,6 +571,41 @@ function AccessModeSection({ settings, onChange }: {
             </div>
             <StatusDot available={cliStatus.codex} />
           </label>
+
+          {/* Devin — ACP backend (SWE-2 + the account's real model catalog).
+              A detected-but-unauthenticated install stays selectable (the
+              honest state is surfaced under the row) — clicking it is the
+              natural place to land before the user runs `devin auth login`. */}
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '7px 10px',
+            borderRadius: 7,
+            background: (mode === 'cli' && cliTool === 'devin') ? 'rgba(45,212,191,0.1)' : 'var(--color-panel)',
+            border: `1px solid ${(mode === 'cli' && cliTool === 'devin') ? 'rgba(45,212,191,0.3)' : 'var(--color-border)'}`,
+            cursor: cliStatus.devin === false ? 'not-allowed' : 'pointer',
+            opacity: cliStatus.devin === false ? 0.5 : 1,
+          }}>
+            <input
+              type="radio"
+              name="cli-tool"
+              checked={cliTool === 'devin'}
+              disabled={cliStatus.devin === false}
+              onChange={() => selectCliTool('devin')}
+              style={{ accentColor: 'var(--color-accent)', cursor: 'pointer' }}
+            />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text)' }}>Devin</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{t('settings.access.cli.devinDesc')}</div>
+              {cliStatus.devin === true && cliStatus.devinAuthed === false && (
+                <div style={{ fontSize: 10, color: '#F6A945', marginTop: 2 }}>
+                  {t('settings.access.cli.devinNotLoggedIn')}
+                </div>
+              )}
+            </div>
+            <StatusDot available={cliStatus.devin} />
+          </label>
         </div>
       </div>
 
@@ -668,6 +711,11 @@ function ActiveEngineInfo() {
       label:  t('settings.engine.codex'),
       detail: t('settings.engine.codex.detail'),
       color:  '#74C0FC',
+    },
+    'devin': {
+      label:  t('settings.engine.devin'),
+      detail: t('settings.engine.devin.detail'),
+      color:  '#2DD4BF',
     },
     'live-key': {
       label:  t('settings.engine.liveKey'),

@@ -161,19 +161,25 @@ export function useCanvasFlowGraph(params: UseCanvasFlowGraphParams): UseCanvasF
     void load();
     // Keep status halos honest while the canvas is mounted: refresh when a
     // pending approval appears/resolves, when a bot VM window opens/closes,
-    // and periodically re-derive (a run starting/completing changes
-    // getBotRuntimeState, which has no event).
+    // and on every bot-runtime mutation (botEngine emits
+    // 'lazybots:runtimeChanged' at each register/finish/stop/slot site —
+    // the 5s polling interval this replaced). A slow 30s safety net stays
+    // for the one uncovered case: a run that died by crash/HMR without
+    // reaching finishBotRun/stopBotRun (its stale entry gets reaped by the
+    // next real event or this net, whichever comes first).
     const offApproval = on('solari:approvalRequest', () => void load());
     const offResolved = on('solari:approvalResolved', () => void load());
     const offRoster = on('lazybots:changed', () => void load());
+    const offRuntime = on('lazybots:runtimeChanged', () => void load());
     const offRoot = on('projectRoot:resolved', () => void load());
     const offVmWindows = subscribeBotVmWindows(() => void load());
-    const interval = setInterval(() => void load(), 5000);
+    const interval = setInterval(() => void load(), 30_000);
     return () => {
       cancelled = true;
       offApproval();
       offResolved();
       offRoster();
+      offRuntime();
       offRoot();
       offVmWindows();
       clearInterval(interval);

@@ -46,7 +46,7 @@ describe('breadcrumbSegments', () => {
   it('degrades gracefully (no crash) to the stripped absolute path when the file is outside any known project root', () => {
     const path = String.raw`\\?\C:\Users\dev\Downloads\scratch.js`;
     expect(() => breadcrumbSegments(path, null)).not.toThrow();
-    expect(breadcrumbSegments(path, null)).toEqual(['C:', 'Users', /'dev'/, 'Downloads', 'scratch.js']);
+    expect(breadcrumbSegments(path, null)).toEqual(['C:', 'Users', 'dev', 'Downloads', 'scratch.js']);
   });
 
   it('never leaves a literal "?" segment for a verbatim-prefixed path with no known project root', () => {

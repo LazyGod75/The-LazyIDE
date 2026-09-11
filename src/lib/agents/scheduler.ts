@@ -200,7 +200,7 @@ function resolveNativePool(): string {
 
 function resolveModePool(mode: ProviderMode): string {
   if (mode === 'managed') return 'managed';
-  if (mode === 'claude-code' || mode === 'codex') return 'claude-cli';
+  if (mode === 'claude-code' || mode === 'codex' || mode === 'devin') return 'claude-cli';
   if (mode === 'live-key') return byokPool(loadAccessSettings().byokProvider ?? 'anthropic');
   // 'pro' (selected but inactive) / 'mock' (no real engine at all) — no
   // engine will actually run this mission (see runtime.ts's

@@ -5,6 +5,7 @@
 import type { ChatMode } from '../../lib/models';
 import { MODELS_BY_PROVIDER } from '../../lib/models';
 import { OPENROUTER_MODELS_BY_PROVIDER } from '../../lib/models/openrouterCatalog';
+import { devinModelInfos } from '../../lib/models/devinCatalog';
 
 // ── Mode config ───────────────────────────────────────────────────
 
@@ -117,6 +118,10 @@ export interface ModelDropdownProps {
   currentId: string;
   showNative: boolean;
   showOpenRouter: boolean;
+  /** Devin CLI detected — renders the ACP-harvested catalog (SWE-2 + the
+   *  account's model list) as its own section, between the native and the
+   *  Pro groups. */
+  showDevin: boolean;
   /** Shown instead of the (otherwise empty) dropdown body when neither
       catalog is entitled — see modelPickerOptions.ts's emptyReadiness. */
   emptyMessage?: string;
@@ -168,13 +173,13 @@ function SectionHeader({ label, color }: { label: string; color: string }) {
   );
 }
 
-export function ModelDropdown({ currentId, showNative, showOpenRouter, emptyMessage, onSelect, onClose, t }: ModelDropdownProps) {
+export function ModelDropdown({ currentId, showNative, showOpenRouter, showDevin, emptyMessage, onSelect, onClose, t }: ModelDropdownProps) {
   return (
     <div style={DROPDOWN_STYLE}>
       {/* Clear disabled state — neither catalog is entitled right now
           (see modelPickerOptions.ts's emptyReadiness) instead of silently
           rendering an empty dropdown. */}
-      {!showNative && !showOpenRouter && (
+      {!showNative && !showOpenRouter && !showDevin && (
         <div style={{ padding: '10px 12px', fontSize: 11, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, maxWidth: 240 }}>
           {emptyMessage}
         </div>
@@ -211,6 +216,37 @@ export function ModelDropdown({ currentId, showNative, showOpenRouter, emptyMess
           ))}
         </div>
       ))}
+
+      {/* Devin CLI catalog (ACP — real account catalog, see devinCatalog.ts) */}
+      {showDevin && (
+        <div>
+          <SectionHeader label="Devin · CLI" color="#2DD4BF" />
+          {devinModelInfos().map(model => (
+            <button
+              key={model.id}
+              onClick={() => { onSelect(model.id); onClose(); }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '6px 12px',
+                width: '100%',
+                background: model.id === currentId ? 'rgba(124,92,255,0.12)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontFamily: 'inherit',
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 500, color: model.id === currentId ? 'var(--color-accent-light)' : '#D5D8E0' }}>
+                {model.label}
+              </span>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>
+                {model.id}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* OpenRouter catalog (Lazy Pro) */}
       {showOpenRouter && Object.entries(OPENROUTER_MODELS_BY_PROVIDER).map(([providerName, models]) => (

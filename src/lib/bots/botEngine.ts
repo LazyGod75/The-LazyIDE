@@ -19,6 +19,7 @@
 */
 
 import type { BotConfig, BotRun, BotRunLaunchOpts, BotRuntimeState, BotMissionInput } from './botTypes.js';
+import { emit } from '../bus.js';
 import { releaseAll } from '../solari/solariSessions.js';
 import { checkBotBudgetExceeded, checkBotBudgetWarning, setBotBudgetCap } from './budgetGuard.js';
 import {
@@ -252,6 +253,7 @@ export function registerBotRun(botId: string, missionId: string, routineId?: str
   };
   activeBotRuns.set(missionId, run);
   persistRunning();
+  emit('lazybots:runtimeChanged', { botId });
   return run;
 }
 
@@ -344,6 +346,7 @@ function beginLaunchSlot(bot: BotConfig): string {
   assertBotCanLaunch(bot);
   const slot = `__pending_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   getOrCreateState(bot.id).activeRuns.push(slot);
+  emit('lazybots:runtimeChanged', { botId: bot.id });
   return slot;
 }
 
@@ -351,6 +354,7 @@ function abortLaunchSlot(botId: string, slot: string): void {
   const state = runtimeStates.get(botId);
   if (!state) return;
   state.activeRuns = state.activeRuns.filter((id) => id !== slot);
+  emit('lazybots:runtimeChanged', { botId });
 }
 
 function snapshotRunning(): BotRun[] {
@@ -413,6 +417,7 @@ export async function finishBotRun(missionId: string, summary?: string): Promise
   if (summary) run.summary = summary;
   activeBotRuns.delete(missionId);
   persistRunning();
+  emit('lazybots:runtimeChanged', { botId: run.botId });
   void appendBotRunHistory({ ...run });
   await releaseAll(missionId).catch(() => {});
 }
@@ -430,6 +435,7 @@ export async function stopBotRun(run: BotRun): Promise<void> {
   run.completedAt = new Date().toISOString();
   activeBotRuns.delete(run.missionId);
   persistRunning();
+  emit('lazybots:runtimeChanged', { botId: run.botId });
   void appendBotRunHistory({ ...run });
   await releaseAll(run.missionId).catch(() => {});
 }

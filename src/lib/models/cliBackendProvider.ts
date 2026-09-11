@@ -1,13 +1,15 @@
 /* cliBackendProvider — generic factory for agent-CLI streaming backends.
-   Supports 'claude' (Claude Code subscription) and 'codex' (OpenAI Codex CLI).
-   Each backend invokes the Tauri `agent_cli_chat_stream` command and yields
-   text chunks via the same model:// event protocol.
+   Supports 'claude' (Claude Code subscription), 'codex' (OpenAI Codex CLI)
+   and 'devin' (Devin CLI over ACP — see chat.rs's Devin section). Each
+   backend invokes the Tauri `agent_cli_chat_stream` command and yields text
+   chunks via the same model:// event protocol.
 */
 
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { ModelProvider, ModelInfo, StreamChatRequest, StreamEvent } from './types.js';
 import { ALL_MODELS } from './registry.js';
+import { devinModelInfos } from './devinCatalog.js';
 import { addUsage } from './costStore.js';
 import { buildSystemPrompt } from './systemPrompts.js';
 import { loadAccessSettings } from './accessSettings.js';
@@ -338,6 +340,18 @@ export const CLI_BACKENDS: CliBackendEntry[] = [
       }
     },
   },
+  {
+    id: 'devin',
+    label: 'Devin (SWE-2)',
+    detect: async () => {
+      try {
+        const available = await invoke<boolean>('agent_cli_available', { tool: 'devin' });
+        return available;
+      } catch {
+        return false;
+      }
+    },
+  },
 ];
 
 // ── Factory ───────────────────────────────────────────────────────
@@ -364,6 +378,9 @@ export function cliBackendProvider(tool: string): ModelProvider {
       // "no models configured" state.
       if (tool === 'claude') return ALL_MODELS.filter(m => m.provider === 'anthropic');
       if (tool === 'codex')  return [];
+      // Devin has a real, account-scoped catalog harvested over ACP —
+      // devinCatalog.ts (live list + curated static fallback).
+      if (tool === 'devin')  return [...devinModelInfos()];
       return ALL_MODELS;
     },
 

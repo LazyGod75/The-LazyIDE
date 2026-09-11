@@ -125,6 +125,23 @@ describe('buildModelPickerOptions', () => {
     expect(result.defaultModelId).toBe(DEFAULT_OPENROUTER_MODEL_ID);
   });
 
+  it('devin detected: the Devin group sits between claude-sub and pro, sourced from the devin catalog', () => {
+    const result = buildModelPickerOptions({ claudeSub: true, pro: 'active', codexManaged: false, devin: true });
+
+    expect(result.groups.map((g) => g.id)).toEqual(['free', 'claude-sub', 'devin', 'pro']);
+    const devinGroup = result.groups.find((g) => g.id === 'devin')!;
+    expect(devinGroup.models.some((m) => m.id === 'swe-2-medium')).toBe(true);
+    expect(devinGroup.models.every((m) => m.provider === 'devin')).toBe(true);
+    expect(result.hasOptions).toBe(true);
+  });
+
+  it('devin-only (no claude/byok/pro): the Devin group is offered and swe-2-medium is the default', () => {
+    const result = buildModelPickerOptions({ claudeSub: false, pro: 'inactive', codexManaged: false, devin: true });
+
+    expect(result.groups.map((g) => g.id)).toEqual(['free', 'devin']);
+    expect(result.defaultModelId).toBe('swe-2-medium');
+  });
+
   it('neither: only the free group remains — still usable via ox alpha', () => {
     const result = buildModelPickerOptions({ claudeSub: false, pro: 'inactive', codexManaged: false });
 
@@ -262,17 +279,17 @@ describe('detectModelEntitlements', () => {
   }
 
   it('outside Tauri: does not invent a Claude CLI entitlement (browser cannot run it)', () => {
-    expect(detectModelEntitlements()).toEqual({ claudeSub: false, pro: 'inactive', codexManaged: false, byok: null });
+    expect(detectModelEntitlements()).toEqual({ claudeSub: false, pro: 'inactive', codexManaged: false, byok: null, devin: false });
   });
 
   it('outside Tauri + managed credits: Pro is offerable, Claude CLI is not', () => {
     setManagedAvailability(true);
-    expect(detectModelEntitlements()).toEqual({ claudeSub: false, pro: 'active', codexManaged: false, byok: null });
+    expect(detectModelEntitlements()).toEqual({ claudeSub: false, pro: 'active', codexManaged: false, byok: null, devin: false });
   });
 
   it('Tauri + nothing detected or declared: neither entitlement', () => {
     simulateTauri();
-    expect(detectModelEntitlements()).toEqual({ claudeSub: false, pro: 'inactive', codexManaged: false, byok: null });
+    expect(detectModelEntitlements()).toEqual({ claudeSub: false, pro: 'inactive', codexManaged: false, byok: null, devin: false });
   });
 
   it('Tauri + claude CLI detected available: claudeSub true', () => {
@@ -376,7 +393,7 @@ describe('detectModelEntitlements', () => {
     mockedIsCliBackendAvailable.mockImplementation((tool: string) => tool === 'claude');
     setManagedAvailability(true);
 
-    expect(detectModelEntitlements()).toEqual({ claudeSub: true, pro: 'active', codexManaged: false, byok: null });
+    expect(detectModelEntitlements()).toEqual({ claudeSub: true, pro: 'active', codexManaged: false, byok: null, devin: false });
   });
 });
 

@@ -215,16 +215,16 @@ describe('normalizeRepoPathForGit', () => {
 
 describe('normalizeForPathCompare', () => {
   it('strips a verbatim prefix, unifies separators, and lower-cases', () => {
-    expect(normalizeForPathCompare(String.raw`\\?\C:\Users\user\Demo`)).toBe(String.raw`c:\users\david\demo`);
+    expect(normalizeForPathCompare(String.raw`\\?\C:\Users\user\Demo`)).toBe(String.raw`c:\users\user\demo`);
   });
 
   it('unifies forward slashes to backslashes', () => {
-    expect(normalizeForPathCompare('C:/Users/user/Demo')).toBe(String.raw`c:\users\david\demo`);
+    expect(normalizeForPathCompare('C:/Users/user/Demo')).toBe(String.raw`c:\users\user\demo`);
   });
 
   it('drops a trailing separator', () => {
     const withTrailingSep = String.raw`C:\Users\user\Demo` + '\\';
-    expect(normalizeForPathCompare(withTrailingSep)).toBe(String.raw`c:\users\david\demo`);
+    expect(normalizeForPathCompare(withTrailingSep)).toBe(String.raw`c:\users\user\demo`);
   });
 });
 

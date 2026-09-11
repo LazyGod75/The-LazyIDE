@@ -151,7 +151,7 @@ describe('inferReHomeTarget', () => {
     const orch = makeOrch({
       projectId: 'proj-backoffice',
       name: 'Site plan',
-      objective: 'work inside c:/users/david/documents/cerveau/lazysite-internet please',
+      objective: 'work inside c:/users/user/documents/cerveau/lazysite-internet please',
     });
     expect(inferReHomeTarget(orch, openProjects)?.projectId).toBe('proj-site');
   });

@@ -47,7 +47,7 @@ export interface ManagerConversationTab {
   customTitle?: string;
 }
 
-export type EngineKey = 'claude-code' | 'codex' | 'live-key' | 'managed' | 'pro' | 'mock';
+export type EngineKey = 'claude-code' | 'codex' | 'devin' | 'live-key' | 'managed' | 'pro' | 'mock';
 
 /** Engine keys that consume Lazy-managed credits — every other key runs
  *  via a CLI subscription (claude-code/codex) or the user's own API key
@@ -60,6 +60,7 @@ export const CREDIT_METERED_ENGINES: ReadonlySet<EngineKey> = new Set(['managed'
 export const ENGINE_I18N_KEY: Record<EngineKey, string> = {
   'claude-code': 'assistant.engine.claudeCode',
   'codex':       'assistant.engine.codex',
+  'devin':       'assistant.engine.devin',
   'live-key':    'assistant.engine.liveKey',
   'managed':     'assistant.engine.managed',
   'pro':         'assistant.engine.pro',
@@ -69,6 +70,7 @@ export const ENGINE_I18N_KEY: Record<EngineKey, string> = {
 const ENGINE_COLOR: Record<string, string> = {
   'claude-code': 'rgba(124,92,255,0.18)',
   'codex':       'rgba(74,192,252,0.16)',
+  'devin':       'rgba(45,212,191,0.16)',
   'live-key':    'rgba(74,192,252,0.16)',
   'managed':     'rgba(124,92,255,0.18)',
   'pro':         'rgba(246,169,69,0.14)',
@@ -78,6 +80,7 @@ const ENGINE_COLOR: Record<string, string> = {
 const ENGINE_TEXT_COLOR: Record<string, string> = {
   'claude-code': '#A78BFF',
   'codex':       '#74C0FC',
+  'devin':       '#2DD4BF',
   'live-key':    '#74C0FC',
   'managed':     '#A78BFF',
   'pro':         '#F6A945',

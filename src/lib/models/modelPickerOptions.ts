@@ -29,6 +29,7 @@ import type { ModelInfo } from './types.js';
 import { isTauri as isTauriRuntime } from '../platform/index.js';
 import { ALL_MODELS, DEFAULT_MODEL } from './registry.js';
 import { OPENROUTER_MODELS, DEFAULT_OPENROUTER_MODEL_ID } from './openrouterCatalog.js';
+import { devinModelInfos, DEFAULT_DEVIN_MODEL_ID } from './devinCatalog.js';
 import { loadAccessSettings } from './accessSettings.js';
 import { isCliBackendAvailable } from './cliBackendProvider.js';
 import { hasAnthropicKey } from './anthropicProvider.js';
@@ -46,7 +47,7 @@ export type Translate = (key: string, params?: Record<string, string | number>) 
 
 // ── Contract ──────────────────────────────────────────────────────
 
-export type ModelGroupId = 'free' | 'claude-sub' | 'pro' | 'byok';
+export type ModelGroupId = 'free' | 'claude-sub' | 'devin' | 'pro' | 'byok';
 
 /** A single selectable model, normalized to the same shape regardless of
     which catalog (native registry.ts vs openrouterCatalog.ts) it came from. */
@@ -84,6 +85,11 @@ export interface ModelEntitlements {
    *  empty-state message stays honest instead of recommending the user
    *  configure a subscription they may already have working. */
   codexManaged: boolean;
+  /** Devin CLI detected (devin.exe resolvable). Its models live in their
+   *  own group — selecting one routes through the Devin ACP backend via
+   *  the model-driven short-circuit in getProvider() (index.ts). Optional:
+   *  undefined behaves as false. */
+  devin?: boolean;
 }
 
 export interface ModelPickerOptions {
@@ -155,6 +161,7 @@ export interface ModelPickerOptions {
 
 export const CLAUDE_SUB_LABEL = 'Abonnement Claude';
 export const PRO_LABEL = 'LazyPro / Managé';
+export const DEVIN_LABEL = 'Devin CLI';
 /** Header of the always-present FREE group (GLM 5.2). No entitlement of any
     kind is required — see openrouterCatalog.ts's free tier block. */
 export const FREE_GROUP_LABEL = 'Gratuit · GLM 5.2';
@@ -212,6 +219,7 @@ export function detectModelEntitlements(): ModelEntitlements {
           : 'inactive',
       codexManaged: false,
       byok: null,
+      devin: false,
     };
   }
 
@@ -260,7 +268,7 @@ export function detectModelEntitlements(): ModelEntitlements {
   // that routing logic is exactly the kind of incoherence this fix removes.
   const codexManaged = getProviderMode() === 'codex';
 
-  return { claudeSub, pro, codexManaged, byok };
+  return { claudeSub, pro, codexManaged, byok, devin: isCliBackendAvailable('devin') === true };
 }
 
 // ── Options builder ───────────────────────────────────────────────
@@ -321,6 +329,7 @@ export function buildModelPickerOptions(entitlements: ModelEntitlements, t?: Tra
   const claudeSubLabel = t ? t('models.picker.claudeSubLabel') : CLAUDE_SUB_LABEL;
   const proLabel = t ? t('models.picker.proLabel') : PRO_LABEL;
   const freeLabel = t ? t('models.picker.freeLabel') : FREE_GROUP_LABEL;
+  const devinLabel = t ? t('models.picker.devinLabel') : DEVIN_LABEL;
   const groups: ModelOptionGroup[] = [
     // FREE tier first — visible to EVERYONE, no entitlement check. A user
     // with nothing configured can still pick ox alpha and work immediately
@@ -328,6 +337,18 @@ export function buildModelPickerOptions(entitlements: ModelEntitlements, t?: Tra
     { id: 'free' as const, label: freeLabel, models: freeOptions() },
     ...(entitlements.claudeSub
       ? [{ id: 'claude-sub' as const, label: claudeSubLabel, models: nativeOptions() }]
+      : []),
+    ...(entitlements.devin
+      ? [{
+          id: 'devin' as const,
+          label: devinLabel,
+          models: devinModelInfos().map((m) => ({
+            id: m.id,
+            label: m.label,
+            provider: m.provider,
+            description: 'Devin CLI',
+          })),
+        }]
       : []),
     ...(entitlements.byok
       ? [{
@@ -371,6 +392,11 @@ export function buildModelPickerOptions(entitlements: ModelEntitlements, t?: Tra
           ? effectiveByokModel(entitlements.byok)
           : entitlements.claudeSub
             ? DEFAULT_MODEL.id
+            // Devin-only setup (no Pro, no BYOK, no Claude): the Devin
+            // group IS in `groups`, so its default must come from it —
+            // SWE-2 Medium is the free-tier Devin model.
+            : entitlements.devin
+              ? DEFAULT_DEVIN_MODEL_ID
             // Nothing entitled at all: the free group is the ONLY one
             // offered (see the `groups` array above), so the default must
             // come from it — see DEFAULT_FREE_MODEL_ID's doc comment for the

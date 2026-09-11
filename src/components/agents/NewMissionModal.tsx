@@ -754,7 +754,9 @@ export function NewMissionModal({ isOpen, onClose }: NewMissionModalProps) {
               <span data-testid="mission-quote-line" style={S.hint}>
                 {quoteResult
                   ? t(
-                      classifyMissionModel(form.modelId) === 'native'
+                      // 'devin' bills the user's own Devin account, never
+                      // Lazy credits — same non-debited qualifier as native.
+                      ['native', 'devin'].includes(classifyMissionModel(form.modelId) ?? '')
                         ? 'agents.modal.quote.lineNative'
                         : 'agents.modal.quote.line',
                       {
@@ -795,7 +797,7 @@ export function NewMissionModal({ isOpen, onClose }: NewMissionModalProps) {
               style={S.input}
             />
             <span style={S.hint}>
-              {classifyMissionModel(form.modelId) === 'native'
+              {['native', 'devin'].includes(classifyMissionModel(form.modelId) ?? '')
                 ? t('agents.modal.budgetCapHintNative')
                 : t('agents.modal.budgetCapHint')}
             </span>

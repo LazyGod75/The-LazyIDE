@@ -79,10 +79,13 @@ beforeEach(() => {
 });
 
 describe('TerminalNodeCard', () => {
-  it('mounts the REAL TerminalView with the surface cwd, inside a nodrag body', () => {
+  // TerminalView is React.lazy inside TerminalNodeCard (xterm bundle split)
+  // — the mock still resolves, just on the next microtask, so every
+  // assertion on the mounted terminal body awaits findByTestId.
+  it('mounts the REAL TerminalView with the surface cwd, inside a nodrag body', async () => {
     renderCard({ id: 't1', kind: 'terminal', cwd: '/repo/worktree-a' });
 
-    const mounted = screen.getByTestId('mock-terminal-view');
+    const mounted = await screen.findByTestId('mock-terminal-view');
     expect(mounted).toHaveTextContent('/repo/worktree-a');
     expect(mounted.parentElement).toHaveClass('nodrag');
   });
@@ -120,9 +123,9 @@ describe('TerminalNodeCard', () => {
   // underneath ... never unmounted"), which this collapse toggle used to
   // silently violate (conditional-render unmount, killing the PTY on every
   // collapse).
-  it('collapse hides the terminal body via display:none WITHOUT unmounting it (the PTY session is never torn down by collapsing)', () => {
+  it('collapse hides the terminal body via display:none WITHOUT unmounting it (the PTY session is never torn down by collapsing)', async () => {
     renderCard({ id: 't1', kind: 'terminal', cwd: '/repo' });
-    const mounted = screen.getByTestId('mock-terminal-view');
+    const mounted = await screen.findByTestId('mock-terminal-view');
     expect(mounted).toBeInTheDocument();
     expect((mounted.parentElement as HTMLElement).style.display).not.toBe('none');
 
@@ -177,9 +180,10 @@ describe('TerminalNodeCard', () => {
   // cover the registry itself, these prove THIS node actually writes to it. ──
 
   describe('terminalActivity wiring (Fix 2)', () => {
-    it('records real PTY output via onActivity into the shared activity registry', () => {
+    it('records real PTY output via onActivity into the shared activity registry', async () => {
       renderCard({ id: 't1', kind: 'terminal', cwd: '/repo' });
       expect(getTerminalActivity('t1').lastOutputAtMs).toBeUndefined();
+      await screen.findByTestId('mock-terminal-view'); // lazy TerminalView mounted
 
       act(() => { capturedOnActivity?.(42); });
 
@@ -196,9 +200,10 @@ describe('TerminalNodeCard', () => {
       expect(getTerminalActivity('t1').lastFocusedAtMs).toBeTypeOf('number');
     });
 
-    it('close button also clears the tracked activity (removeSurface is the single choke point)', () => {
+    it('close button also clears the tracked activity (removeSurface is the single choke point)', async () => {
       canvasStoreVanilla.getState().addSurface({ id: 't1', kind: 'terminal', cwd: '/repo' });
       renderCard({ id: 't1', kind: 'terminal', cwd: '/repo' });
+      await screen.findByTestId('mock-terminal-view'); // lazy TerminalView mounted
       act(() => { capturedOnActivity?.(10); });
       expect(getTerminalActivity('t1').lastOutputAtMs).toBeTypeOf('number');
 

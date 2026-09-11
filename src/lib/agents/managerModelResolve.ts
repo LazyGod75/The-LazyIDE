@@ -17,6 +17,8 @@ import {
 import { isManagedModelReady, isNativeModelReady } from './runtime.js';
 import { ALL_MODELS } from '../models/registry.js';
 import { OPENROUTER_MODELS, findOpenRouterModel, isOpenRouterFreeModel } from '../models/openrouterCatalog.js';
+import { isDevinModel, devinModelInfos } from '../models/devinCatalog.js';
+import { isCliBackendAvailable } from '../models/cliBackendProvider.js';
 import type { ManagerEngineChoice } from './types.js';
 
 const TIER_WORD = /haiku|sonnet|opus/;
@@ -313,6 +315,14 @@ export function findAlternateRailMatches(
     if (lookup.ok) matches.push({ rail: 'byok', id: lookup.id, label: `byok:${def.id}` });
   }
 
+  // Devin ids (swe-2-medium, ...) live on the cli family but a distinct
+  // sub-rail — offered as a switch target only when the devin CLI is
+  // actually detected, same "only plausible homes" contract as the keyed
+  // BYOK check above.
+  if (requestedRail !== 'cli' && isDevinModel(requestedId) && isCliBackendAvailable('devin') === true) {
+    matches.push({ rail: 'cli', id: requestedId, label: 'cli:devin' });
+  }
+
   return matches;
 }
 
@@ -369,7 +379,10 @@ function tryInferredRailSwitch(
  *  installed. Shared by resolveManagerModelId's engineOverride branch and
  *  runManagerTurn's own (STACK fix). */
 export function nativeEngineMode(): ProviderMode {
-  return loadAccessSettings().cliTool === 'codex' ? 'codex' : 'claude-code';
+  const tool = loadAccessSettings().cliTool;
+  if (tool === 'codex') return 'codex';
+  if (tool === 'devin') return 'devin';
+  return 'claude-code';
 }
 
 /** BUG-2: empty Pro wallet + native CLI ready → native pool, unless this
@@ -391,7 +404,7 @@ function pickEffectiveManagerMode(
     return nativeEngineMode();
   }
   if (engineOverride === 'pro') return 'managed';
-  if (fallbackToNative) return 'claude-code';
+  if (fallbackToNative) return nativeEngineMode();
   return mode;
 }
 
@@ -427,6 +440,10 @@ function resolveExactOnByokRail(modelId: string): string {
 
 function resolveExactOnCliRail(modelId: string): string {
   if (ALL_MODELS.some((m) => m.id === modelId)) return modelId;
+  // Devin-catalog ids belong to the CLI rail family (devin is a cliTool):
+  // accepting them here lets classifyMissionModel route the mission to the
+  // devin branch downstream — the id itself carries the engine switch.
+  if (isDevinModel(modelId)) return modelId;
   const lookup = resolveBareRailModelId(modelId, ALL_MODELS.map((m) => m.id), 'anthropic');
   if (lookup.ok) {
     warnModelIdNormalized(modelId, lookup.id, 'cli');
@@ -446,6 +463,10 @@ function resolveExactManagerModelId(modelId: string, effectiveMode: ProviderMode
 
 function tierPoolForMode(effectiveMode: ProviderMode): readonly { id: string }[] {
   if (effectiveMode === 'managed' || effectiveMode === 'pro') return OPENROUTER_MODELS;
+  // Devin's own catalog holds its tier words (medium/high/max + the
+  // account's claude/gpt/... variants) — resolve against it so a hint
+  // lands on an id --model actually accepts.
+  if (effectiveMode === 'devin') return devinModelInfos();
   if (effectiveMode !== 'live-key') return ALL_MODELS;
   const def = resolveByokDef(loadAccessSettings().byokProvider);
   return def ? byokModelInfos(def) : ALL_MODELS;

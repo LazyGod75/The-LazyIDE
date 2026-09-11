@@ -25,6 +25,7 @@ import type { ByokProviderDef } from '../models/byokProviders.js';
 import type { ProviderMode, ChatMessage, ModelInfo, StreamChatRequest } from '../models/index.js';
 import { ALL_MODELS } from '../models/registry.js';
 import { OPENROUTER_MODELS, DEFAULT_OPENROUTER_MODEL_ID, findOpenRouterModel, isOpenRouterFreeModel, migrateRetiredOpenRouterId } from '../models/openrouterCatalog.js';
+import { isDevinModel } from '../models/devinCatalog.js';
 import { RECALL_TEACHING } from '../models/systemPrompts.js';
 import type { ManagerMessage } from './types.js';
 
@@ -455,6 +456,37 @@ async function streamManagedRailWithRetry(
   throw lastErr;
 }
 
+/** Devin CLI rail (ACP backend, tool 'devin'). Model ids pass through
+ *  UNMANGLED — devin's --model flag accepts its own catalog ids AND fuzzy
+ *  names ("Accepts the same fuzzy names as /model"), so a devin id like
+ *  'swe-2-medium' or a resolved tier word both work; anything invalid
+ *  fails honestly in the CLI's own error. Same system-prompt workaround
+ *  as buildCodexStreamRequest: threaded through rulesContext (which
+ *  cliBackendProvider forwards verbatim into its own buildSystemPrompt —
+ *  RECALL_TEACHING already gets appended there for non-'transform' modes,
+ *  hence codexSystemFinal, not systemFinal). */
+async function streamDevinRail(
+  model: string,
+  systemFinal: string,
+  apiMessages: ManagerMessage[],
+  signal: AbortSignal | undefined,
+  ingest: IngestChunk,
+): Promise<void> {
+  const devinMessages: ChatMessage[] = apiMessages.map((m) => ({
+    id: m.id,
+    role: m.role === 'assistant' ? 'assistant' : 'user',
+    content: m.content,
+  }));
+  const devinModel: ModelInfo = { id: model, label: model, provider: 'devin' };
+  await drainChunks(cliBackendProvider('devin').streamChat({
+    messages: devinMessages,
+    model: devinModel,
+    mode: 'ask',
+    rulesContext: systemFinal,
+    signal,
+  }), ingest);
+}
+
 async function dispatchAmbientRail(
   mode: ProviderMode,
   model: string,
@@ -482,6 +514,10 @@ async function dispatchAmbientRail(
     await drainChunks(cliBackendProvider('codex').streamChat(
       buildCodexStreamRequest(apiMessages, codexSystemFinal, model, signal),
     ), ingest);
+    return;
+  }
+  if (mode === 'devin') {
+    await streamDevinRail(model, codexSystemFinal, apiMessages, signal, ingest);
     return;
   }
   if (mode === 'live-key') {
@@ -536,6 +572,12 @@ export async function streamManagerCompletion(opts: StreamManagerCompletionOpts)
   const modelByokDef = resolveByokDefForModel(model);
   if (modelByokDef) {
     await streamKeyedByokRail(modelByokDef, model, systemFinal, apiMessages, signal, ingest);
+  } else if (isDevinModel(model)) {
+    // Devin-catalog id picked explicitly — same model-driven short-circuit
+    // as the BYOK check above: rides the devin ACP rail no matter which
+    // ambient mode resolved (getProvider()'s isDevinModel check is the
+    // provider-level twin of this branch).
+    await streamDevinRail(model, codexSystemFinal, apiMessages, signal, ingest);
   } else {
     await dispatchAmbientRail(
       mode, model, systemFinal, codexSystemFinal, cacheableSystemFinal, apiMessages, signal, ingest,

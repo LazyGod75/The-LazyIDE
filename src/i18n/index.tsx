@@ -79,6 +79,19 @@ function detectLocaleSync(): Locale {
 }
 
 /**
+ * Boot-time dictionary preload — awaited from main.tsx in PARALLEL with
+ * initByokVault so the detected non-eager locale's chunk (de/es/ja/zh —
+ * ~50KB each, lazy by design above) is already cached before the first
+ * render. Without this, every t() call renders the fr fallback until the
+ * chunk resolves — a visible French flash for e.g. a German user. The boot
+ * splash in index.html covers the wait; cost is one parallel chunk fetch.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function preloadDetectedLocale(): Promise<void> {
+  return loadDict(detectLocaleSync()).then(() => undefined);
+}
+
+/**
  * Asynchronously fetch the OS locale via Tauri's os plugin.
  * Returns null outside Tauri or when the locale cannot be resolved.
  * Only used on first run (no saved preference).

@@ -4,6 +4,7 @@
 */
 
 import { useCallback, useEffect, useState } from 'react';
+import { useI18n } from '../i18n';
 import type { BotConfig } from '../lib/bots/botTypes';
 import { BotListPanel } from '../components/agents/BotListPanel';
 import { BotDetailPanel } from '../components/agents/BotDetailPanel';
@@ -20,6 +21,7 @@ import { on } from '../lib/bus';
 import { BotVmWindow } from '../components/agents/canvas/nodes/BotVmWindow';
 
 export function BotsSpace() {
+  const { t } = useI18n();
   const [selectedBot, setSelectedBot] = useState<BotConfig | undefined>();
   const [showNewModal, setShowNewModal] = useState(false);
   const { bots, refresh } = useBots();
@@ -38,9 +40,9 @@ export function BotsSpace() {
   }, []);
 
   const handleLaunchRun = useCallback(async (bot: BotConfig, task: string) => {
-    toast(`Launching run for ${bot.name}...`, 'info');
+    toast(t('bots.space.launching', { name: bot.name }), 'info');
     try {
-      if (!agents) throw new Error('agent store unavailable - open the Agents space once first.');
+      if (!agents) throw new Error(t('bots.space.noStore'));
       // A bot runs on whichever rail the user actually has (BYOK / CLI /
       // Pro / free) — see resolveLazyBotRunModel; the old bare Claude id
       // sent bots to the CLI rail even when no CLI was installed.
@@ -52,11 +54,11 @@ export function BotsSpace() {
         model,
         createMission: async (input) => agents.addMission(toBotNewMissionInput(input)),
       });
-      toast(`Run launched for ${bot.name}`, 'success');
+      toast(t('bots.space.launched', { name: bot.name }), 'success');
     } catch (err) {
-      toast(`Failed to launch: ${String(err)}`, 'error');
+      toast(t('bots.space.launchFailed', { error: String(err) }), 'error');
     }
-  }, [agents, toast]);
+  }, [agents, toast, t]);
 
   // Keep selectedBot in sync when bots list changes
   const currentBot = selectedBot ? bots.find((b) => b.id === selectedBot.id) : undefined;
@@ -79,9 +81,9 @@ export function BotsSpace() {
         ) : (
           <div style={S.empty}>
             <div style={S.emptyIcon}>🤖</div>
-            <div style={S.emptyText}>Select a bot or create a new one</div>
+            <div style={S.emptyText}>{t('bots.space.selectOrCreate')}</div>
             <button onClick={() => setShowNewModal(true)} style={S.emptyBtn}>
-              + New Bot
+              + {t('bots.space.newBot')}
             </button>
           </div>
         )}
@@ -96,7 +98,7 @@ export function BotsSpace() {
       <BotApprovalPanel />
       {!solariConfigured && (
         <div style={S.keyBanner} data-testid="bots-no-key-banner">
-          <span>🔑 LazyBot needs a Solari key to use cloud capabilities — set it in Settings → Solari.</span>
+          <span>🔑 {t('bots.space.solariBanner')}</span>
         </div>
       )}
     </div>

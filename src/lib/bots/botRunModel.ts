@@ -27,6 +27,7 @@ import {
   OPENROUTER_MODELS,
   isOpenRouterFreeModel,
 } from '../models/openrouterCatalog.js';
+import { DEFAULT_DEVIN_MODEL_ID, devinModelInfos } from '../models/devinCatalog.js';
 
 /** The four ways a LazyBot's brain can be served. `free` is the ai-proxy's
  *  no-credit tier (same transport as `pro`, no Pro plan required). */
@@ -57,7 +58,11 @@ export function classifyBotModelRail(model: string | undefined): BotModelRail | 
   if (kind === 'byok') return 'byok';
   if (kind === 'managed') return isOpenRouterFreeModel(model) ? 'free' : 'pro';
   if (kind === 'native') return 'cli';
+  // Devin-catalog ids serve as a LazyBot brain through the same CLI text
+  // streamer — same rail family as claude/codex.
+  if (kind === 'devin') return 'cli';
   if (!model && resolveCliEngineMode() === 'codex') return 'cli';
+  if (!model && resolveCliEngineMode() === 'devin') return 'cli';
   return undefined;
 }
 
@@ -76,7 +81,7 @@ export function isBotRailReady(rail: BotModelRail): boolean {
 /** Why a rail is not usable — surfaced as the mission's statusReason. */
 export function describeBotRailNotReady(rail: BotModelRail, model: string): string {
   switch (rail) {
-    case 'cli': return `Le modèle "${model}" passe par la CLI (claude/codex), qui n'est pas détectée sur ce poste.`;
+    case 'cli': return `Le modèle "${model}" passe par la CLI (claude/codex/devin), qui n'est pas détectée sur ce poste.`;
     case 'pro': return `Le modèle "${model}" passe par Lazy Pro, sans plan actif ni crédits disponibles.`;
     case 'byok': return `Le modèle "${model}" nécessite une clé BYOK qui n'est pas configurée.`;
     case 'free': return `Le modèle gratuit "${model}" est indisponible.`;
@@ -123,7 +128,10 @@ export function resolveBotByokStreamer(model: string) {
 }
 
 function defaultCliModel(): string {
-  return resolveCliEngineMode() === 'codex' ? '' : DEFAULT_MODEL.id;
+  const engine = resolveCliEngineMode();
+  if (engine === 'codex') return '';
+  if (engine === 'devin') return DEFAULT_DEVIN_MODEL_ID;
+  return DEFAULT_MODEL.id;
 }
 
 /** The first READY rail's default model, in preference order BYOK (the
@@ -154,6 +162,7 @@ export function isExactBotModelId(model: string | undefined): boolean {
   if (!model) return false;
   if (model.includes('/')) return true;
   if (ALL_MODELS.some((m) => m.id === model)) return true;
+  if (devinModelInfos().some((m) => m.id === model)) return true;
   return BYOK_PROVIDER_DEFS.some((d) => d.models.some((m) => m.id === model));
 }
 
@@ -168,7 +177,8 @@ export function applyTierHintWithinRail(hint: string, base: { model: string; rai
     return OPENROUTER_MODELS.find((m) => m.provider === 'Anthropic' && m.id.toLowerCase().includes(word))?.id ?? base.model;
   }
   if (base.rail === 'cli') {
-    return ALL_MODELS.find((m) => m.id.toLowerCase().includes(word))?.id ?? base.model;
+    const pool = resolveCliEngineMode() === 'devin' ? devinModelInfos() : ALL_MODELS;
+    return pool.find((m) => m.id.toLowerCase().includes(word))?.id ?? base.model;
   }
   return base.model;
 }

@@ -318,7 +318,7 @@ describe('findOutOfScopeTaskPath', () => {
 
     it('is case-insensitive and separator-tolerant for extra readable roots too', () => {
       const result = findOutOfScopeTaskPath(
-        'Read c:/USERS/David/Documents/cerveau/Lazy/src/App.tsx for reference.',
+        'Read c:/USERS/user/Documents/cerveau/Lazy/src/App.tsx for reference.',
         lazyDocsRoot,
         [lazyRoot],
       );

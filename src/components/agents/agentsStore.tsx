@@ -196,6 +196,7 @@ import { useSubscriptionContext, isOutOfCredits, formatRenewalDate, usdToCredits
 import { getProviderMode, getDefaultModelIdForMode, findOpenRouterModel } from '../../lib/models/index';
 import { isOpenRouterFreeModel, migrateRetiredOpenRouterId } from '../../lib/models/openrouterCatalog';
 import { loadAccessSettings, saveAccessSettings } from '../../lib/models/accessSettings';
+import { isDevinModel } from '../../lib/models/devinCatalog';
 import { getEngineReadiness, engineReasonKey } from '../../lib/models/entitlement';
 // STACK fix: the SAME mode-independent entitlements primitive every model
 // picker (LazyManager, New Mission, Composer) already uses — see
@@ -1353,7 +1354,19 @@ export interface ManagerConversationState {
    * implying the LLM call is already in flight.
    */
   phase: 'idle' | 'turn' | 'grounding' | 'queued';
+  /** Final duration of the LAST completed turn (ms). During a turn the
+   *  live value is DERIVED from `turnStartedAt` at read time (see
+   *  `managerElapsedMs` in the exposed value below) — it is deliberately
+   *  NEVER written per-second into this shared state: doing so re-rendered
+   *  every useAgentsStore() consumer once a second for the whole turn
+   *  (measured ~570 subscribers on the cockpit hot-spot pass), and nothing
+   *  actually reads the ticking value — the turn's visible liveness already
+   *  comes from busy/phase/isStreaming. */
   elapsedMs: number;
+  /** Epoch ms when the current turn started; undefined when idle. Set once
+   *  at turn start, cleared once at turn end — one write each, not a
+   *  per-second interval. */
+  turnStartedAt?: number;
   pendingApprovals: PendingApprovalAction[];
   /** Epoch ms of last activity (a turn starting, or a message appended) —
    *  drives wake-up routing (managerWakeup.ts's wiring below routes a
@@ -13148,10 +13161,10 @@ stopAll(action.filter);
         timedOut: true,
         retryText: text,
       }]);
-      setState((prev) => withConversation(prev, conversationId, { busy: false, phase: 'idle', elapsedMs: 0 }));
+      setState((prev) => withConversation(prev, conversationId, { busy: false, phase: 'idle', elapsedMs: 0, turnStartedAt: undefined }));
       return;
     }
-    setState((prev) => withConversation(prev, conversationId, { phase: 'turn' }));
+    setState((prev) => withConversation(prev, conversationId, { phase: 'turn', turnStartedAt }));
 
     // R4b fix (deliverable #4 — turn cost visibility): snapshot the REAL
     // session cost accumulator BEFORE this exchange's LLM call(s) so the
@@ -13161,16 +13174,11 @@ stopAll(action.filter);
     // awaited runManagerTurn/runGroundedFollowUp call).
     const costBeforeTurn = getCostState();
 
-    // P0-1 fix (item #3 — no visible feedback beyond ~15s): ticks
-    // managerElapsedMs roughly once a second for the whole exchange, so a
-    // long turn never reads as a dead screen — see managerElapsedMs' own doc
-    // comment (AgentsState) for why this lives here rather than as UI-local
-    // state. Cleared in the `finally` below, same guarantee as managerBusy.
-    const elapsedTicker = setInterval(() => {
-      if ((managerGenerationRef.current.get(conversationId) ?? 0) === myGeneration) {
-        setState((prev) => withConversation(prev, conversationId, { elapsedMs: Date.now() - turnStartedAt }));
-      }
-    }, 1000);
+    // Perf fix (re-render storm): there is NO per-second elapsedMs ticker
+    // anymore — `turnStartedAt` is written once above and the live elapsed
+    // value is derived in the exposed `managerElapsedMs` below. The turn's
+    // visible liveness comes from busy/phase/isStreaming (P0-1's original
+    // intent), which need no ticking state at all.
 
     // Real elapsed time for the MAIN call specifically — surfaced in the
     // honest timeout message below ("generation" phase, P0-1 item #2)
@@ -14458,7 +14466,6 @@ stopAll(action.filter);
       }
     } finally {
       clearTimeout(turnCapTimeout);
-      clearInterval(elapsedTicker);
       managerAbortRef.current.set(conversationId, null);
       // Concurrency slot is released exactly once per acquire, regardless of
       // which branch above ran — mirrors the busy-state guarantee just below.
@@ -14466,10 +14473,16 @@ stopAll(action.filter);
       // Guaranteed exactly-once reset regardless of which branch above ran —
       // the B12 fix's core invariant: a manager turn always resolves the
       // busy state, success or honest error, never leaving the UI waiting.
-      // phase/elapsedMs reset to idle/0 with it (same guarantee, R2a fix /
-      // P0-1 fix), scoped to THIS conversation only — every other open
-      // conversation's own busy/phase is untouched.
-      setState((prev) => withConversation(prev, conversationId, { busy: false, phase: 'idle', elapsedMs: 0 }));
+      // phase resets to idle with it (same guarantee, R2a fix / P0-1 fix),
+      // scoped to THIS conversation only — every other open conversation's
+      // own busy/phase is untouched. elapsedMs keeps the REAL final
+      // duration (not 0) so managerElapsedMs stays meaningful post-turn.
+      setState((prev) => withConversation(prev, conversationId, {
+        busy: false,
+        phase: 'idle',
+        elapsedMs: Date.now() - turnStartedAt,
+        turnStartedAt: undefined,
+      }));
     }
   // No `state.*` dep: every store read inside goes through stateRef.current
   // (see the liveState comment near gatherManagerContext above), so the
@@ -14720,6 +14733,10 @@ stopAll(action.filter);
     const current = loadAccessSettings();
     if (model.includes('/')) {
       saveAccessSettings({ ...current, accessMode: 'pro', model });
+    } else if (isDevinModel(model)) {
+      // Devin-catalog id — pin cliTool so the next turn actually reaches
+      // `devin acp` (a devin id sent to the claude/codex binary fails).
+      saveAccessSettings({ ...current, accessMode: 'cli', cliTool: 'devin', model });
     } else {
       saveAccessSettings({ ...current, accessMode: 'cli', model });
     }
@@ -15929,7 +15946,16 @@ stopAll(action.filter);
     managerMessages: activeConversation?.messages ?? [],
     managerBusy: activeConversation?.busy ?? false,
     managerPhase: activeConversation?.phase ?? 'idle',
-    managerElapsedMs: activeConversation?.elapsedMs ?? 0,
+    // Derived, never ticked: during a turn the live value is
+    // Date.now() - turnStartedAt evaluated at whatever render produced this
+    // value object; after the turn it's the final duration written in the
+    // finally above. Nothing subscribes to a per-second refresh — the UI
+    // reads busy/phase for liveness.
+    managerElapsedMs: activeConversation
+      ? (activeConversation.busy && activeConversation.turnStartedAt
+          ? Date.now() - activeConversation.turnStartedAt
+          : activeConversation.elapsedMs)
+      : 0,
     pendingApprovals: activeConversation?.pendingApprovals ?? [],
     managerSessions,
     // Not in actionsValue — see AgentsStoreActionsValue's doc comment

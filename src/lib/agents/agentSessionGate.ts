@@ -46,7 +46,7 @@ export function classifyAgentRail(model: string | undefined, mode: ProviderMode)
   if (model?.includes('/')) return 'pro';
   if (mode === 'managed') return 'pro';
   if (mode === 'live-key') return 'byok';
-  if (mode === 'claude-code' || mode === 'codex') return 'cli';
+  if (mode === 'claude-code' || mode === 'codex' || mode === 'devin') return 'cli';
   return 'cli';
 }
 

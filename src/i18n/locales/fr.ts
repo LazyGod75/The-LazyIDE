@@ -295,6 +295,8 @@ export const fr: TranslationDict = {
   'settings.engine.claudeCode.detail': 'Aucune clé API requise — utilise ta session Claude Code.',
   'settings.engine.codex': 'Codex CLI (abonnement OpenAI)',
   'settings.engine.codex.detail': 'Utilise ton abonnement OpenAI via codex-cli.',
+  'settings.engine.devin': 'Devin CLI (SWE-2)',
+  'settings.engine.devin.detail': 'Utilise ta session Devin via ACP — swe-2 et le catalogue de ton compte.',
   'settings.engine.liveKey': 'Clé API BYOK',
   'settings.engine.liveKey.detail': 'Clé API personnelle configurée.',
   'settings.engine.managed': 'Pro (géré par Lazy) — actif',
@@ -587,6 +589,7 @@ export const fr: TranslationDict = {
   'models.picker.proLabel': 'LazyPro / Managé',
   'models.picker.noModelFallback': 'Aucun modèle disponible — configure un abonnement Claude ou Lazy Pro.',
   'models.picker.codexManaged': "Codex gère ses propres modèles — la sélection de modèle n'est pas applicable ici.",
+  'models.picker.devinLabel': 'Devin CLI',
 
   // ── Assistant ────────────────────────────────────────────────
   'assistant.brainNotRunning': 'Aucun résultat — vérifiez que le brain tourne sur le port {port}',
@@ -646,6 +649,13 @@ export const fr: TranslationDict = {
   'agents.notification.botRoutineResumed': 'Reprise de la routine « {routine} » ({bot}) mise en file depuis le web',
   'bots.routines.webDisabled': 'Les routines nécessitent Lazy Desktop — le mode web met en file les échéances pour la prochaine session bureau.',
   'bots.routines.queuedForDesktop': '{count} en file pour le bureau.',
+  'bots.space.selectOrCreate': 'Sélectionnez un bot ou créez-en un nouveau',
+  'bots.space.newBot': 'Nouveau bot',
+  'bots.space.solariBanner': 'LazyBot nécessite une clé Solari pour les capacités cloud — configurez-la dans Paramètres → Solari.',
+  'bots.space.launching': 'Lancement du run pour {name}…',
+  'bots.space.launched': 'Run lancé pour {name}',
+  'bots.space.launchFailed': 'Échec du lancement : {error}',
+  'bots.space.noStore': 'Store d’agents indisponible — ouvrez l’espace Agents une première fois.',
   'agents.board.emptyTitle': 'Aucune mission en cours',
   'agents.board.emptySubtitle': 'Lance ton premier agent pour démarrer une mission automatisée.',
   'agents.board.newMission': 'Nouvelle mission',
@@ -804,6 +814,7 @@ export const fr: TranslationDict = {
   'agents.runtime.modelMismatchManaged': "Modèle managé choisi mais LazyPro est inactif ou les crédits sont épuisés. Active LazyPro ou choisis un modèle de l'abonnement Claude dans Réglages > Modèles.",
   'agents.runtime.modelMismatchByok': "Modèle BYOK choisi mais aucune clé API n'est configurée pour ce provider. Ajoute ta clé dans Réglages > Modèles, puis clique « Utiliser ».",
   'agents.runtime.modelMismatchNative': 'Modèle Claude choisi mais le CLI Claude est introuvable. Installe/connecte Claude Code (CLI) ou choisis un modèle LazyPro dans Réglages > Modèles.',
+  'agents.runtime.modelMismatchDevin': 'Modèle Devin choisi mais le CLI Devin est introuvable ou non connecté. Installe/connecte Devin (« devin auth login ») ou choisis un autre modèle dans Réglages > Modèles.',
   // ── Fil d'action de la boucle managée (managedAgent.ts) — espace de noms
   // frère de agents.runtime.* ci-dessus. Même exclusion "Erreur agent:"/
   // 'évaluation indisponible' que agents.runtime.*.
@@ -1304,6 +1315,8 @@ export const fr: TranslationDict = {
   'settings.access.cli.desc': 'Utilise ton propre abonnement CLI — aucune clé API requise, aucun coût Lazy.',
   'settings.access.cli.claudeDesc': 'Anthropic — modèle par défaut : Haiku',
   'settings.access.cli.codexDesc': 'OpenAI codex-cli — nécessite un compte OpenAI',
+  'settings.access.cli.devinDesc': 'Cognition — SWE-2 et le catalogue de ton compte via ACP',
+  'settings.access.cli.devinNotLoggedIn': 'Détecté mais non connecté — lance « devin auth login » dans un terminal, puis relance.',
   'settings.access.byok.title': 'Clé API (BYOK)',
   'settings.access.byok.desc': 'Utilise ta propre clé API Anthropic, OpenAI ou Google. Configure les clés ci-dessous.',
   'settings.access.pro.title': 'Pro (géré par Lazy)',
@@ -1711,6 +1724,7 @@ export const fr: TranslationDict = {
   'assistant.engineLabel': 'Moteur IA : {label}',
   'assistant.engine.claudeCode': 'Claude · abonnement',
   'assistant.engine.codex': 'Codex · abonnement',
+  'assistant.engine.devin': 'Devin · CLI',
   'assistant.engine.liveKey': 'Claude · clé API',
   'assistant.engine.managed': 'Pro · géré',
   'assistant.engine.pro': 'Pro · non configuré',

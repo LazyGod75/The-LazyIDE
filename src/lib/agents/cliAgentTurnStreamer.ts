@@ -22,9 +22,10 @@ import { loadAccessSettings } from '../models/accessSettings.js';
 import { streamClaudeCodeTurn } from '../models/claudeCodeProvider.js';
 import { cliBackendProvider } from '../models/cliBackendProvider.js';
 import { ALL_MODELS } from '../models/registry.js';
+import { isDevinModel } from '../models/devinCatalog.js';
 import type { PlanAndActManagedOpts } from './managedAgent.js';
 
-export type CliEngineMode = 'claude-code' | 'codex';
+export type CliEngineMode = 'claude-code' | 'codex' | 'devin';
 
 export type AgentTurnStreamer = NonNullable<PlanAndActManagedOpts['streamTurn']>;
 
@@ -54,7 +55,10 @@ export function toNativeCliModelId(model: string): string {
  *  global provider mode: a Pro user who selected a CLI model for one bot
  *  still gets the CLI, not the ai-proxy. Defaults to claude. */
 export function resolveCliEngineMode(): CliEngineMode {
-  return (loadAccessSettings().cliTool ?? 'claude') === 'codex' ? 'codex' : 'claude-code';
+  const tool = loadAccessSettings().cliTool ?? 'claude';
+  if (tool === 'codex') return 'codex';
+  if (tool === 'devin') return 'devin';
+  return 'claude-code';
 }
 
 function buildCodexRequest(
@@ -73,6 +77,21 @@ function buildCodexRequest(
   return { messages, model, mode: 'ask', rulesContext: opts.system, signal: opts.signal };
 }
 
+/** Devin counterpart to buildCodexRequest — same shape (system via
+ *  rulesContext), except the model id is NOT normalized: devin's --model
+ *  accepts fuzzy names natively, so the raw value is the honest one. */
+function buildDevinRequest(
+  opts: Parameters<AgentTurnStreamer>[0],
+): StreamChatRequest {
+  const messages: ChatMessage[] = opts.messages.map((m, i) => ({
+    id: `bot-turn-${i}`,
+    role: m.role === 'assistant' ? 'assistant' : 'user',
+    content: m.content,
+  }));
+  const model: ModelInfo = { id: opts.model, label: opts.model, provider: 'devin' };
+  return { messages, model, mode: 'ask', rulesContext: opts.system, signal: opts.signal };
+}
+
 /**
  * Build a planAndActManaged `streamTurn` backed by the given CLI. The model
  * id is normalized once per turn so a bot saved with a tier word or a picker
@@ -80,6 +99,17 @@ function buildCodexRequest(
  */
 export function createCliAgentTurnStreamer(mode: CliEngineMode): AgentTurnStreamer {
   return async function* cliTurn(opts) {
+    // Devin short-circuit: a picked Devin-catalog id (swe-2-medium, ...)
+    // rides the devin ACP rail no matter which cliTool `mode` names —
+    // the model-driven twin of getProvider()'s isDevinModel check, so a
+    // bot saved with a Devin model keeps working when the ambient CLI
+    // tool is claude/codex. Devin's --model flag accepts fuzzy names, so
+    // non-catalog values (a tier word, a native id) pass through raw and
+    // resolve — or fail honestly — on the CLI side.
+    if (mode === 'devin' || isDevinModel(opts.model)) {
+      yield* cliBackendProvider('devin').streamChat(buildDevinRequest(opts));
+      return;
+    }
     const nativeModel = toNativeCliModelId(opts.model);
     if (mode === 'codex') {
       yield* cliBackendProvider('codex').streamChat(buildCodexRequest(opts, nativeModel));

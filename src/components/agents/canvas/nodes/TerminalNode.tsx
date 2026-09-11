@@ -36,11 +36,20 @@
    those as a node drag.
 */
 
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Handle, NodeResizer, Position, type Node, type NodeProps } from '@xyflow/react';
 import type { SurfaceSpec } from '../canvasTypes';
 import { useI18n } from '../../../../i18n';
-import { TerminalView } from '../../../terminal/TerminalView';
+
+// @xterm is ~250KB of terminal emulator + CSS that the canvas only needs
+// when a terminal node actually exists — most sessions never create one.
+// Lazy-loading TerminalView keeps xterm out of the canvas bundle (and out
+// of the startup path entirely when the agents space itself is eager),
+// while preserving the "PTY stays mounted at all times" invariant below:
+// the lazy boundary only defers the FIRST mount, never remounts.
+const TerminalView = lazy(() =>
+  import('../../../terminal/TerminalView').then((m) => ({ default: m.TerminalView })),
+);
 import { useCanvasStore } from '../canvasStore';
 import { TERMINAL_NODE_SIZE } from '../reconcilerZones';
 import { LivingPaneCompactCard } from './LivingPaneCompactCard';
@@ -245,7 +254,9 @@ export function TerminalNodeCard({ data, selected }: TerminalNodeCardProps) {
             the PRE-EXISTING `collapsed` toggle used to conditionally
             unmount this instead, contradicting its own doc comment). */}
         <div className="nodrag" style={{ display: showFull && !collapsed ? 'flex' : 'none', flex: 1, minHeight: 0 }}>
-          <TerminalView terminalId={data.id} cwd={data.cwd} onActivity={handleActivity} />
+          <Suspense fallback={null}>
+            <TerminalView terminalId={data.id} cwd={data.cwd} onActivity={handleActivity} />
+          </Suspense>
         </div>
       </div>
     </>

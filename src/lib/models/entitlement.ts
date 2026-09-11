@@ -23,6 +23,7 @@ import { isCliBackendAvailable } from './cliBackendProvider.js';
 import { hasAnthropicKey } from './anthropicProvider.js';
 import { hasManagedCreditsActive, getProPlanState } from './index.js';
 import { findModelById } from './registry.js';
+import { isDevinModel } from './devinCatalog.js';
 import { isOpenRouterFreeModel } from './openrouterCatalog.js';
 import { hasByokKey, resolveByokDef, BYOK_PROVIDER_DEFS } from './byokProviders.js';
 
@@ -75,6 +76,11 @@ export function getEngineReadiness(
   const settings = loadAccessSettings();
   if (!forMode && modelId && findModelById(modelId)) {
     return cliReadiness(settings.cliTool ?? 'claude');
+  }
+  // Devin-catalog id picked explicitly (swe-2-medium, ...) — readiness
+  // follows the Devin CLI's own detection, whatever the ambient cliTool is.
+  if (!forMode && modelId && isDevinModel(modelId)) {
+    return cliReadiness('devin');
   }
   // FREE tier short-circuit — an explicitly chosen free OpenRouter model
   // (e.g. ox alpha) needs no plan and no credits: the ai-proxy serves it at
@@ -154,6 +160,7 @@ function autoReadiness(): EngineReadiness {
   if (hasManagedCreditsActive()) return { mode: 'pro', ready: true };
   if (isCliBackendAvailable('claude') === true) return { mode: 'cli', ready: true };
   if (isCliBackendAvailable('codex') === true) return { mode: 'cli', ready: true };
+  if (isCliBackendAvailable('devin') === true) return { mode: 'cli', ready: true };
   if (hasAnthropicKey()) return { mode: 'byok', ready: true };
   // BYOK wave: any configured non-Anthropic BYOK key (DeepSeek, OpenRouter,
   // ...) makes the byok engine usable in auto mode too.
@@ -180,6 +187,7 @@ export function isAnyEngineUsable(): boolean {
   if (hasManagedCreditsActive()) return true;
   if (isCliBackendAvailable('claude') === true) return true;
   if (isCliBackendAvailable('codex') === true) return true;
+  if (isCliBackendAvailable('devin') === true) return true;
   if (hasAnthropicKey()) return true;
   for (const def of BYOK_PROVIDER_DEFS) {
     if (def.id !== 'anthropic' && hasByokKey(def.id)) return true;

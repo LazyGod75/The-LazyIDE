@@ -65,6 +65,8 @@ import { planAndActManaged } from './managedAgent.js';
 import { loadAccessSettings } from '../models/accessSettings.js';
 import { BYOK_PROVIDER_DEFS, hasByokKey, resolveByokAgentTurnStreamer } from '../models/byokProviders.js';
 import { DEFAULT_OPENROUTER_MODEL_ID, isOpenRouterFreeModel } from '../models/openrouterCatalog.js';
+import { isDevinModel } from '../models/devinCatalog.js';
+import { createCliAgentTurnStreamer } from './cliAgentTurnStreamer.js';
 import { emitEvent, emitBuffered } from '../journal/journal.js';
 import { projectIdFromRoot } from '../journal/projectId.js';
 import { normalizeRepoPathForGit } from '../paths.js';
@@ -252,7 +254,7 @@ export function isManagedAgentAvailable(): boolean {
 // model, and (b) other call sites that genuinely want "the current engine"
 // (pause/intervene gating in agentsStore.tsx, ReviewSpace, MissionDetail).
 
-export type ModelRouteKind = 'managed' | 'native' | 'byok';
+export type ModelRouteKind = 'managed' | 'native' | 'byok' | 'devin';
 
 /** OpenRouter (managed) ids always carry a '/' (e.g. 'openai/gpt-5.5',
  *  'anthropic/claude-sonnet-5'); native Anthropic ids/labels never do
@@ -271,6 +273,11 @@ export function classifyMissionModel(model: string | undefined): ModelRouteKind 
     if (def.id === 'anthropic') continue;
     if (def.models.some((m) => m.id === model) && hasByokKey(def.id)) return 'byok';
   }
+  // Devin-catalog ids (swe-2-medium, ...) get their own route — the Devin
+  // CLI can't run the native code-agent rail (planAndActLive is the claude
+  // agent_run path), but it CAN serve as the managed loop's brain via
+  // createCliAgentTurnStreamer — same pattern as the BYOK route.
+  if (isDevinModel(model)) return 'devin';
   return 'native';
 }
 
@@ -297,7 +304,9 @@ export function isManagedModelReady(): boolean {
  *  isLiveAgentAvailable(), this ignores accessMode entirely. */
 export function isNativeModelReady(): boolean {
   if (!isTauriRuntime()) return false;
-  return isCliBackendAvailable('claude') !== false || isCliBackendAvailable('codex') !== false;
+  return isCliBackendAvailable('claude') !== false
+    || isCliBackendAvailable('codex') !== false
+    || isCliBackendAvailable('devin') !== false;
 }
 
 // ── Worktree Tauri bridge ─────────────────────────────────────────
@@ -713,6 +722,11 @@ function modelMismatchMessage(kind: ModelRouteKind, t?: TFunc): string {
       ? t('agents.runtime.modelMismatchByok')
       : "Modèle BYOK choisi mais aucune clé API n'est configurée pour ce provider. Ajoute ta clé dans Réglages > Modèles, puis clique « Utiliser ».";
   }
+  if (kind === 'devin') {
+    return t
+      ? t('agents.runtime.modelMismatchDevin')
+      : "Modèle Devin choisi mais le CLI Devin est introuvable ou non connecté. Installe/connecte Devin (devin auth login) ou choisis un autre modèle dans Réglages > Modèles.";
+  }
   return t
     ? t('agents.runtime.modelMismatchNative')
     : 'Modèle Claude choisi mais le CLI Claude est introuvable. Installe/connecte Claude Code (CLI) ou choisis un modèle LazyPro dans Réglages > Modèles.';
@@ -961,6 +975,7 @@ export async function planAndAct(opts: {
   const chosenKind = isTauriRuntime() ? classifyMissionModel(opts.managedModel) : undefined;
   if (chosenKind === 'managed') return dispatchChosenManaged(opts);
   if (chosenKind === 'byok') return dispatchChosenByok(opts);
+  if (chosenKind === 'devin') return dispatchChosenDevin(opts);
   if (chosenKind === 'native') return dispatchChosenNative(opts);
   return dispatchModeFallback(opts);
 }
@@ -971,7 +986,7 @@ function runnerEnabled(): boolean {
   return typeof process !== 'undefined' && process.env?.LAZY_RUNNER === '1';
 }
 
-function mismatchArgs(opts: PlanAndActOpts, kind: 'managed' | 'byok' | 'native') {
+function mismatchArgs(opts: PlanAndActOpts, kind: ModelRouteKind) {
   return {
     kind,
     onStep: opts.onStep,
@@ -997,6 +1012,24 @@ async function dispatchChosenManaged(opts: PlanAndActOpts): Promise<void> {
   return planAndActManaged({
     ...opts,
     model: opts.managedModel!,
+    pauseSignal: opts.pauseSignal ?? (() => false),
+    drainIntervenes: opts.drainIntervenes ?? (() => []),
+  });
+}
+
+async function dispatchChosenDevin(opts: PlanAndActOpts): Promise<void> {
+  // Devin-catalog model: the mission runs Lazy's own ReAct loop
+  // (planAndActManaged) with the Devin CLI as its brain — createCliAgentTurnStreamer
+  // builds the ACP-backed turn streamer; undefined means the devin CLI
+  // isn't installed on this box (precise mismatch, one-step fix).
+  const streamTurn = createCliAgentTurnStreamer('devin');
+  if (!streamTurn || isCliBackendAvailable('devin') === false) {
+    return planAndActMismatch(mismatchArgs(opts, 'devin'));
+  }
+  return planAndActManaged({
+    ...opts,
+    model: opts.managedModel!,
+    streamTurn,
     pauseSignal: opts.pauseSignal ?? (() => false),
     drainIntervenes: opts.drainIntervenes ?? (() => []),
   });

@@ -7,7 +7,19 @@
     <title>Lazy</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Boot splash: pure CSS, paints before the JS bundle even parses —
+           covers the initByokVault await + module eval so the webview never
+           shows a blank screen on cold start. createRoot().render()
+           replaces it on first mount. -->
+      <div style="position:fixed;inset:0;background:#0a0a0f;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+        <img src="/favicon.svg" alt="" width="44" height="44" style="opacity:0.9;" />
+        <div style="width:120px;height:2px;background:rgba(255,255,255,0.08);border-radius:1px;overflow:hidden;">
+          <div style="width:40%;height:100%;background:#7c5cff;border-radius:1px;animation:lazyboot 1.1s ease-in-out infinite;"></div>
+        </div>
+      </div>
+      <style>@keyframes lazyboot{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}</style>
+    </div>
     <script>
       window.__lazyErrors = [];
       window.addEventListener('error', (e) => {

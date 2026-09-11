@@ -13,7 +13,7 @@ import type { ByokProvider } from './byokProviders.js';
 
 export type { ByokProvider } from './byokProviders.js';
 export type AccessMode = 'cli' | 'byok' | 'pro' | 'local';
-export type CliTool = 'claude' | 'codex';
+export type CliTool = 'claude' | 'codex' | 'devin';
 
 export interface AccessSettings {
   /** Which access mode is selected. Undefined = auto-detect. */
