@@ -1460,7 +1460,7 @@ mod tests {
         let a = stable_path_key(r"C:\Users\user\demo-shop");
         let b = stable_path_key("C:/Users/user/demo-shop");
         let c = stable_path_key(r"\\?\C:\Users\user\demo-shop");
-        let d = stable_path_key(r"c:\users\david\demo-shop");
+        let d = stable_path_key(r"c:\users\user\demo-shop");
         let e = stable_path_key(r"C:\Users\user\demo-shop\");
         assert_eq!(a, b, "backslash vs forward slash");
         assert_eq!(a, c, "verbatim \\\\?\\ prefix");

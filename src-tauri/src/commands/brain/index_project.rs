@@ -802,7 +802,7 @@ mod tests {
             "verbatim canonicalize() open must hit the same marker"
         );
         assert!(
-            is_project_auto_indexed(&brain_path, r"c:\users\david\demo-shop"),
+            is_project_auto_indexed(&brain_path, r"c:\users\user\demo-shop"),
             "drive-letter case must not re-index"
         );
 
