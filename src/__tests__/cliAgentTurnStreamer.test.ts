@@ -93,7 +93,12 @@ describe('createCliAgentTurnStreamer', () => {
   });
 
   it('codex: routes through cliBackendProvider("codex") with the system prompt as rulesContext', async () => {
-    const streamChat = vi.fn(() => fakeStream('FINAL: done'));
+    const streamChat = vi.fn((_req: {
+      messages: Array<{ role: string; content: string }>;
+      model: { id: string };
+      mode: string;
+      rulesContext: string;
+    }) => fakeStream('FINAL: done'));
     mockedCliProvider.mockReturnValue({ streamChat });
     const turn = createCliAgentTurnStreamer('codex');
     const text = await collect(turn({
@@ -107,12 +112,7 @@ describe('createCliAgentTurnStreamer', () => {
     }));
     expect(text).toBe('FINAL: done');
     expect(mockedCliProvider).toHaveBeenCalledWith('codex');
-    const req = streamChat.mock.calls[0]![0] as {
-      messages: Array<{ role: string; content: string }>;
-      model: { id: string };
-      mode: string;
-      rulesContext: string;
-    };
+    const req = streamChat.mock.calls[0]![0];
     expect(req.rulesContext).toBe('BOT SYSTEM');
     expect(req.mode).toBe('ask');
     expect(req.model.id).toBe('');

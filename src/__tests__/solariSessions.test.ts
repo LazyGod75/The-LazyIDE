@@ -333,6 +333,7 @@ describe('agent computer desktop', () => {
       browserSessions: [],
       sandboxes: [],
       agentComputer: { desktopId: 'dsk_pause', volumeId: 'vol_1', lastSnapshotId: 'snap_keep' },
+      agentComputersByBotId: {},
     });
     const attached = fakeDesktop('dsk_pause');
     attached.connect.mockRejectedValue(new Error('Not connected — call connect() first'));
@@ -381,6 +382,7 @@ describe('sweepOrphans and ledger resilience', () => {
       ],
       sandboxes: [{ id: 'sbx_orphan_1', missionId: 'gone_3', openedAt: 3 }],
       agentComputer: { desktopId: 'dsk_persist', volumeId: 'vol_1', lastSnapshotId: 'snap_old' },
+      agentComputersByBotId: {},
     });
     desktopConnect.mockResolvedValue(fakeDesktop('dsk_persist'));
     await sweepOrphans();
@@ -406,6 +408,7 @@ describe('sweepOrphans and ledger resilience', () => {
       browserSessions: [{ id: 'ses_gone', missionId: 'gone', openedAt: 1 }],
       sandboxes: [],
       agentComputer: null,
+      agentComputersByBotId: {},
     });
     browserReleaseAndWait.mockRejectedValue(new Error('unreachable'));
     await sweepOrphans();

@@ -95,7 +95,11 @@ describe('bot tool handler wiring', () => {
     emit('solari:approvalRequest', {
       missionId: 'M1',
       tool: 'cloud_browser_click',
+      args: {},
+      klass: 'browse',
+      reason: 'class',
       page: { url: 'https://example.com/checkout' },
+      requestedAt: Date.now(),
     });
     expect(vi.mocked(emit)).toHaveBeenCalledWith(
       'bot:intervention',

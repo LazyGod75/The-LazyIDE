@@ -4,7 +4,11 @@ import { liveManagerStoreView } from '../lib/agents/managerLiveState';
 describe('liveManagerStoreView', () => {
   it('reads missions and autonomy from the live ref, not a stale snapshot', () => {
     const ref = {
-      current: { missions: [{ id: 'M1' }], autonomyLevel: 'supervised' as const, extra: 1 },
+      current: {
+        missions: [{ id: 'M1' }],
+        autonomyLevel: 'supervised' as 'supervised' | 'yolo',
+        extra: 1,
+      },
     };
     const view = liveManagerStoreView(ref);
     expect(view.missions).toEqual([{ id: 'M1' }]);
