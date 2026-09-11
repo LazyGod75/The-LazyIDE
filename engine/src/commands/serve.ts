@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getEmbedder } from '../indexer/embeddings.js';
-import { listAllReadonly } from '../indexer/fts.js';
+import { countAllNotesReadonly } from '../indexer/fts.js';
 import { checkAuth } from '../server/auth.js';
 import { BrainNotFoundError, enterBrain } from '../server/brain-registry.js';
 import { applyCorsHeaders } from '../server/cors.js';
@@ -296,8 +296,7 @@ export function runServe(opts: ServeCliOptions): Promise<import('node:http').Ser
       // Auto-build: if the index is empty but note files exist, trigger incremental update.
       setImmediate(() => {
         try {
-          const indexedNotes = listAllReadonly({ includeExpired: true });
-          if (indexedNotes.length === 0) {
+          if (countAllNotesReadonly({ includeExpired: true }) === 0) {
             const hasNoteFiles = existsSync(notesDir()) || existsSync(batchesDir());
             if (hasNoteFiles) {
               log.info(

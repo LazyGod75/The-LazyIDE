@@ -9,7 +9,8 @@
    For the currently ACTIVE project, live agentsStore missions (streaming,
    no polling lag) are merged over the journal snapshot when an
    AgentsStoreProvider ancestor exists (i.e. AgentsSpace has been visited
-   this session) — see useAgentsStoreOptional's doc comment. This is a
+   this session) — see useAgentsStoreOptional's doc comment on that
+   optional-outside-the-provider contract. This is a
    best-effort merge: agentsStore's own mission list does not carry a
    project id and is not re-loaded when the active project changes after
    AgentsSpace first mounts (a pre-existing gap, not fixed here — see
@@ -24,7 +25,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../../app/AppContext.js';
-import { useAgentsStoreOptional } from '../../components/agents/agentsStore.js';
+import { useAgentsStoreMissionsOptional } from '../../components/agents/agentsStore.js';
 import { projectIdFromRoot } from '../journal/projectId.js';
 import { basename } from '../paths.js';
 import type { ApprovalMode, DiffFile, JudgeVerdict, LoopConfig, Mission } from './types.js';
@@ -321,7 +322,7 @@ export function mergeLiveMissions(
  */
 export function useFleetMissions(enabled = true): UseFleetMissionsResult {
   const { platform, openProjects, activeProjectId } = useAppContext();
-  const liveStore = useAgentsStoreOptional();
+  const liveMissions = useAgentsStoreMissionsOptional();
   const isTauri = platform.name === 'tauri';
 
   const [rows, setRows] = useState<readonly JournalMissionCurrentRow[]>([]);
@@ -401,8 +402,8 @@ export function useFleetMissions(enabled = true): UseFleetMissionsResult {
       // caveat) — never a full replace, see mergeLiveMissions's doc comment
       // for the F4/F11 regressions this fixes.
       const missions =
-        project.id === activeProjectId && liveStore
-          ? mergeLiveMissions(journalMissions, liveStore.missions, projectId, missionOwner)
+        project.id === activeProjectId && liveMissions
+          ? mergeLiveMissions(journalMissions, liveMissions, projectId, missionOwner)
           : journalMissions;
 
       return {
@@ -418,7 +419,7 @@ export function useFleetMissions(enabled = true): UseFleetMissionsResult {
     // fleetApprovalModes()'s live global-store read is, so eslint's
     // exhaustive-deps rule can't see why it belongs here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTauri, rows, openProjects, activeProjectId, liveStore, approvalModeVersion]);
+  }, [isTauri, rows, openProjects, activeProjectId, liveMissions, approvalModeVersion]);
 
   return { projects, loading, error };
 }

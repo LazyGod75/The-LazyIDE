@@ -23,7 +23,7 @@
 */
 
 import { useCallback, useMemo } from 'react';
-import { useAgentsStore } from '../../agentsStore';
+import { useAgentsStoreActions } from '../../agentsStore';
 import { emit } from '../../../../lib/bus';
 import type { LoopNodeData, MissionNodeData } from '../canvasTypes';
 import type { CanvasReactFlowNode } from '../reconciler';
@@ -43,7 +43,7 @@ export function useCanvasInspectSelection(
   nodes: readonly CanvasReactFlowNode[],
   canvasActions: CanvasActionsValue,
 ): UseCanvasInspectSelectionResult {
-  const { setSelectedMissionId } = useAgentsStore();
+  const { setSelectedMissionId } = useAgentsStoreActions();
 
   const selectedMissionNode = useMemo(() => {
     const selected = nodes.filter((n) => n.selected && (n.type === 'mission' || n.type === 'loop'));

@@ -28,6 +28,11 @@ vi.mock('../components/agents/agentsStore', () => ({
     archiveTerminalMissions: archiveTerminalMissionsSpy,
     changeApprovalMode: vi.fn(),
   }),
+  useAgentsStoreMissionsOptional: () => mockMissions,
+  useAgentsStoreActionsOptional: () => ({
+    archiveTerminalMissions: archiveTerminalMissionsSpy,
+    changeApprovalMode: vi.fn(),
+  }),
 }));
 
 function mission(overrides: Partial<Mission> & { id: string }): Mission {

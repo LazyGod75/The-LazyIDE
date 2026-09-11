@@ -39,6 +39,7 @@ vi.mock('../lib/agents/graph/checkpointStore', () => ({
 const forkMissionFromCheckpointSpy = vi.fn();
 vi.mock('../components/agents/agentsStore', () => ({
   useAgentsStore: () => ({ forkMissionFromCheckpoint: forkMissionFromCheckpointSpy }),
+  useAgentsStoreActions: () => ({ forkMissionFromCheckpoint: forkMissionFromCheckpointSpy }),
 }));
 
 function makeMission(overrides: Partial<Mission> = {}): Mission {

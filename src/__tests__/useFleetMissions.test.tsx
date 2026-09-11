@@ -38,6 +38,9 @@ vi.mock('../app/AppContext', () => ({
 
 vi.mock('../components/agents/agentsStore', () => ({
   useAgentsStoreOptional: mockUseAgentsStoreOptional,
+  // useFleetMissions reads the missions-only context now — derive it from
+  // the same per-test mock so `{ missions: [...] }` fixtures keep working.
+  useAgentsStoreMissionsOptional: () => mockUseAgentsStoreOptional()?.missions ?? null,
 }));
 
 function liveMission(overrides: Partial<Mission> & { id: string; title: string }): Mission {

@@ -24,7 +24,7 @@ import { MissionDetailIntervene } from './MissionDetailIntervene';
 import { MissionDetailCheckpoints } from './MissionDetailCheckpoints';
 import { MissionMailbox } from './MissionMailbox';
 import { MissionManagerAdvice } from './MissionManagerAdvice';
-import { useAgentsStore, resolveProjectRoot } from './agentsStore';
+import { useAgentsStoreActions, resolveProjectRoot } from './agentsStore';
 import { isManagedAgentAvailable } from '../../lib/agents/runtime';
 import { AgentWizard } from './library/AgentWizard';
 import { createNewAgent } from '../../lib/agents/agentDef';
@@ -252,7 +252,7 @@ export function MissionDetail({ mission, onBack, layout = 'page', focusSection, 
   const isDrawer = layout === 'drawer';
   const [saveAsAgentOpen, setSaveAsAgentOpen] = useState(false);
   const [evalRunning, setEvalRunning] = useState(false);
-  const { updateMission } = useAgentsStore();
+  const { updateMission } = useAgentsStoreActions();
   const { toast } = useToast();
   const { t, locale } = useI18n();
 

@@ -66,6 +66,20 @@ vi.mock('../components/agents/agentsStore', () => ({
     retryMission: retryMissionSpy,
     deleteMission: vi.fn(),
   }),
+  useAgentsStoreActions: () => ({
+    stopMission: vi.fn(),
+    pauseMission: vi.fn(),
+    resumeMission: vi.fn(),
+    takeoverMission: vi.fn(),
+    returnFromTakeover: vi.fn(),
+    approveMission: approveMissionSpy,
+    discardMission: discardMissionSpy,
+    revertMission: revertMissionSpy,
+    toggleLoop: toggleLoopSpy,
+    deleteLoop: deleteLoopSpy,
+    retryMission: retryMissionSpy,
+    deleteMission: vi.fn(),
+  }),
   resolveProjectRoot: () => resolveProjectRootSpy(),
 }));
 

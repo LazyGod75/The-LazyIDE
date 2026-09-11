@@ -10,7 +10,7 @@
 
 import { useCallback, useState, type CSSProperties } from 'react';
 import type { Mission } from '../../lib/agents/types';
-import { useAgentsStore, resolveProjectRoot, type RevertableMission } from './agentsStore';
+import { useAgentsStoreActions, resolveProjectRoot, type RevertableMission } from './agentsStore';
 import { ApproveBlockedError, isJudgeRejected } from './approveGate';
 import { useToast } from '../ui';
 import { useI18n } from '../../i18n';
@@ -40,7 +40,7 @@ export function MissionDetailControls({ mission, onBack, onSaveAsAgent, isManage
     deleteLoop,
     retryMission,
     deleteMission,
-  } = useAgentsStore();
+  } = useAgentsStoreActions();
   const { toast } = useToast();
   const { t, locale } = useI18n();
 

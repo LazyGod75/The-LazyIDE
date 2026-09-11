@@ -20,8 +20,8 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { composeFileNeuron } from '../src/annotator/blocks/composers/file-neuron.js';
-import { runTurnInjectDetailed } from '../src/commands/inject-context.js';
 import { runInit } from '../src/commands/init.js';
+import { runTurnInjectDetailed } from '../src/commands/inject-context.js';
 import { runServe } from '../src/commands/serve.js';
 import type { CodeNode } from '../src/graph/code-scanner.js';
 import { closeDb, indexNote } from '../src/indexer/fts.js';
@@ -149,10 +149,13 @@ describe('turn-mode recall budget saturation (real populated brain)', () => {
         hydrateNote: true,
         skipTelemetry: true,
       });
+      // StrippedNote carries no `title` field — the file-neuron's persisted
+      // note id (buildArticleId: file-<project>-<sanitized-path>) maps 1:1
+      // onto the source file, which is what this unique-file count needs.
       const files = new Set(
         result.hits
-          .map((h) => h.note?.title ?? '')
-          .filter((t) => /^src\/mod\d+\.ts$/.test(t)),
+          .map((h) => h.note?.id ?? '')
+          .filter((t) => /^file-fixture-project-src-mod\d+-ts$/.test(t)),
       );
       rows.push({
         topK,
@@ -196,15 +199,17 @@ describe('turn-mode recall budget saturation (real populated brain)', () => {
     const json = JSON.parse(body) as { text?: string; tokens?: number; level?: string };
     const uniqueFiles = uniqueFilesInText(json.text ?? '').length;
     // eslint-disable-next-line no-console
-    console.log(JSON.stringify({
-      bench: 'recall-http-1500',
-      port,
-      tokens: json.tokens,
-      uniqueFiles,
-      level: json.level,
-      textChars: (json.text ?? '').length,
-      ms,
-    }));
+    console.log(
+      JSON.stringify({
+        bench: 'recall-http-1500',
+        port,
+        tokens: json.tokens,
+        uniqueFiles,
+        level: json.level,
+        textChars: (json.text ?? '').length,
+        ms,
+      }),
+    );
 
     expect(json.tokens).toBeGreaterThan(0);
     expect(json.tokens).toBeLessThanOrEqual(1500);

@@ -39,7 +39,7 @@ import { useDismissable } from '../../common/useDismissable';
 import { ShortcutsIcon } from './ShortcutsPanel';
 import { DryRunOverlay } from './dryrun/DryRunOverlay';
 import { useDryRunPreview } from './dryrun/useDryRunPreview';
-import { useAgentsStoreOptional } from '../agentsStore';
+import { useAgentsStoreActionsOptional, useAgentsStoreMissionsOptional } from '../agentsStore';
 import type { ApprovalMode } from '../../../lib/agents/types';
 import { ensureApprovalModesLoaded, getApprovalMode, subscribeApprovalModes } from '../../../lib/agents/approvalMode';
 import { ApprovalModeBadge } from './chrome/ApprovalModeBadge';
@@ -1095,7 +1095,8 @@ export function CanvasToolbar({
   // badge live (a manager set_approval_mode action, or another canvas
   // tab/window, must be reflected here too, not just this popover's own
   // onSelect).
-  const agentsStore = useAgentsStoreOptional();
+  const agentsMissions = useAgentsStoreMissionsOptional();
+  const agentsActions = useAgentsStoreActionsOptional();
   // W-CLEAR-FINISHED — canvas-wide "Nettoyer les terminées" (recon finding:
   // the existing "Archiver les terminées" only ever lives per-zone,
   // CanvasContextMenu.tsx's `projectEntries`). Reads `agentsStore.missions`
@@ -1113,19 +1114,19 @@ export function CanvasToolbar({
   // rendered-only scope.
   const terminalMissionIds = useMemo(
     () =>
-      (agentsStore?.missions ?? [])
+      (agentsMissions ?? [])
         .filter((m) => !m.archived && (m.status === 'done' || m.status === 'failed' || m.status === 'cancelled'))
         .map((m) => m.id),
-    [agentsStore?.missions],
+    [agentsMissions],
   );
 
   const fleetRunning = useMemo(
-    () => (agentsStore?.missions ?? []).filter((m) => !m.archived && m.status === 'running' && !m.paused).length,
-    [agentsStore?.missions],
+    () => (agentsMissions ?? []).filter((m) => !m.archived && m.status === 'running' && !m.paused).length,
+    [agentsMissions],
   );
   const fleetReview = useMemo(
-    () => (agentsStore?.missions ?? []).filter((m) => !m.archived && m.status === 'review').length,
-    [agentsStore?.missions],
+    () => (agentsMissions ?? []).filter((m) => !m.archived && m.status === 'review').length,
+    [agentsMissions],
   );
   // LazyCredits, never $ (owner's standing rule, 2026-08-22: the fleet
   // summary used to render a raw `$86.28` while every per-mission chip on
@@ -1136,14 +1137,14 @@ export function CanvasToolbar({
   const fleetCost = useMemo(() => {
     let debitedUsd = 0;
     let nativeUsd = 0;
-    for (const m of agentsStore?.missions ?? []) {
+    for (const m of agentsMissions ?? []) {
       const c = m.agentMetrics?.costUsd ?? 0;
       if (!c) continue;
       if (classifyMissionModel(m.model) === 'native') nativeUsd += c;
       else debitedUsd += c;
     }
     return { debitedCredits: usdToCredits(debitedUsd), nativeCredits: usdToCredits(nativeUsd), any: debitedUsd + nativeUsd > 0 };
-  }, [agentsStore?.missions]);
+  }, [agentsMissions]);
   const [globalApprovalMode, setGlobalApprovalMode] = useState<ApprovalMode>(() => getApprovalMode());
   const [approvalAnchorRect, setApprovalAnchorRect] = useState<DOMRect | null>(null);
   useEffect(() => {
@@ -1565,7 +1566,7 @@ export function CanvasToolbar({
         <button
           type="button"
           data-testid="canvas-toolbar-clear-finished"
-          onClick={() => agentsStore?.archiveTerminalMissions(terminalMissionIds)}
+          onClick={() => agentsActions?.archiveTerminalMissions(terminalMissionIds)}
           disabled={terminalMissionIds.length === 0}
           title={t('canvas.toolbar.clearFinishedTitle', { count: terminalMissionIds.length })}
           aria-label={t('canvas.toolbar.clearFinished')}
@@ -1658,7 +1659,7 @@ export function CanvasToolbar({
         testIdPrefix="toolbar-approval-mode"
         onClose={() => setApprovalAnchorRect(null)}
         onSelect={(mode) => {
-          void agentsStore?.changeApprovalMode(mode);
+          void agentsActions?.changeApprovalMode(mode);
         }}
       />
     )}

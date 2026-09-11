@@ -17,7 +17,7 @@ import { useWorktreeReview } from '../../../lib/review/useWorktreeReview';
 import type { DiffLine } from '../../../lib/review/diffParse';
 import { computeHeuristicRisk, type RiskLevel } from '../../../lib/review/risk';
 import { useAgentAvailable } from '../../../lib/review/agentAvailability';
-import { useAgentsStoreOptional, resolveProjectRoot } from '../../agents/agentsStore';
+import { useAgentsStoreActionsOptional, resolveProjectRoot } from '../../agents/agentsStore';
 import { ApproveBlockedError } from '../../agents/approveGate';
 
 export interface DiffDrawerTarget {
@@ -97,7 +97,7 @@ export function DiffDrawer({ target, onClose }: DiffDrawerProps) {
   const { t } = useI18n();
   const { toast } = useToast();
   const platform = getPlatform();
-  const agentsStore = useAgentsStoreOptional();
+  const agentsActions = useAgentsStoreActionsOptional();
   const state = useWorktreeReview(target.worktreePath);
   const agentAvailable = useAgentAvailable();
   const [approving, setApproving] = useState(false);
@@ -131,9 +131,9 @@ export function DiffDrawer({ target, onClose }: DiffDrawerProps) {
     setBlockedReason(null);
     setApproving(true);
     try {
-      if (target.missionId && agentsStore) {
+      if (target.missionId && agentsActions) {
         const repoPath = await resolveProjectRoot();
-        await agentsStore.approveMission(target.missionId, repoPath);
+        await agentsActions.approveMission(target.missionId, repoPath);
         toast(t('codespace.diffDrawer.approved'), 'success');
         onClose();
         return;

@@ -41,6 +41,8 @@ vi.mock('../lib/models/modelPickerOptions', async (importOriginal) => {
 
 vi.mock('../components/agents/agentsStore', () => ({
   useAgentsStore: () => ({ addMission: mockAddMission }),
+  useAgentsStoreActions: () => ({ addMission: mockAddMission }),
+  useAgentsStoreMissionsOptional: () => null,
 }));
 
 vi.mock('../app/AppContext', () => ({

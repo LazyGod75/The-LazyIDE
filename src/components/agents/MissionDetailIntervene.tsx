@@ -13,7 +13,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import type { Mission } from '../../lib/agents/types';
-import { useAgentsStore } from './agentsStore';
+import { useAgentsStoreActions } from './agentsStore';
 import { useI18n } from '../../i18n';
 import { useToast } from '../ui';
 
@@ -26,7 +26,7 @@ interface MissionDetailInterveneProps {
 }
 
 export function MissionDetailIntervene({ mission, isManagedEngine }: MissionDetailInterveneProps) {
-  const { interveneMission } = useAgentsStore();
+  const { interveneMission } = useAgentsStoreActions();
   const { t } = useI18n();
   const { toast } = useToast();
   const [interventionText, setInterventionText] = useState('');

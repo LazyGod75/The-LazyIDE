@@ -64,6 +64,7 @@ vi.mock('../lib/updateStore', () => ({
 
 vi.mock('../components/agents/agentsStore', () => ({
   useAgentsStoreOptional: vi.fn(() => null),
+  useAgentsStoreMissionsOptional: vi.fn(() => null),
 }));
 
 import { SettingsSpace } from '../spaces/SettingsSpace';

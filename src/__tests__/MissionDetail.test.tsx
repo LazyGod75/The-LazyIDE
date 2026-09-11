@@ -52,21 +52,25 @@ const interveneMissionSpy = vi.fn();
 // undefined instead.
 vi.mock('../components/agents/agentsStore', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../components/agents/agentsStore')>();
+  const actionsStub = () => ({
+    stopMission: stopMissionSpy,
+    pauseMission: vi.fn(),
+    resumeMission: vi.fn(),
+    interveneMission: interveneMissionSpy,
+    approveMission: vi.fn(),
+    discardMission: vi.fn(),
+    updateMission: updateMissionSpy,
+    toggleLoop: vi.fn(),
+    deleteLoop: vi.fn(),
+    retryMission: vi.fn(),
+    deleteMission: vi.fn(),
+  });
   return {
     ...actual,
-    useAgentsStore: () => ({
-      stopMission: stopMissionSpy,
-      pauseMission: vi.fn(),
-      resumeMission: vi.fn(),
-      interveneMission: interveneMissionSpy,
-      approveMission: vi.fn(),
-      discardMission: vi.fn(),
-      updateMission: updateMissionSpy,
-      toggleLoop: vi.fn(),
-      deleteLoop: vi.fn(),
-      retryMission: vi.fn(),
-      deleteMission: vi.fn(),
-    }),
+    useAgentsStore: actionsStub,
+    // MissionDetail's children (Controls/Intervene/Checkpoints) now read the
+    // narrow action-only context — same spies, same shape.
+    useAgentsStoreActions: actionsStub,
   };
 });
 

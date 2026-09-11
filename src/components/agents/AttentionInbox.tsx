@@ -30,7 +30,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useI18n } from '../../i18n';
-import { useAgentsStore, resolveProjectRoot } from './agentsStore';
+import { useAgentsStoreActions, useAgentsStoreMissionsOptional, resolveProjectRoot } from './agentsStore';
 import { ApproveBlockedError } from './approveGate';
 import { queryAttentionInbox, type AttentionItem } from '../../lib/journal/projections';
 import { emitEvent, journalQuery } from '../../lib/journal/journal';
@@ -44,6 +44,13 @@ import { EmptyState, useToast } from '../ui';
 import { CpuIcon } from '../icons';
 
 // ── Kinds + colors ───────────────────────────────────────────────────
+
+/** Stable fallback for useAgentsStoreMissionsOptional() (null only outside
+ *  an AgentsStoreProvider — this component always renders inside one). A
+ *  module constant, not an inline `?? []`, so the `missions` dep of the
+ *  derived-items effect below keeps a stable reference — same rationale as
+ *  NewMissionModal.tsx's EMPTY_MISSIONS. */
+const EMPTY_MISSIONS: readonly Mission[] = [];
 
 type InboxKind = 'approval' | 'question' | 'blocked' | 'budget' | 'duration';
 
@@ -372,8 +379,8 @@ function RaiseCapForm({
 export function AttentionInbox() {
   const { t } = useI18n();
   const { toast } = useToast();
+  const missions = useAgentsStoreMissionsOptional() ?? EMPTY_MISSIONS;
   const {
-    missions,
     setSelectedMissionId,
     interveneMission,
     approveMission,
@@ -381,7 +388,7 @@ export function AttentionInbox() {
     takeoverMission,
     resumeMission,
     updateMission,
-  } = useAgentsStore();
+  } = useAgentsStoreActions();
 
   const [baseEntries, setBaseEntries] = useState<InboxEntry[]>([]);
   const [derivedEntries, setDerivedEntries] = useState<InboxEntry[]>([]);

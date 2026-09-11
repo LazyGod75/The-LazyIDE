@@ -65,6 +65,9 @@ const { mockUseAgentsStoreOptional } = vi.hoisted(() => ({
 }));
 vi.mock('../components/agents/agentsStore', () => ({
   useAgentsStoreOptional: mockUseAgentsStoreOptional,
+  // SettingsSpace's mission reads now go through the missions-only context —
+  // same `missions` payload, narrower surface.
+  useAgentsStoreMissionsOptional: () => mockUseAgentsStoreOptional()?.missions ?? null,
 }));
 
 import { SettingsSpace } from '../spaces/SettingsSpace';

@@ -29,7 +29,7 @@ import { HealthPanel } from '../components/settings/HealthPanel';
 import { MemoryPanel } from '../components/settings/MemoryPanel';
 import { AgentsPanel } from '../components/settings/AgentsPanel';
 import { SolariPanel } from '../components/settings/SolariPanel';
-import { useAgentsStoreOptional } from '../components/agents/agentsStore';
+import { useAgentsStoreMissionsOptional } from '../components/agents/agentsStore';
 import { ModelsAssistantPanel } from '../components/settings/ModelsAssistantPanel';
 import { ProvidersPanel } from '../components/settings/ProvidersPanel';
 import { resetOnboarding } from '../components/onboarding/useOnboarding';
@@ -392,11 +392,11 @@ function AccessModeSection({ settings, onChange }: {
   // to "nothing to warn about"/no-op outside their providers (defensive only
   // — the real app always wraps SettingsSpace in both, see
   // useRunningAgentCount's own doc comment for the identical pattern).
-  const agentsStoreForRailSwitch = useAgentsStoreOptional();
+  const railSwitchMissions = useAgentsStoreMissionsOptional();
   const warnOnRailSwitch = useToastSafe();
   function runningManagedMissionCount(): number {
-    if (!agentsStoreForRailSwitch) return 0;
-    return agentsStoreForRailSwitch.missions.filter(
+    if (!railSwitchMissions) return 0;
+    return railSwitchMissions.filter(
       (m) => m.status === 'running' && classifyMissionModel(m.model) === 'managed',
     ).length;
   }
@@ -1006,9 +1006,9 @@ function formatLastChecked(iso: string, locale: string): string {
     defensive only; AgentsStoreProvider always wraps SettingsSpace in the
     real app (see AppShell.tsx). */
 function useRunningAgentCount(): number {
-  const store = useAgentsStoreOptional();
-  if (!store) return 0;
-  return store.missions.filter((m) => m.status === 'running').length;
+  const missions = useAgentsStoreMissionsOptional();
+  if (!missions) return 0;
+  return missions.filter((m) => m.status === 'running').length;
 }
 
 type UpdateStoreValue = ReturnType<typeof useUpdateStore>;

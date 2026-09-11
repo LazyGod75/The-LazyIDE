@@ -27,7 +27,7 @@ import { useI18n } from '../../../i18n';
 import type { CodeBanner } from '../../../lib/agents/codeBanner';
 import { fileActivityWhoLine } from '../../../lib/agents/codeFileActivity';
 import { translateStatusReason } from '../../../lib/agents/statusReasonLabel';
-import { useAgentsStoreOptional, resolveProjectRoot } from '../../agents/agentsStore';
+import { useAgentsStoreActionsOptional, resolveProjectRoot } from '../../agents/agentsStore';
 import { recordMissionAnswer } from '../../../lib/agents/missionQuestion';
 import { projectIdFromRoot } from '../../../lib/journal/projectId';
 import { emit } from '../../../lib/bus';
@@ -81,14 +81,14 @@ interface ContextualBannerProps {
 export function ContextualBanner({ banner, onFollowCursor, onDismiss }: ContextualBannerProps) {
   const { t } = useI18n();
   const { toast } = useToast();
-  const agentsStore = useAgentsStoreOptional();
+  const agentsActions = useAgentsStoreActionsOptional();
   const [busy, setBusy] = useState(false);
 
   const handleAnswer = useCallback(async (answer: string) => {
-    if (banner.kind !== 'question' || !agentsStore || busy) return;
+    if (banner.kind !== 'question' || !agentsActions || busy) return;
     setBusy(true);
     try {
-      agentsStore.interveneMission(banner.mission.id, answer);
+      agentsActions.interveneMission(banner.mission.id, answer);
       const repoPath = await resolveProjectRoot();
       await recordMissionAnswer({
         missionId: banner.mission.id,
@@ -101,32 +101,32 @@ export function ContextualBanner({ banner, onFollowCursor, onDismiss }: Contextu
     } finally {
       setBusy(false);
     }
-  }, [banner, agentsStore, busy, onDismiss]);
+  }, [banner, agentsActions, busy, onDismiss]);
 
   const handlePause = useCallback(() => {
-    if (banner.kind !== 'run' || !agentsStore) return;
-    agentsStore.pauseMission(banner.mission.id);
+    if (banner.kind !== 'run' || !agentsActions) return;
+    agentsActions.pauseMission(banner.mission.id);
     // Deliberately no onDismiss() here (unlike the other actions below) —
     // the banner must stay mounted so it can flip to the "paused" state and
     // offer Resume. See this file's header comment for why (B18).
-  }, [banner, agentsStore]);
+  }, [banner, agentsActions]);
 
   const handleResume = useCallback(() => {
-    if (banner.kind !== 'run' || !agentsStore) return;
-    agentsStore.resumeMission(banner.mission.id);
-  }, [banner, agentsStore]);
+    if (banner.kind !== 'run' || !agentsActions) return;
+    agentsActions.resumeMission(banner.mission.id);
+  }, [banner, agentsActions]);
 
   const handleRetry = useCallback(() => {
-    if (banner.kind !== 'failed' || !agentsStore) return;
-    agentsStore.retryMission(banner.mission.id);
+    if (banner.kind !== 'failed' || !agentsActions) return;
+    agentsActions.retryMission(banner.mission.id);
     onDismiss();
-  }, [banner, agentsStore, onDismiss]);
+  }, [banner, agentsActions, onDismiss]);
 
   const handleOpenMission = useCallback(() => {
     if (banner.kind !== 'failed' && banner.kind !== 'question' && banner.kind !== 'review') return;
-    if (agentsStore) agentsStore.setSelectedMissionId(banner.mission.id);
+    if (agentsActions) agentsActions.setSelectedMissionId(banner.mission.id);
     emit('nav:navigateSpace', 'agents');
-  }, [banner, agentsStore]);
+  }, [banner, agentsActions]);
 
   if (banner.kind === 'none') return null;
   const isPausedRun = banner.kind === 'run' && banner.mission.paused === true;
@@ -165,18 +165,18 @@ export function ContextualBanner({ banner, onFollowCursor, onDismiss }: Contextu
           {banner.kind === 'run' && (
             <>
               <ActionButton label={t('codespace.banner.followCursor')} onClick={onFollowCursor} />
-              {agentsStore && (isPausedRun
+              {agentsActions && (isPausedRun
                 ? <ActionButton primary label={t('codespace.banner.resumeAgent')} onClick={handleResume} />
                 : <ActionButton label={t('codespace.banner.pauseAgent')} onClick={handlePause} />)}
             </>
           )}
-          {banner.kind === 'question' && agentsStore && (
+          {banner.kind === 'question' && agentsActions && (
             <>
               <ActionButton primary label={t('codespace.banner.deny')} onClick={() => void handleAnswer(t('codespace.banner.denyAnswer'))} />
               <ActionButton label={t('codespace.banner.allowOnce')} onClick={() => void handleAnswer(t('codespace.banner.allowAnswer'))} />
             </>
           )}
-          {banner.kind === 'failed' && agentsStore && (
+          {banner.kind === 'failed' && agentsActions && (
             <>
               <ActionButton primary label={t('codespace.banner.retry')} onClick={handleRetry} />
               <ActionButton label={t('codespace.banner.logs')} onClick={handleOpenMission} />
@@ -185,10 +185,10 @@ export function ContextualBanner({ banner, onFollowCursor, onDismiss }: Contextu
           {banner.kind === 'review' && (
             <>
               <ActionButton label={t('codespace.banner.followCursor')} onClick={onFollowCursor} />
-              {agentsStore && <ActionButton primary label={t('codespace.banner.openInCockpit')} onClick={handleOpenMission} />}
+              {agentsActions && <ActionButton primary label={t('codespace.banner.openInCockpit')} onClick={handleOpenMission} />}
             </>
           )}
-          {!agentsStore && banner.kind !== 'run' && (
+          {!agentsActions && banner.kind !== 'run' && (
             <ActionButton label={t('codespace.banner.openInCockpit')} onClick={() => toast(t('codespace.banner.cockpitUnavailable'), 'warning')} />
           )}
         </div>

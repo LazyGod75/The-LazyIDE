@@ -14,7 +14,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Mission } from '../../lib/agents/types';
 import type { Checkpoint } from '../../lib/agents/graph/types';
 import { listCheckpoints } from '../../lib/agents/graph/checkpointStore';
-import { useAgentsStore } from './agentsStore';
+import { useAgentsStoreActions } from './agentsStore';
 import { useToast } from '../ui';
 import { useI18n } from '../../i18n';
 
@@ -25,7 +25,7 @@ interface MissionDetailCheckpointsProps {
 export function MissionDetailCheckpoints({ mission }: MissionDetailCheckpointsProps) {
   const { t, locale } = useI18n();
   const { toast } = useToast();
-  const { forkMissionFromCheckpoint } = useAgentsStore();
+  const { forkMissionFromCheckpoint } = useAgentsStoreActions();
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
   const [forkingId, setForkingId] = useState<string | null>(null);
 

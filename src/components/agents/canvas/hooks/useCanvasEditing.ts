@@ -20,10 +20,11 @@ import { useCallback, useMemo, useState, type Dispatch, type SetStateAction } fr
 import { useI18n } from '../../../../i18n';
 import { useAppContext } from '../../../../app/AppContext';
 import { useToast } from '../../../ui';
-import { useAgentsStore, resolveMissionRepoPath } from '../../agentsStore';
+import { useAgentsStoreActions, useAgentsStoreMissionsOptional, resolveMissionRepoPath } from '../../agentsStore';
 import { ApproveBlockedError } from '../../approveGate';
 import { pinChainWithAudit, refireChainDownstream } from '../../../../lib/agents/canvasChainOps';
 import type { FleetMission, FleetProject } from '../../../../lib/agents/fleetMissions';
+import type { Mission } from '../../../../lib/agents/types';
 import { projectIdFromRoot } from '../../../../lib/journal/projectId';
 import {
   makeRef,
@@ -48,6 +49,13 @@ import type { ContextMenuState } from '../CanvasContextMenu';
 import type { CanvasActionsValue } from '../chrome/CanvasActionsContext';
 import { DEFAULT_NODE_SIZE, type CanvasReactFlowEdge, type CanvasReactFlowNode } from '../reconciler';
 import { useCanvasChainConnect, type UseCanvasChainConnectResult } from './useCanvasChainConnect';
+
+/** Stable fallback for useAgentsStoreMissionsOptional() (null outside an
+ *  AgentsStoreProvider — useCanvasEditing only ever runs under CanvasView,
+ *  inside the provider, but the hook's type says otherwise). A module
+ *  constant, not an inline `?? []`, so useCallback deps keyed on
+ *  `activeMissions` keep a stable reference. */
+const EMPTY_MISSIONS: readonly Mission[] = [];
 
 /** Honest fallback when a draft carries no explicit model — no primitive
  *  exists here to derive "the" default model (NewMissionModal's full
@@ -134,15 +142,15 @@ export function useCanvasEditing({
   const { toast } = useToast();
   const { openProjects, activeRoot, switchProject } = useAppContextActiveRoot();
   const activeFleetProjectId = useMemo(() => (activeRoot ? projectIdFromRoot(activeRoot) : null), [activeRoot]);
+  const activeMissions = useAgentsStoreMissionsOptional() ?? EMPTY_MISSIONS;
   const {
-    missions: activeMissions,
     addMission,
     toggleLoop,
     skipLoopNextRun,
     stopMission,
     approveMission,
     retryMission,
-  } = useAgentsStore();
+  } = useAgentsStoreActions();
 
   const drafts = useCanvasStore((s) => s.drafts);
   const addDraft = useCanvasStore((s) => s.addDraft);

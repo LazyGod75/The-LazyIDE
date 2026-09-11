@@ -21,7 +21,7 @@
 */
 
 import { useEffect, useRef, type CSSProperties } from 'react';
-import { useAgentsStore, resolveProjectRoot } from '../agentsStore';
+import { useAgentsStoreActions, useAgentsStoreMissionsOptional, resolveProjectRoot } from '../agentsStore';
 import { useCanvasActions } from './chrome/CanvasActionsContext';
 import { usePopoverPosition } from './chrome/popoverPosition';
 import { useCanvasStore } from './canvasStore';
@@ -156,7 +156,8 @@ export function CanvasContextMenu({
     { gap: 0 },
   );
   const actions = useCanvasActions();
-  const { missions, stopMission, deleteLoop, setSelectedMissionId, archiveMission, archiveTerminalMissions, addMission } = useAgentsStore();
+  const missions = useAgentsStoreMissionsOptional() ?? [];
+  const { stopMission, deleteLoop, setSelectedMissionId, archiveMission, archiveTerminalMissions, addMission } = useAgentsStoreActions();
   const addDraft = useCanvasStore((s) => s.addDraft);
   // W-CONTEST — same direct-canvasStore-mutation convention as every other
   // creation helper in this file (addRouter/addJoin/addFrame above).

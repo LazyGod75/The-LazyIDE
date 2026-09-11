@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { type IndexedNote, listAll } from '../indexer/fts.js';
 import { getConfig } from '../util/config.js';
@@ -600,25 +600,69 @@ export function extractSubGraph(
   return { ...subGraph, topicTree: buildTopicTree(subGraph) };
 }
 
+/**
+ * In-process cache for loadKnowledgeGraph(), invalidated by mtime+size —
+ * the exact same pattern as backlinks.ts's cachedBacklinks (see its header
+ * for the measured rationale: a 44 MB-class JSON re-read+re-parse per call
+ * on hot paths). Callers only ever READ the returned object (graph.ts's
+ * payload builders, inject-context's topicTree read, site.ts's posMap), so
+ * sharing one parsed instance is safe.
+ */
+let cachedGraph: {
+  path: string;
+  mtimeMs: number;
+  size: number;
+  value: BrainKnowledgeGraph;
+} | null = null;
+
 export function saveKnowledgeGraph(graph: BrainKnowledgeGraph): string {
   const cfg = getConfig();
   if (!existsSync(cfg.cachePath)) mkdirSync(cfg.cachePath, { recursive: true });
   const path = join(cfg.cachePath, GRAPH_FILENAME);
   writeFileSync(path, JSON.stringify(graph, null, 2), 'utf8');
+  // Seed the cache with what we just wrote — a save-then-load flow (common
+  // right after `lazybrain graph`) is served from memory instead of
+  // re-parsing the file we just serialized.
+  try {
+    const stats = statSync(path);
+    cachedGraph = { path, mtimeMs: stats.mtimeMs, size: stats.size, value: graph };
+  } catch {
+    cachedGraph = null;
+  }
   return path;
 }
 
 export function loadKnowledgeGraph(): BrainKnowledgeGraph | null {
   const cfg = getConfig();
   const path = join(cfg.cachePath, GRAPH_FILENAME);
-  if (!existsSync(path)) return null;
+  let stats: ReturnType<typeof statSync>;
   try {
-    const data = JSON.parse(readFileSync(path, 'utf8')) as BrainKnowledgeGraph;
-    if (!data.version || !data.nodes || !data.edges) return null;
-    return data;
+    stats = statSync(path);
   } catch {
     return null;
   }
+  if (
+    cachedGraph &&
+    cachedGraph.path === path &&
+    cachedGraph.mtimeMs === stats.mtimeMs &&
+    cachedGraph.size === stats.size
+  ) {
+    return cachedGraph.value;
+  }
+  try {
+    const data = JSON.parse(readFileSync(path, 'utf8')) as BrainKnowledgeGraph;
+    if (!data.version || !data.nodes || !data.edges) return null;
+    cachedGraph = { path, mtimeMs: stats.mtimeMs, size: stats.size, value: data };
+    return data;
+  } catch {
+    cachedGraph = null;
+    return null;
+  }
+}
+
+/** Test-only: reset the in-process graph cache between tests. */
+export function resetKnowledgeGraphCacheForTests(): void {
+  cachedGraph = null;
 }
 
 export function buildKnowledgeGraphFromIndex(

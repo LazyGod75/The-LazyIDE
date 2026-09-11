@@ -16,7 +16,7 @@
 
 import { useEffect, useState, useCallback, type CSSProperties, type ReactNode } from 'react';
 import { useI18n } from '../../i18n';
-import { useAgentsStore } from './agentsStore';
+import { useAgentsStoreActions } from './agentsStore';
 import { queryJournalSince } from '../../lib/journal/projections';
 import {
   buildBriefingDigest,
@@ -59,7 +59,7 @@ const SECTION_TITLE_STYLE: CSSProperties = {
 
 export function Briefing({ projectId }: BriefingProps = {}) {
   const { t, locale } = useI18n();
-  const { setSelectedMissionId } = useAgentsStore();
+  const { setSelectedMissionId } = useAgentsStoreActions();
   const [digest, setDigest] = useState<BriefingDigest | null>(null);
   const [loading, setLoading] = useState(true);
   const [narrative, setNarrative] = useState<string | null>(null);

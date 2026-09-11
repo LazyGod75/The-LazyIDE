@@ -48,9 +48,10 @@ import './canvas-layout.css';
 import './replay/replay.css';
 import { useI18n } from '../../../i18n';
 import { useAppContext } from '../../../app/AppContext';
-import { useAgentsStore } from '../agentsStore';
+import { useAgentsStoreMissionsOptional } from '../agentsStore';
 import { Skeleton, useToast } from '../../ui';
 import type { FleetMission, FleetProject } from '../../../lib/agents/fleetMissions';
+import type { Mission } from '../../../lib/agents/types';
 import { projectIdFromRoot } from '../../../lib/journal/projectId';
 import { emit, on } from '../../../lib/bus';
 import { PresenceOverlay } from '../../../lib/collab/PresenceOverlay';
@@ -149,6 +150,13 @@ const CANVAS_THEME_VARS: Record<string, string> = {
 };
 
 const SNAP_GRID: [number, number] = [16, 16];
+
+/** Stable fallback for useAgentsStoreMissionsOptional() (null outside an
+ *  AgentsStoreProvider — this component never is, but the hook's type says
+ *  otherwise). A module constant, not an inline `?? []` literal, so the
+ *  useMemo/useCallback deps keyed on `activeMissions` keep a stable
+ *  reference — same rationale as NewMissionModal.tsx's EMPTY_MISSIONS. */
+const EMPTY_MISSIONS: readonly Mission[] = [];
 
 /** W-CLOSE row 1 — Shift+Arrow nudge deltas, one grid step (SNAP_GRID) per
  *  direction. Module-level (never a fresh literal per render, same rationale
@@ -301,7 +309,7 @@ function CanvasViewTree({
   const { t } = useI18n();
   const { toast } = useToast();
   const { openProjects, activeProjectId, openProject, projectsHydrated, platform } = useAppContext();
-  const { missions: activeMissions } = useAgentsStore();
+  const activeMissions = useAgentsStoreMissionsOptional() ?? EMPTY_MISSIONS;
   const collab = useCollab();
   const fleetProjects = useMemo(() => {
     // Spectator mode: no local projects but remote deltas exist → synthetic fleet

@@ -43,13 +43,16 @@ export type { IndexedNote, ListAllOptions, StructuralBoostHit } from './note-typ
 export { deleteNote, indexNote, parseOptionalFloat, rebuildAll } from './note-index.js';
 
 // Note reading
+export type { GraphNoteRow } from './note-read.js';
 export {
   countAllNotes,
+  countAllNotesReadonly,
   getNoteById,
   getNoteText,
   listAll,
   listAllReadonly,
   listAllWithText,
+  listGraphNotesReadonly,
   notesAnsweringQuestion,
   notesByTagOrType,
   notesForErrorPattern,

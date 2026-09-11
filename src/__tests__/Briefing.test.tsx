@@ -28,6 +28,8 @@ vi.mock('../i18n', () => ({
 const setSelectedMissionId = vi.fn();
 vi.mock('../components/agents/agentsStore', () => ({
   useAgentsStore: () => ({ setSelectedMissionId, missions: [] }),
+  useAgentsStoreActions: () => ({ setSelectedMissionId }),
+  useAgentsStoreMissionsOptional: () => [],
 }));
 
 vi.mock('../lib/journal/projections', () => ({

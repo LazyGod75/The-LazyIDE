@@ -48,6 +48,9 @@ vi.mock('../components/agents/agentsStore', () => ({
   useAgentsStoreOptional: () => (agentsStoreAvailable
     ? { pauseMission, resumeMission, interveneMission, retryMission, setSelectedMissionId }
     : null),
+  useAgentsStoreActionsOptional: () => (agentsStoreAvailable
+    ? { pauseMission, resumeMission, interveneMission, retryMission, setSelectedMissionId }
+    : null),
   resolveProjectRoot: vi.fn().mockResolvedValue('/repo'),
 }));
 

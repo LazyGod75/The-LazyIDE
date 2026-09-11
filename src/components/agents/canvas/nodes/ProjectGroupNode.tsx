@@ -62,7 +62,7 @@ import {
 // is a NEW, separate module rather than a move/rename of that other file.
 import { truncateMiddle } from '../../../../lib/truncateMiddle';
 import { TRANSVERSE_PROJECT_ID } from '../reconciler';
-import { useAgentsStoreOptional } from '../../agentsStore';
+import { useAgentsStoreActionsOptional } from '../../agentsStore';
 import { ApprovalModeBadge } from '../chrome/ApprovalModeBadge';
 import { ApprovalModePopover } from '../chrome/ApprovalModePopover';
 
@@ -568,7 +568,7 @@ interface ProjectGroupNodeCardProps {
 export function ProjectGroupNodeCard({ data, selected, aggregate, headerTier = 'full', width }: ProjectGroupNodeCardProps) {
   const { t } = useI18n();
   const actions = useCanvasActions();
-  const agentsStore = useAgentsStoreOptional();
+  const agentsActions = useAgentsStoreActionsOptional();
   const { projectId, name, color, collapsed, isActive, counts, hasChildren, laneMode, approvalMode, missions } = data;
   // feat/always-visible-agents — onFocusNode is optional on CanvasActionsValue.
   const handleFocusNode = (ref: string) => actions.onFocusNode?.(ref);
@@ -1189,7 +1189,7 @@ export function ProjectGroupNodeCard({ data, selected, aggregate, headerTier = '
           testIdPrefix="zone-approval-mode"
           onClose={() => setModeAnchorRect(null)}
           onSelect={(mode) => {
-            void agentsStore?.changeApprovalMode(mode, projectId);
+            void agentsActions?.changeApprovalMode(mode, projectId);
           }}
         />
       )}

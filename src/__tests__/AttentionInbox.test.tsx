@@ -60,6 +60,16 @@ vi.mock('../components/agents/agentsStore', () => ({
     resumeMission: resumeMissionSpy,
     updateMission: updateMissionSpy,
   }),
+  useAgentsStoreActions: () => ({
+    setSelectedMissionId: setSelectedMissionIdSpy,
+    interveneMission: interveneMissionSpy,
+    approveMission: approveMissionSpy,
+    retryMission: retryMissionSpy,
+    takeoverMission: takeoverMissionSpy,
+    resumeMission: resumeMissionSpy,
+    updateMission: updateMissionSpy,
+  }),
+  useAgentsStoreMissionsOptional: () => missionsFixture,
   resolveProjectRoot: () => resolveProjectRootSpy(),
 }));
 

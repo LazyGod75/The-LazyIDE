@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Mission } from '../../lib/agents/types';
 import { createAgentMailbox, type AgentMessage } from '../../lib/agents/agentMailbox';
-import { useAgentsStoreOptional, resolveProjectRoot } from './agentsStore';
+import { useAgentsStoreMissionsOptional, resolveProjectRoot } from './agentsStore';
 import { projectIdFromRoot } from '../../lib/journal/projectId';
 import { isTauri } from '../../lib/platform';
 import { useToast } from '../ui';
@@ -15,9 +15,8 @@ export function MissionMailbox({ mission }: { mission: Mission }) {
   // Optional on purpose (returns null outside an AgentsStoreProvider —
   // fixture/harness renders, e.g. MissionDetail.test.tsx): the "send to
   // another mission" affordance is simply omitted then, same degrade
-  // pattern as MissionNode.tsx's own agentsStore?.missions read.
-  const agentsStore = useAgentsStoreOptional();
-  const missions = agentsStore?.missions ?? [];
+  // pattern as MissionNode.tsx's own useAgentsStoreMissionsOptional read.
+  const missions = useAgentsStoreMissionsOptional() ?? [];
   const { toast } = useToast();
   const { t } = useI18n();
 

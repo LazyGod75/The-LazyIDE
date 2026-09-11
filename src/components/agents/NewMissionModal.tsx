@@ -16,7 +16,7 @@ import type { ReasoningEffort } from '../../lib/models/openrouterCatalog';
 import { getModelPickerOptions, noModelFallbackMessage, modelManagedByCodexMessage } from '../../lib/models/modelPickerOptions';
 import { getEngineReadiness, engineReasonKey } from '../../lib/models/entitlement';
 import type { EngineReadiness } from '../../lib/models/entitlement';
-import { useAgentsStore, type NewMissionInput } from './agentsStore';
+import { useAgentsStoreActions, useAgentsStoreMissionsOptional, type NewMissionInput } from './agentsStore';
 import type { PermissionMode } from '../../lib/agents/runtime';
 import { classifyMissionModel } from '../../lib/agents/runtime';
 import type { Mission, MissionContract, ProofRequirement } from '../../lib/agents/types';
@@ -80,16 +80,16 @@ const FALLBACK_REPOS = [
   { value: 'lazybrain', label: 'lazybrain' },
 ];
 
-/** Stable fallback for useAgentsStore()'s `missions` — a module-level
+/** Stable fallback for useAgentsStoreMissionsOptional()'s `missions` — a module-level
  *  constant, NOT an inline `[]` destructuring default. An inline `[]`
  *  literal is re-evaluated on every render, producing a brand-new array
  *  reference each time; runningMissions' useMemo (keyed on `missions`) and
  *  the conflict-preflight effect (keyed on `runningMissions`) would then
  *  never see a stable dependency, re-running — and calling
  *  setConflictTitles([]) — on literally every render, forever (verified via
- *  newMissionPreflight.test.tsx: any useAgentsStore() stub that omits
- *  `missions`, e.g. `() => ({ addMission })`, spins an unbounded render loop
- *  that exhausts the process). Reusing ONE empty array for every render
+ *  newMissionPreflight.test.tsx: a missions stub returning a fresh `[]` per
+ *  call spins an unbounded render loop that exhausts the process).
+ *  Reusing ONE empty array for every render
  *  keeps the whole chain referentially stable when the store has no
  *  running missions to report. */
 const EMPTY_MISSIONS: Mission[] = [];
@@ -180,14 +180,15 @@ function makeInitialForm(defaultRepo = 'lazy-ide'): FormState {
 // ── Component ─────────────────────────────────────────────────────
 
 export function NewMissionModal({ isOpen, onClose }: NewMissionModalProps) {
-  // `missions` was already exposed by this same hook (AgentsStoreValue
-  // extends AgentsState) — reading one more field off a store this
-  // component already reads from, rather than threading a new prop through
-  // any render site (T1.6's conflict notice, see conflictTitles below).
-  // Defaulted defensively: several existing tests mock this hook down to
-  // just `{ addMission }` (e.g. newMissionPreflight.test.tsx), which is
-  // otherwise still a perfectly valid stub for everything BUT this feature.
-  const { addMission, missions = EMPTY_MISSIONS } = useAgentsStore();
+  // `missions` comes from the narrow missions-only context (see
+  // useAgentsStoreMissionsOptional) — same field useAgentsStore() used to
+  // expose, without subscribing this modal to the full store (T1.6's
+  // conflict notice, see conflictTitles below). Defaulted defensively:
+  // several existing tests stub the missions hook down to `null`/`[]`
+  // (e.g. newMissionPreflight.test.tsx), which is otherwise still a
+  // perfectly valid stub for everything BUT this feature.
+  const { addMission } = useAgentsStoreActions();
+  const missions = useAgentsStoreMissionsOptional() ?? EMPTY_MISSIONS;
   const { t } = useI18n();
   const { projectRoot } = useAppContext();
 
