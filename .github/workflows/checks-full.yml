@@ -43,13 +43,20 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Provision node.exe for Tauri bundling (Windows)
+      - name: Provision bundled resources for Tauri (Windows)
         shell: pwsh
         run: |
           $node = (Get-Command node).Source
           New-Item -ItemType Directory -Force -Path src-tauri/resources | Out-Null
           Copy-Item -Force $node -Destination src-tauri/resources/node.exe
           if (-not (Test-Path src-tauri/resources/node.exe)) { throw "node.exe not provisioned" }
+          # tauri.conf.json lists resources/lazybrain/node_modules as a
+          # bundle resource; the public export strips every node_modules
+          # tree, so tauri::generate_context! fails at compile time on a
+          # missing glob. A placeholder dir keeps the glob non-empty.
+          $lb = "src-tauri/resources/lazybrain/node_modules"
+          New-Item -ItemType Directory -Force -Path $lb | Out-Null
+          New-Item -ItemType File -Force -Path "$lb/.keep" | Out-Null
           Write-Host "Provisioned node.exe from $node"
 
       - name: Vite build
