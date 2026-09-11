@@ -15,6 +15,7 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -213,7 +214,13 @@ if (DRY) {
 }
 
 if (existsSync(DEST)) {
-  rmSync(DEST, { recursive: true, force: true });
+  // Preserve an existing .git so repeated exports keep the clone's history
+  // (the caller rebases/pushes from DEST; wiping it forced a fresh init +
+  // fetch every run and silently lost the local branch setup).
+  for (const entry of readdirSync(DEST)) {
+    if (entry === '.git') continue;
+    rmSync(path.join(DEST, entry), { recursive: true, force: true });
+  }
 }
 mkdirSync(DEST, { recursive: true });
 

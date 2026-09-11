@@ -84,6 +84,16 @@ export default defineConfig({
     tailwindcss(),
     brainMockApi(),
   ],
+  // Same es2022 override as vite.config.ts — esbuild's default target
+  // (chrome87) cannot parse @novnc/novnc's top-level await and kills the
+  // whole dev server during dep-scan of desktopViewer.ts, which then
+  // fails every E2E test with ERR_CONNECTION_REFUSED.
+  esbuild: { target: 'es2022' },
+  optimizeDeps: {
+    exclude: ['patchright-core', 'playwright-core', 'chromium-bidi', 'playwright', '@novnc/novnc'],
+    esbuildOptions: { target: 'es2022' },
+    entries: ['src/**/*.tsx', 'src/**/*.ts'],
+  },
   resolve: {
     alias: {
       // Provide a minimal stub so dynamic `import('@tauri-apps/plugin-shell')`
