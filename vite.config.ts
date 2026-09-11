@@ -27,7 +27,13 @@ const VENDOR_THREE_CHUNK = 'vendor-three'
 // eagerly <link rel=modulepreload>'d from the root index.html. Add future
 // per-space vendor chunks here (not just to manualChunks) so they stay
 // excluded from the eager preload list too.
-const LAZY_SPACE_VENDOR_CHUNKS = [VENDOR_CODEMIRROR_CHUNK, VENDOR_THREE_CHUNK]
+// elkjs is only ever reached through dynamic import() call sites
+// (agentsStore's draft-plan layout, the canvas arrange path inside the lazy
+// AgentsSpace chunk, and the preview-layout Worker) — never statically from
+// the entry graph — so its vendor chunk must never be eagerly preloaded
+// either. Listed here so a future static import cannot silently regress it
+// back into the boot path.
+const LAZY_SPACE_VENDOR_CHUNKS = [VENDOR_CODEMIRROR_CHUNK, VENDOR_THREE_CHUNK, 'vendor-elkjs']
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {

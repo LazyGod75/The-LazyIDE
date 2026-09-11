@@ -139,7 +139,7 @@ import {
   type FrameSpec,
 } from './canvas/canvasTypes';
 import { validateChain, type ChainTargetInfo } from './canvas/chainValidation';
-import { layoutDraftGraphInZone, type DraftGraphEdge, type DraftGraphNode } from './canvas/layout';
+import type { DraftGraphEdge, DraftGraphNode } from './canvas/layout';
 import { DEFAULT_NODE_SIZE, JOIN_NODE_SIZE } from './canvas/reconcilerZones';
 import { generateCanvasId } from './canvas/canvasIds';
 import { launchDraft } from './canvas/draftLaunch';
@@ -14331,6 +14331,13 @@ stopAll(action.filter);
               const zoneGraphEdges: DraftGraphEdge[] = ir.edges
                 .filter((edge) => edge.kind === 'control')
                 .map((edge) => ({ id: edge.id, source: edge.from, target: edge.to }));
+              // Lazy import: layout.ts statically pulls in elk.bundled.js
+              // (~1.4 MB vendor-elkjs chunk). A static import here kept that
+              // whole chunk in the app's eager boot path (agentsStore is in
+              // the entry chunk); the draft-plan layout only runs when a
+              // plan preview is materialized, so paying the chunk fetch at
+              // this exact call site is strictly better.
+              const { layoutDraftGraphInZone } = await import('./canvas/layout');
               const zoneLayout = await layoutDraftGraphInZone(zoneGraphNodes, zoneGraphEdges);
               const previewPositions: Record<NodeRef, { x: number; y: number }> = {};
               for (const [nodeId, pos] of Object.entries(zoneLayout.positions)) {
