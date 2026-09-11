@@ -247,11 +247,11 @@ export default defineConfig(({ mode }) => {
           // main-thread bundle and the Worker-side/API modules) into ONE
           // explicit chunk removes that ambiguity outright, independent of
           // which layout.ts export any given caller happens to use — see
-          // this fix's commit message for the exact bisection trail. Not
-          // added to LAZY_SPACE_VENDOR_CHUNKS: unlike CodeMirror, elkjs is
-          // ALSO needed by the synchronous canvas auto-layout path
-          // (layoutZone/layoutAll), not exclusively behind a lazy Worker/
-          // preview path.
+          // this fix's commit message for the exact bisection trail. It IS
+          // in LAZY_SPACE_VENDOR_CHUNKS: the last static entry-graph import
+          // was removed (agentsStore's draft-plan layout now dynamic-imports
+          // it), so the 1.4MB chunk must not be eagerly preloaded at boot —
+          // it loads on first actual canvas/draft use.
           if (id.includes('node_modules/elkjs')) {
             return 'vendor-elkjs';
           }

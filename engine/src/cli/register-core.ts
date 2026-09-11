@@ -82,6 +82,10 @@ export function registerCore(program: Command): void {
       '--upsert-if-richer',
       'if a note with the same id exists, replace it only when the new body is richer (preserves created, refreshes updated)',
     )
+    .option(
+      '--defer-enrich',
+      'defer conv enrichment/recompose to the serving sidecar (arms a pending-enrich marker instead)',
+    )
     .option('--pretty')
     .action(async (opts) => {
       try {

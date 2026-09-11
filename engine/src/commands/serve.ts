@@ -27,6 +27,7 @@ import { handleSynthesisIndex, handleSynthesisTopic } from '../server/routes/syn
 import { handleHierarchy, handleTopics, handleTree } from '../server/routes/tree.js';
 import { sendError } from '../server/security.js';
 import { batchesDir, brainRoot, notesDir } from '../store/paths.js';
+import { consumePendingEnrich } from '../store/pending-enrich.js';
 import { assertBrainExists } from '../util/brain-guard.js';
 import { getLogger } from '../util/logger.js';
 import { runIncrementalUpdate } from './index-update.js';
@@ -42,6 +43,12 @@ export interface ServeCliOptions {
   token?: string;
   bind?: string;
 }
+
+/** How often the deferred-enrichment drain polls for the pending marker.
+ *  Enrichment is not latency-critical (a capture's note is already indexed
+ *  and searchable the moment store returns — this is the conv→file-neuron
+ *  rollup), so 20s keeps drains prompt without spinning on an idle marker. */
+const ENRICH_DRAIN_INTERVAL_MS = 20_000;
 
 export function runServe(opts: ServeCliOptions): Promise<import('node:http').Server> {
   return new Promise((resolveServer, reject) => {
@@ -350,8 +357,41 @@ export function runServe(opts: ServeCliOptions): Promise<import('node:http').Ser
       // timers — see server/resource-monitor.ts.
       const stopResourceMonitor = startResourceMonitor();
 
+      // Deferred-enrichment drain: `store --defer-enrich` (the desktop app's
+      // brain_capture spawn path) leaves a <cache>/pending-enrich.json marker
+      // instead of paying ~30s of conv→file-neuron enrichment + recompose
+      // inside the capture child's 30s timeout. This sidecar is the long-
+      // running process that owns that work: warm caches, no per-request
+      // deadline, and a marker armed while the sidecar was down drains here
+      // at boot. The interval is stopped on close so test serves don't leak.
+      let enrichDrainInFlight = false;
+      const drainPendingEnrich = async (): Promise<void> => {
+        if (enrichDrainInFlight) return;
+        if (!consumePendingEnrich()) return;
+        enrichDrainInFlight = true;
+        const t0 = Date.now();
+        try {
+          const { runIncrementalEnrich } = await import('./enrich.js');
+          const { runRecomposeAll } = await import('./recompose-all.js');
+          await runIncrementalEnrich();
+          await runRecomposeAll();
+          log.info({ ms: Date.now() - t0 }, 'serve: pending-enrich drained');
+        } catch (err) {
+          // Both passes are contractually non-throwing — belt-and-suspenders:
+          // a drain exception must never take the HTTP server down.
+          log.warn({ err: (err as Error).message }, 'serve: pending-enrich drain failed');
+        } finally {
+          enrichDrainInFlight = false;
+        }
+      };
+      const enrichDrainTimer = setInterval(() => {
+        void drainPendingEnrich();
+      }, ENRICH_DRAIN_INTERVAL_MS);
+      void drainPendingEnrich(); // catch a marker armed while the sidecar was down
+
       server.once('close', () => {
         stopResourceMonitor();
+        clearInterval(enrichDrainTimer);
         process.removeListener('exit', onExit);
         process.removeListener('SIGINT', onSigInt);
         process.removeListener('SIGTERM', onSigTerm);

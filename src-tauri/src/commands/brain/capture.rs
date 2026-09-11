@@ -630,8 +630,18 @@ pub(crate) async fn brain_capture(
 /// (serde previously dropped this unknown JSON key entirely, making
 /// completion upserts a no-op). Absent/false forwards no extra arg, so
 /// existing callers that never set the field see a byte-identical argv.
+///
+/// `--defer-enrich` is unconditional for this path: a conv-eligible `store`
+/// otherwise runs ~30s of incremental enrichment + recompose synchronously —
+/// over BRAIN_CAPTURE_TIMEOUT_SECS on mature brains, so every capture timed
+/// out, retried, and gave up (the recurring `brain.capture_failed` events).
+/// With the flag, `store` writes the note + index and arms a
+/// `pending-enrich.json` marker in the brain's cache; the serving sidecar
+/// drains it (engine/src/commands/serve.ts). A marker armed while no sidecar
+/// runs is drained at the next serve boot, so a stopped sidecar only delays
+/// enrichment — it cannot lose it.
 fn store_command_args(payload: &CaptureEvent) -> Vec<&'static str> {
-    let mut args: Vec<&'static str> = vec!["store"];
+    let mut args: Vec<&'static str> = vec!["store", "--defer-enrich"];
     if payload.upsert_if_richer == Some(true) {
         args.push("--upsert-if-richer");
     }
@@ -1405,11 +1415,13 @@ mod tests {
     /// Backward compat: when the payload omits `upsertIfRicher` (deserializes
     /// to `None`), the store invocation must carry no extra flag — every
     /// existing capture kind (edit/decision/episodic/agent/commit) never
-    /// sets this field and must see the exact same argv as before this fix.
+    /// sets this field. `--defer-enrich` is present on every call regardless:
+    /// the heavy enrich/recompose tail is deferred to the serving sidecar for
+    /// ALL captures, not opt-in (see store_command_args's doc comment).
     #[test]
     fn store_command_args_omits_flag_when_absent() {
         let ev = sample_capture_event(None);
-        assert_eq!(super::store_command_args(&ev), vec!["store"]);
+        assert_eq!(super::store_command_args(&ev), vec!["store", "--defer-enrich"]);
         eprintln!("store_command_args_omits_flag_when_absent PASSED");
     }
 
@@ -1421,7 +1433,10 @@ mod tests {
     #[test]
     fn store_command_args_appends_flag_when_true() {
         let ev = sample_capture_event(Some(true));
-        assert_eq!(super::store_command_args(&ev), vec!["store", "--upsert-if-richer"]);
+        assert_eq!(
+            super::store_command_args(&ev),
+            vec!["store", "--defer-enrich", "--upsert-if-richer"]
+        );
         eprintln!("store_command_args_appends_flag_when_true PASSED");
     }
 

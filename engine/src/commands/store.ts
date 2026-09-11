@@ -6,6 +6,7 @@ import {
   detectContradictions,
 } from '../graph/contradictions.js';
 import { indexNote, listAll } from '../indexer/fts.js';
+import { armPendingEnrich } from '../store/pending-enrich.js';
 import { readNote } from '../store/reader.js';
 import { writeNote } from '../store/writer.js';
 import { getLogger } from '../util/logger.js';
@@ -21,6 +22,13 @@ export interface StoreCliOptions {
    *  existing note's body only when the new one is richer, preserving
    *  data-cerveau-created and refreshing data-cerveau-updated. */
   upsertIfRicher?: boolean;
+  /** When set, a conversation-eligible note's enrich+recompose tail is
+   *  deferred to the serving sidecar via a pending-enrich marker (see
+   *  store/pending-enrich.ts) instead of running ~30s of corpus work inside
+   *  the capture child's 30s timeout. Used by the desktop app's brain_capture
+   *  spawn; CLI-only flows keep the synchronous default so their brains still
+   *  get enriched without any sidecar running. */
+  deferEnrich?: boolean;
   pretty?: boolean;
 }
 
@@ -120,11 +128,35 @@ export async function runStore(opts: StoreCliOptions): Promise<string> {
       );
     }
 
-    await runIncrementalEnrich();
-    try {
-      await runRecomposeAll();
-    } catch (err) {
-      log.warn({ err: (err as Error).message }, 'store: recompose-all failed (non-fatal)');
+    if (opts.deferEnrich) {
+      // Deferred path: arm the marker and skip the corpus-wide tail. If the
+      // marker write itself fails, fall through to the synchronous pass —
+      // losing the enrichment entirely would be worse than a slow capture.
+      let armed = false;
+      try {
+        armPendingEnrich(result.id);
+        armed = true;
+      } catch (err) {
+        log.warn(
+          { err: (err as Error).message },
+          'store: pending-enrich marker write failed — running enrichment inline',
+        );
+      }
+      if (!armed) {
+        await runIncrementalEnrich();
+        try {
+          await runRecomposeAll();
+        } catch (err) {
+          log.warn({ err: (err as Error).message }, 'store: recompose-all failed (non-fatal)');
+        }
+      }
+    } else {
+      await runIncrementalEnrich();
+      try {
+        await runRecomposeAll();
+      } catch (err) {
+        log.warn({ err: (err as Error).message }, 'store: recompose-all failed (non-fatal)');
+      }
     }
   }
 
