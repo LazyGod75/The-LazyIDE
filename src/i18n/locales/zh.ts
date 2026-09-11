@@ -612,6 +612,10 @@ export const zh: TranslationDict = {
   'models.picker.noModelFallback': '没有可用的模型 — 请配置 Claude 订阅或 Lazy Pro。',
   'models.picker.codexManaged': 'Codex 自行管理其模型 — 此处不适用模型选择。',
   'models.picker.devinLabel': 'Devin CLI',
+  'models.picker.search': '搜索模型…',
+  'models.picker.noMatch': '没有与"{query}"匹配的模型',
+  'models.picker.lockedHint': 'Pro',
+  'models.picker.recent': '最近',
 
   // ── 助手 ─────────────────────────────────────────────────────
   'assistant.brainNotRunning': '无结果 — 请检查 Brain 是否在端口 {port} 上运行',

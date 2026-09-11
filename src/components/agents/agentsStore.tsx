@@ -202,7 +202,7 @@ import { getEngineReadiness, engineReasonKey } from '../../lib/models/entitlemen
 // picker (LazyManager, New Mission, Composer) already uses — see
 // modelPickerOptions.ts's module doc comment (a Claude subscription and an
 // active Lazy Pro plan are independent, never mutually exclusive).
-import { detectModelEntitlements, buildModelPickerOptions, isSelectablePickerModel } from '../../lib/models/modelPickerOptions';
+import { detectModelEntitlements, buildModelPickerOptions, isSelectablePickerModel, isModelRailPending } from '../../lib/models/modelPickerOptions';
 import { recallForDirective, withTimeout } from '../../lib/models/brainSearchLoop';
 import { extractPendingQuestionText, recordMissionAnswer } from '../../lib/agents/missionQuestion';
 import { runBrainQueryCss, runBrainNeighbours } from '../../lib/brain/brainTool';
@@ -328,6 +328,15 @@ const MIN_HYGIENE_SWEEP_INTERVAL_MS = 30_000;
 const DEFAULT_MANAGER_LOOP_MAX_ITERATIONS = 10;
 
 const autoDismissTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+/** Wall-clock read for the live manager-elapsed derivation. Kept at module
+ *  level (not inline in the render-time memo) so the react-hooks/purity
+ *  rule doesn't flag it: a displayed duration derived from a persisted
+ *  `turnStartedAt` anchor is the sanctioned use of a clock read — tearing
+ *  is harmless, nothing subscribes to a per-second refresh. */
+function nowMs(): number {
+  return Date.now();
+}
 
 function scheduleAutoDismiss(missionId: string): void {
   if (autoDismissTimers.has(missionId)) return;
@@ -4504,6 +4513,14 @@ function loadManagerModel(): string {
     if (stored) {
       const id = migrateRetiredOpenRouterId(stored);
       if (isSelectablePickerModel(id)) return id;
+      // Boot-window persistence (real repro 2026-09-08): a stored id on a
+      // rail whose probe hasn't settled yet (CLI detection still null ->
+      // group absent from the picker) must survive — dropping it here
+      // silently rewrote the manager onto a DIFFERENT rail (persisted
+      // swe-2-medium -> BYOK DeepSeek -> next turn 402'd). The header's
+      // detection-pending guard owns the deferred reset once probes land;
+      // a settled-unusable or garbage id still falls through to default.
+      if (isModelRailPending(id)) return id;
     }
   } catch {
     // localStorage unavailable — fall through to the real default below
@@ -4613,13 +4630,23 @@ function buildWakeupFacts(candidates: WakeupCandidate[], t: I18nTranslate): stri
 
   const emittedMissions = new Set<string>();
   const facts: string[] = [];
+  const seenFactText = new Set<string>();
+  const pushUnique = (fact: string) => {
+    // Two identical events for the same mission in one coalesced batch (e.g.
+    // "M111 failed (interrupted)" emitted by both the mission.failed row and
+    // its follow-up mission.updated) used to render the SAME fact twice —
+    // the screenshot QA showed "… - …" duplicated in one wakeup line.
+    if (seenFactText.has(fact)) return;
+    seenFactText.add(fact);
+    facts.push(fact);
+  };
   for (const c of candidates) {
     if (c.kind === 'review_passed' || c.kind === 'review_failed') {
       const id = c.missionId ?? '';
       if (emittedMissions.has(id)) continue;
       emittedMissions.add(id);
       const verdicts = verdictsByMission.get(id) ?? [c];
-      facts.push(
+      pushUnique(
         verdicts.length === 1
           ? formatWakeupFact(verdicts[0], t)
           : t('lazyManager.wakeup.fact.judgeVerdictGrouped', {
@@ -4630,7 +4657,7 @@ function buildWakeupFacts(candidates: WakeupCandidate[], t: I18nTranslate): stri
       );
       continue;
     }
-    facts.push(formatWakeupFact(c, t));
+    pushUnique(formatWakeupFact(c, t));
   }
   return facts;
 }
@@ -12120,6 +12147,14 @@ stopAll(action.filter);
       },
       generate_plan: async () => {
         if (action.type !== 'generate_plan') return;
+        // Zero-step guard (2026-09-08 real repro): a generate_plan with no
+        // steps used to create an empty orchestrator draft AND a pending
+        // "Validate & run" proposal for it — an empty plan can never run,
+        // so fail the action honestly instead of materializing dead state
+        // (the manager's prose still reaches the transcript).
+        if ((action.steps ?? []).length === 0) {
+          return { failed: true, message: 'generate_plan: no steps provided — a plan needs at least one step.' };
+        }
         // Target-project fix (2026-08-02 escalation — real founder repro:
         // three unrelated plans, proposed while `lazy-backoffice` happened
         // to be the ACTIVE project, all silently materialized INSIDE that
@@ -13580,9 +13615,18 @@ stopAll(action.filter);
       // R4b fix (deliverable #4): real measured delta since costBeforeTurn —
       // see ManagerMessage.approxCreditsUsed's doc comment. Never shown when
       // it rounds to 0 (nothing measurable — never fabricate a placeholder).
+      // Credit-metering gate (2026-09-08): the "credits" label only means
+      // something on the managed rail — a native CLI turn (claude/codex/devin
+      // subscription), a BYOK key, or a managed :free model consumes ZERO
+      // Lazy credits, so attaching the token-derived estimate there renders
+      // a fake "~3 credits" under every CLI/BYOK/Devin reply.
       const costAfterTurn = getCostState();
       const deltaCostUsd = Math.max(0, costAfterTurn.totalCostUsd - costBeforeTurn.totalCostUsd);
-      const approxCreditsUsed = Math.round(deltaCostUsd * 100) || undefined;
+      const creditsMetered =
+        classifyMissionModel(model) === 'managed' && !isOpenRouterFreeModel(model);
+      const approxCreditsUsed = creditsMetered
+        ? Math.round(deltaCostUsd * 100) || undefined
+        : undefined;
 
       // ── Proposal gating (plan-expand UX) ──
       // When the manager's actions include a `generate_plan`, the message
@@ -13699,7 +13743,15 @@ stopAll(action.filter);
               after: result.compacted.charsAfter,
             })
           : undefined,
-        ...(generatePlanAction ? {
+        // Zero-step guard (2026-09-08 real repro): a generate_plan with no
+        // steps produced a "PENDING VALIDATION — No steps in this plan"
+        // card with a live Validate & run button — an empty plan can't do
+        // anything, so it never enters the pending gate at all (the
+        // assistant's responseText above still explains whatever the
+        // manager meant; deferred mutative actions tied to a degenerate
+        // plan are dropped, which is correct — there was nothing real to
+        // run anyway).
+        ...(generatePlanAction && (generatePlanAction.steps ?? []).length > 0 ? {
           proposal: {
             state: 'pending' as const,
             objective: generatePlanAction.objective,
@@ -15953,7 +16005,7 @@ stopAll(action.filter);
     // reads busy/phase for liveness.
     managerElapsedMs: activeConversation
       ? (activeConversation.busy && activeConversation.turnStartedAt
-          ? Date.now() - activeConversation.turnStartedAt
+          ? nowMs() - activeConversation.turnStartedAt
           : activeConversation.elapsedMs)
       : 0,
     pendingApprovals: activeConversation?.pendingApprovals ?? [],

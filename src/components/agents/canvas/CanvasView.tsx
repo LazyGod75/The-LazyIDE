@@ -31,6 +31,7 @@
 */
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { SafeResizeObserver } from '../../../lib/safeResizeObserver';
 import {
   MiniMap,
   PanOnScrollMode,
@@ -1046,7 +1047,7 @@ function CanvasViewTree({
   useEffect(() => {
     const containerEl = canvasContainerRef.current;
     if (!containerEl || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => recomputeDynamicMinZoom());
+    const observer = new SafeResizeObserver(() => recomputeDynamicMinZoom());
     observer.observe(containerEl);
     return () => observer.disconnect();
   }, [recomputeDynamicMinZoom]);

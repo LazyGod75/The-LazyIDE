@@ -9,9 +9,11 @@
      lazy.models.agentModel  — default model id for agent sub-tasks
 */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MODELS_BY_PROVIDER } from '../../lib/models/registry';
 import type { ModelInfo } from '../../lib/models/types';
+import type { ModelOptionGroup } from '../../lib/models/modelPickerOptions';
+import { ModelPickerDropdown } from '../common/ModelPickerDropdown';
 import { useI18n } from '../../i18n';
 
 // ── localStorage keys ──────────────────────────────────────────────
@@ -74,27 +76,76 @@ function ModelSelect({
   onChange: (id: string) => void;
   models: ModelInfo[];
 }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Group the flat provider map into the shared picker's group shape —
+  // one group per provider, so a long list stays navigable.
+  const groups = useMemo<ModelOptionGroup[]>(
+    () =>
+      Object.entries(MODELS_BY_PROVIDER).map(([provider, list]) => ({
+        id: `prov-${provider}`,
+        label: provider,
+        models: list.map((m) => ({ id: m.id, label: m.label, provider })),
+      })),
+    [],
+  );
+
+  // Outside-click dismissal — same contract as the header/composer pickers.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+
+  const currentLabel = models.find((m) => m.id === value)?.label ?? value;
+
   return (
-    <select
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      style={{
-        background: 'var(--color-panel)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 6,
-        padding: '6px 10px',
-        fontSize: 12,
-        color: 'var(--color-text)',
-        fontFamily: 'var(--font-mono, monospace)',
-        outline: 'none',
-        cursor: 'pointer',
-        width: 240,
-      }}
-    >
-      {models.map(m => (
-        <option key={m.id} value={m.id}>{m.label}</option>
-      ))}
-    </select>
+    <div ref={rootRef} style={{ position: 'relative', width: 240 }}>
+      <button
+        type="button"
+        data-testid="assistant-model-select"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          background: 'var(--color-panel)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 6,
+          padding: '6px 10px',
+          fontSize: 12,
+          color: 'var(--color-text)',
+          fontFamily: 'var(--font-mono, monospace)',
+          outline: 'none',
+          cursor: 'pointer',
+          width: '100%',
+          textAlign: 'left',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {currentLabel}
+        </span>
+        <span style={{ opacity: 0.5, flexShrink: 0 }}>▾</span>
+      </button>
+      {open && (
+        <ModelPickerDropdown
+          groups={groups}
+          currentId={value}
+          onSelect={onChange}
+          onClose={() => setOpen(false)}
+          t={t}
+          direction="up"
+          optionTestId="assistant-model-option"
+          unknownCurrent={models.some((m) => m.id === value) ? undefined : { id: value, label: value }}
+        />
+      )}
+    </div>
   );
 }
 

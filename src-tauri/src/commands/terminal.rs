@@ -8,6 +8,23 @@ use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
 use tauri::Emitter;
 use uuid::Uuid;
 
+/// Per-session output gate for the spawn→subscribe race (real repro
+/// 2026-09-08: the shell's first banner was emitted while the frontend's
+/// `listen()` was still resolving, so a freshly opened terminal showed a
+/// dead black pane until the next keystroke). The reader thread buffers
+/// chunks while `attached` is false; `terminal_attach` flushes them.
+#[derive(Default)]
+pub(crate) struct AttachState {
+    attached: bool,
+    pending: std::collections::VecDeque<String>,
+    pending_bytes: usize,
+}
+
+/// Cap for buffered pre-attach output — a banner plus a fast first command
+/// is a few KB at most; beyond this we start dropping the OLDEST buffered
+/// chunks (a terminal that is never attached must not grow unboundedly).
+const PRE_ATTACH_CAP_BYTES: usize = 256 * 1024;
+
 pub(crate) struct PtyHandle {
     writer: Box<dyn IoWrite + Send>,
     master: Box<dyn MasterPty + Send>,
@@ -18,6 +35,8 @@ pub(crate) struct PtyHandle {
     /// `try_wait()` while holding this lock (never the blocking `wait()`),
     /// so an explicit `terminal_kill` is never stuck waiting behind it.
     child: Arc<Mutex<Box<dyn portable_pty::Child + Send>>>,
+    /// See AttachState's doc comment — shared with the reader thread.
+    attach: Arc<Mutex<AttachState>>,
 }
 
 type PtyMap = Arc<Mutex<HashMap<String, PtyHandle>>>;
@@ -148,6 +167,12 @@ pub(crate) fn terminal_spawn(
         .take_writer()
         .map_err(|e| format!("take_writer failed: {}", e))?;
 
+    // Output gate for the spawn→subscribe race — see AttachState's doc
+    // comment. The reader buffers chunks while the frontend's listener is
+    // still being registered; terminal_attach flushes them in order.
+    let attach = Arc::new(Mutex::new(AttachState::default()));
+    let attach_for_reader = attach.clone();
+
     // Spawn background reader thread
     std::thread::spawn(move || {
         let mut buf = [0u8; 4096];
@@ -157,7 +182,28 @@ pub(crate) fn terminal_spawn(
                 Ok(n) => {
                     let chunk = String::from_utf8_lossy(&buf[..n]).into_owned();
                     // Emit to the frontend; ignore send errors (window may have closed)
-                    let _ = app.emit(&event_name, chunk);
+                    let buffered = match attach_for_reader.lock() {
+                        Ok(mut gate) => {
+                            if gate.attached {
+                                false
+                            } else {
+                                gate.pending.push_back(chunk.clone());
+                                gate.pending_bytes += chunk.len();
+                                while gate.pending_bytes > PRE_ATTACH_CAP_BYTES {
+                                    if let Some(dropped) = gate.pending.pop_front() {
+                                        gate.pending_bytes -= dropped.len();
+                                    } else {
+                                        break;
+                                    }
+                                }
+                                true
+                            }
+                        }
+                        Err(_) => false,
+                    };
+                    if !buffered {
+                        let _ = app.emit(&event_name, chunk);
+                    }
                 }
                 Err(_) => break,
             }
@@ -213,6 +259,7 @@ pub(crate) fn terminal_spawn(
         writer,
         master: pair.master,
         child,
+        attach,
     };
 
     state
@@ -222,6 +269,41 @@ pub(crate) fn terminal_spawn(
         .insert(id.clone(), handle);
 
     Ok(id)
+}
+
+/// Mark a PTY session's frontend listener as attached and flush any output
+/// buffered while `listen()` was still resolving (see AttachState). Must be
+/// called AFTER the frontend's `terminal://output/{id}` subscription is
+/// live; the reader thread emits directly once attached is set.
+#[tauri::command]
+pub(crate) fn terminal_attach(
+    state: tauri::State<PtyState>,
+    app: tauri::AppHandle,
+    id: String,
+) -> Result<(), String> {
+    let (event_name, pending) = {
+        let map = state
+            .0
+            .lock()
+            .map_err(|e| format!("state lock failed: {}", e))?;
+        let handle = map
+            .get(&id)
+            .ok_or_else(|| format!("terminal session '{}' not found", id))?;
+        let mut gate = handle
+            .attach
+            .lock()
+            .map_err(|e| format!("attach lock failed: {}", e))?;
+        gate.attached = true;
+        gate.pending_bytes = 0;
+        (
+            format!("terminal://output/{}", id),
+            std::mem::take(&mut gate.pending),
+        )
+    };
+    for chunk in pending {
+        let _ = app.emit(&event_name, chunk);
+    }
+    Ok(())
 }
 
 /// Write data to a PTY session.
@@ -592,7 +674,7 @@ mod tests {
         cmd.cwd(std::env::temp_dir());
         let child = pair.slave.spawn_command(cmd).expect("spawn trivial child for test");
         let writer = pair.master.take_writer().expect("take_writer failed");
-        PtyHandle { writer, master: pair.master, child: Arc::new(Mutex::new(child)) }
+        PtyHandle { writer, master: pair.master, child: Arc::new(Mutex::new(child)), attach: Arc::new(Mutex::new(AttachState::default())) }
     }
 
     /// The idempotency this function exists for: calling it on an id that

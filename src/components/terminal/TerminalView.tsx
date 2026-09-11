@@ -7,6 +7,7 @@
 */
 
 import { useEffect, useRef, useState } from 'react';
+import { SafeResizeObserver } from '../../lib/safeResizeObserver';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
@@ -206,7 +207,7 @@ export function TerminalView({ terminalId: _terminalId, cwd, onActivity }: Termi
     });
 
     // ── ResizeObserver → fit + notify PTY ──────────────────────
-    const observer = new ResizeObserver(() => {
+    const observer = new SafeResizeObserver(() => {
       try {
         fitAddon.fit();
       } catch {

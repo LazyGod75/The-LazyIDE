@@ -188,6 +188,34 @@ pub(crate) fn git_current_branch(repo_path: String, project_registry: tauri::Sta
     }
 }
 
+/// Return the current HEAD commit SHA for `repo_path` — zero-subprocess via
+/// gix, used by event-driven bot routines (`git_commit` trigger) to detect a
+/// new commit landing on the watched branch without shelling out per tick.
+/// Returns an empty string for an unborn branch (fresh repo, no commits yet)
+/// so callers treat "no HEAD" as "no event" rather than an error.
+#[tauri::command]
+pub(crate) fn git_head_sha(repo_path: String, project_registry: tauri::State<ProjectRegistry>) -> Result<String, String> {
+    ensure_repo_in_any_open_project(&repo_path, &project_registry)?;
+    let repo = gix::open(Path::new(&repo_path))
+        .map_err(|e| format!("gix open failed: {}", e))?;
+    match repo.head() {
+        Ok(mut head) => match head.kind {
+            gix::head::Kind::Symbolic(_) | gix::head::Kind::Detached { .. } => {
+                let id = head
+                    .try_peel_to_id_in_place()
+                    .map_err(|e| format!("head peel failed: {}", e))?;
+                match id {
+                    Some(id) => Ok(id.to_string()),
+                    // Unborn branch — no commit yet.
+                    None => Ok(String::new()),
+                }
+            }
+            gix::head::Kind::Unborn(_) => Ok(String::new()),
+        },
+        Err(e) => Err(format!("git head failed: {}", e)),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

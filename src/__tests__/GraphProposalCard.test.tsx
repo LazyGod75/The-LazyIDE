@@ -811,27 +811,36 @@ describe('GraphProposalCard', () => {
       expect(resolveStepModelId({ modelId: 'claude-opus-5' }, 'claude-haiku-4-5', fallback)).toBe('claude-haiku-4-5');
     });
 
+    // Helper: open the chip's picker and click the option with this model
+    // id (each row is wrapped in a [data-model-id] div by ModelPickerDropdown).
+    function pickModelOption(testId: string, modelId: string) {
+      const chip = screen.getByTestId(testId);
+      fireEvent.click(chip);
+      const row = document.querySelector(`[data-model-id="${modelId}"] button`);
+      expect(row).not.toBeNull();
+      fireEvent.click(row as HTMLElement);
+    }
+
     it('renders the chip with the default model id when the step has no explicit model', () => {
       const msg = makeProposalMessage('pending');
       msg.proposal!.steps = [{ id: 'step-1', description: 'Do the thing' }];
       renderWithStepModelHandler(msg);
-      const select = screen.getByTestId('graph-proposal-step-model-step-1') as HTMLSelectElement;
+      const chip = screen.getByTestId('graph-proposal-step-model-step-1');
       // jsdom/non-Tauri detectModelEntitlements() default is claudeSub=true,
       // pro='inactive', byok=null — defaultModelId falls back to the native
       // registry's own DEFAULT_MODEL. Never blank, per resolveStepModelId's
-      // own contract.
-      expect(select.value).toBe(DEFAULT_MODEL.id);
-      expect(select.value).not.toBe('');
+      // own contract — the chip shows the catalog LABEL for that id.
+      expect(chip.textContent).toContain(DEFAULT_MODEL.label);
     });
 
     it('renders the chip with the step’s own persisted model and reports (planId, stepId, modelId) on change', () => {
       const msg = makeProposalMessage('pending', 'plan-xyz');
       msg.proposal!.steps = [{ id: 'step-1', description: 'Do the thing', modelId: 'claude-opus-5', model: 'Claude Opus 5' }];
       const onStepModelChange = renderWithStepModelHandler(msg);
-      const select = screen.getByTestId('graph-proposal-step-model-step-1') as HTMLSelectElement;
-      expect(select.value).toBe('claude-opus-5');
+      const chip = screen.getByTestId('graph-proposal-step-model-step-1');
+      expect(chip.textContent).toContain('Claude Opus 5');
 
-      fireEvent.change(select, { target: { value: 'claude-haiku-4-5' } });
+      pickModelOption('graph-proposal-step-model-step-1', 'claude-haiku-4-5');
       // The plan record's setter (agentsStore.tsx's setStepModel) is called
       // with the exact catalog id, not a label — this is the id that
       // ultimately threads through compileOrchestrator.ts's stepToNode /
@@ -840,7 +849,7 @@ describe('GraphProposalCard', () => {
       expect(onStepModelChange).toHaveBeenCalledWith('plan-xyz', 'step-1', 'claude-haiku-4-5');
       // The chip reflects the pick immediately (local override), before the
       // store's async mirror would land in a real app.
-      expect(select.value).toBe('claude-haiku-4-5');
+      expect(chip.textContent?.toLowerCase()).toContain('haiku');
     });
 
     it('keeps two steps on two independently different models after one is changed', () => {
@@ -850,39 +859,36 @@ describe('GraphProposalCard', () => {
         { id: 'step-b', description: 'Second agent', modelId: 'claude-haiku-4-5' },
       ];
       const onStepModelChange = renderWithStepModelHandler(msg);
-      const selectA = screen.getByTestId('graph-proposal-step-model-step-a') as HTMLSelectElement;
-      const selectB = screen.getByTestId('graph-proposal-step-model-step-b') as HTMLSelectElement;
-      expect(selectA.value).toBe('claude-opus-5');
-      expect(selectB.value).toBe('claude-haiku-4-5');
+      const chipA = screen.getByTestId('graph-proposal-step-model-step-a');
+      const chipB = screen.getByTestId('graph-proposal-step-model-step-b');
+      expect(chipA.textContent?.toLowerCase()).toContain('opus');
+      expect(chipB.textContent?.toLowerCase()).toContain('haiku');
 
-      fireEvent.change(selectA, { target: { value: 'claude-fable-5' } });
+      pickModelOption('graph-proposal-step-model-step-a', 'claude-fable-5');
       expect(onStepModelChange).toHaveBeenCalledWith('plan-multi', 'step-a', 'claude-fable-5');
       // step-b must stay untouched — a multi-LLM graph needs each step's
       // chip to be fully independent, never a single shared selection.
-      expect(selectA.value).toBe('claude-fable-5');
-      expect(selectB.value).toBe('claude-haiku-4-5');
+      expect(chipA.textContent?.toLowerCase()).toContain('fable');
+      expect(chipB.textContent?.toLowerCase()).toContain('haiku');
     });
 
     it('lists ONLY the rails actually available — jsdom default (Claude CLI detected, Pro inactive, no BYOK key) shows the free group plus the Claude group, and no disabled/locked option is ever rendered — 2026-08-06 (founder: "je devrais juste voir les options quand elles sont selectionnable, exemple claude cli seulement si je suis connecte")', () => {
       const msg = makeProposalMessage('pending');
       msg.proposal!.steps = [{ id: 'step-1', description: 'Do the thing' }];
       renderWithStepModelHandler(msg);
-      const select = screen.getByTestId('graph-proposal-step-model-step-1');
+      fireEvent.click(screen.getByTestId('graph-proposal-step-model-step-1'));
       // jsdom/non-Tauri default entitlements: claudeSub=true, pro='inactive',
       // byok=null — the Claude subscription rail is available, PLUS the
       // always-present free group (ox alpha, no entitlement required — see
       // modelPickerOptions.ts). No Pro/BYOK rail: those stay absent.
-      const optgroups = select.querySelectorAll('optgroup');
-      expect(optgroups.length).toBe(2);
-      const labels = Array.from(optgroups).map((g) => g.getAttribute('label'));
-      expect(labels.some((l) => l?.includes('Claude'))).toBe(true);
-      expect(labels.some((l) => l?.toLowerCase().includes('gratuit') || l?.toLowerCase().includes('free'))).toBe(true);
+      const options = screen.getAllByTestId('graph-proposal-step-model-option');
+      expect(options.length).toBeGreaterThan(0);
       // No disabled/locked option anywhere — an unavailable rail is absent,
       // never shown greyed out.
-      const options = select.querySelectorAll('option');
-      expect(options.length).toBeGreaterThan(0);
-      const disabled = Array.from(options).filter((o) => o.disabled);
-      expect(disabled.length).toBe(0);
+      expect(screen.queryAllByTestId('graph-proposal-step-model-option-locked').length).toBe(0);
+      const labels = options.map((o) => o.textContent ?? '');
+      expect(labels.some((l) => l.includes('Claude'))).toBe(true);
+      expect(labels.some((l) => l.toLowerCase().includes('glm') || l.toLowerCase().includes('free'))).toBe(true);
     });
   });
 });

@@ -150,6 +150,15 @@ describe('NewMissionModal — engine preflight', () => {
     expect(screen.queryByTestId('mission-preflight-panel')).not.toBeInTheDocument();
   });
 
+  // Helper for the searchable model picker (was a native <select>): open
+  // the popover and click the row wrapped in [data-model-id="<id>"].
+  function pickModalModel(modelId: string) {
+    fireEvent.click(document.getElementById('nm-model') as HTMLElement);
+    const row = document.querySelector(`[data-model-id="${modelId}"] button`);
+    expect(row).not.toBeNull();
+    fireEvent.click(row as HTMLElement);
+  }
+
   // BUG-4: getEngineReadiness must receive the model actually selected for
   // THIS launch, not just the mode — so a native CLI model picked while the
   // global mode is pro/managed with an empty wallet is never false-blocked.
@@ -157,9 +166,7 @@ describe('NewMissionModal — engine preflight', () => {
     mockedReadiness.mockReturnValue({ mode: 'cli', ready: true });
     renderModal();
 
-    fireEvent.change(document.getElementById('nm-model') as HTMLSelectElement, {
-      target: { value: 'claude-sonnet-5' },
-    });
+    pickModalModel('claude-sonnet-5');
     fillTitleAndSubmit();
 
     expect(mockedReadiness).toHaveBeenCalledWith(undefined, 'claude-sonnet-5');
@@ -172,9 +179,7 @@ describe('NewMissionModal — engine preflight', () => {
     mockedReadiness.mockReturnValue({ mode: 'cli', ready: true });
     renderModal();
 
-    fireEvent.change(document.getElementById('nm-model') as HTMLSelectElement, {
-      target: { value: 'claude-sonnet-5' },
-    });
+    pickModalModel('claude-sonnet-5');
     fillTitleAndSubmit('Mission modele natif');
 
     expect(mockAddMission).toHaveBeenCalledTimes(1);

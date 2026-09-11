@@ -40,6 +40,7 @@
 
 import type { ModelInfo, ModelProvider, StreamChatRequest } from './types.js';
 import { buildSystemPrompt } from './systemPrompts.js';
+import { buildCacheableSystemBlocks, type SystemContentBlock } from './managedProvider.js';
 import { getSecretRaw, setSecret, deleteSecret, migrateByokKeysToVault, byokVaultKey } from '../vault/vaultClient.js';
 
 /** Same Tauri-sentinel check as ../platform/index.js's isTauri(), duplicated
@@ -409,8 +410,9 @@ export interface ByokAgentTurnOpts {
   system: string;
   model: string;
   signal?: AbortSignal;
-  /** Ignored by the BYOK adapter (no proxy-level cache_control) — accepted
-   *  so the managed loop can pass its cacheableSystem shape unconditionally. */
+  /** Static/dynamic split for prompt caching — honored on providers whose
+   *  API accepts content-block `cache_control` (OpenRouter chat-completions,
+   *  native Anthropic); ignored everywhere else. */
   cacheableSystem?: { core: string; dynamic: string };
   maxTokens?: number;
 }
@@ -457,12 +459,22 @@ export function resolveByokAgentTurnStreamer(modelId: string | undefined): ByokA
   // OpenAI), since 0.0 is not a documented recommendation for those and
   // hasn't been verified safe for them here.
   const temperature = def.id === 'deepseek' ? 0 : undefined;
+  // cache_control blocks: only providers whose wire format accepts the
+  // Anthropic "explicit breakpoint" shape — OpenRouter's chat-completions
+  // endpoint and the native Anthropic /v1/messages API both read
+  // cache_control off system content blocks directly. Every other provider
+  // (DeepSeek/xAI/Groq/Mistral/OpenAI) gets the flat string unchanged.
+  const supportsCacheBlocks = def.id === 'openrouter' || def.apiFormat === 'anthropic';
   return (opts) =>
     rawStream({
       baseUrl,
       apiKey,
       model: toNativeByokModelId(def, opts.model),
       system: opts.system,
+      systemBlocks:
+        supportsCacheBlocks && opts.cacheableSystem
+          ? buildCacheableSystemBlocks(opts.cacheableSystem.core, opts.cacheableSystem.dynamic)
+          : undefined,
       messages: opts.messages,
       maxTokens: opts.maxTokens ?? 8192,
       temperature,
@@ -478,6 +490,10 @@ export interface RawStreamOpts {
   apiKey: string;
   model: string;
   system: string;
+  /** Cache-aware system content (Anthropic "explicit breakpoint" blocks) —
+   *  when set, REPLACES `system` on the wire. Only pass on providers that
+   *  accept content-block cache_control (OpenRouter, native Anthropic). */
+  systemBlocks?: SystemContentBlock[];
   messages: Array<{ role: string; content: string }>;
   maxTokens?: number;
   /** Omitted (undefined) falls back to the provider's own default — JSON.stringify
@@ -611,7 +627,7 @@ export async function* streamOpenAICompatRaw(opts: RawStreamOpts): AsyncIterable
     },
     body: JSON.stringify({
       model: opts.model,
-      messages: [{ role: 'system', content: opts.system }, ...opts.messages],
+      messages: [{ role: 'system', content: opts.systemBlocks ?? opts.system }, ...opts.messages],
       stream: true,
       max_tokens: opts.maxTokens ?? 4096,
       temperature: opts.temperature,
@@ -658,7 +674,7 @@ export async function* streamAnthropicCompatRaw(opts: RawStreamOpts): AsyncItera
     body: JSON.stringify({
       model: opts.model,
       max_tokens: opts.maxTokens ?? 4096,
-      system: opts.system,
+      system: opts.systemBlocks ?? opts.system,
       messages: opts.messages,
       stream: true,
       temperature: opts.temperature,

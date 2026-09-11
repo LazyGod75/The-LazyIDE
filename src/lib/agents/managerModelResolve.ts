@@ -288,6 +288,28 @@ interface AlternateRailMatch {
  * resolveManagerModelId's own engineOverride paragraph above). Exported for
  * direct unit testing.
  */
+/** BYOK-provider loop of findAlternateRailMatches, extracted to keep that
+ *  dispatcher under the complexity ratchet: checks each KEYED provider's
+ *  catalog (skipping the rail the request already lives on and the
+ *  anthropic pseudo-provider, which resolves through the cli check above). */
+function byokAlternateRailMatches(
+  requestedId: string,
+  requestedByokProvider: string | undefined,
+): AlternateRailMatch[] {
+  const matches: AlternateRailMatch[] = [];
+  for (const def of BYOK_PROVIDER_DEFS) {
+    if (def.id === 'anthropic' || def.id === requestedByokProvider || !hasByokKey(def.id)) continue;
+    const catalogIds = byokModelInfos(def).map((m) => m.id);
+    if (def.id === 'openrouter') {
+      if (catalogIds.includes(requestedId)) matches.push({ rail: 'byok', id: requestedId, label: `byok:${def.id}` });
+      continue;
+    }
+    const lookup = resolveBareRailModelId(requestedId, catalogIds, def.id);
+    if (lookup.ok) matches.push({ rail: 'byok', id: lookup.id, label: `byok:${def.id}` });
+  }
+  return matches;
+}
+
 export function findAlternateRailMatches(
   requestedId: string,
   requestedRail: 'cli' | 'pro' | 'byok',
@@ -304,16 +326,7 @@ export function findAlternateRailMatches(
     matches.push({ rail: 'pro', id: requestedId, label: 'pro' });
   }
 
-  for (const def of BYOK_PROVIDER_DEFS) {
-    if (def.id === 'anthropic' || def.id === requestedByokProvider || !hasByokKey(def.id)) continue;
-    const catalogIds = byokModelInfos(def).map((m) => m.id);
-    if (def.id === 'openrouter') {
-      if (catalogIds.includes(requestedId)) matches.push({ rail: 'byok', id: requestedId, label: `byok:${def.id}` });
-      continue;
-    }
-    const lookup = resolveBareRailModelId(requestedId, catalogIds, def.id);
-    if (lookup.ok) matches.push({ rail: 'byok', id: lookup.id, label: `byok:${def.id}` });
-  }
+  matches.push(...byokAlternateRailMatches(requestedId, requestedByokProvider));
 
   // Devin ids (swe-2-medium, ...) live on the cli family but a distinct
   // sub-rail — offered as a switch target only when the devin CLI is

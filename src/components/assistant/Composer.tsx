@@ -28,7 +28,8 @@ import { useAppContext } from '../../app/AppContext';
 import { getLastTerminalCommand, getTerminalOutput } from '../../lib/terminal/history';
 import type { AssistantQuickAction } from './assistantIdentity';
 import { useToast } from '../ui';
-import { MODES, ModeIcon, ModePopover, ModelDropdown } from './ComposerMenus';
+import { MODES, ModeIcon, ModePopover } from './ComposerMenus';
+import { ModelPickerDropdown } from '../common/ModelPickerDropdown';
 
 // ── Composer ──────────────────────────────────────────────────────
 
@@ -180,9 +181,9 @@ function ComposerReady({
   const isManagedMode = providerMode === 'managed' || providerMode === 'pro';
 
   const pickerOptions = getModelPickerOptions(t);
-  const showNative = pickerOptions.claudeSub;
-  const showOpenRouter = pickerOptions.pro === 'active';
-  const showDevin = pickerOptions.groups.some((g) => g.id === 'devin');
+  // (No more per-catalog show* flags — ModelPickerDropdown renders
+  // pickerOptions.groups directly, which already covers free/claude-sub/
+  // devin/byok/pro plus the locked upsell group.)
 
   // In managed/pro mode the displayed model comes from accessSettings, not the store
   const managedDisplay = isManagedMode ? getManagedModelDisplay() : null;
@@ -624,11 +625,10 @@ function ComposerReady({
         {/* Model selector */}
         <div style={{ position: 'relative' }}>
           {showModels && (
-            <ModelDropdown
+            <ModelPickerDropdown
+              groups={pickerOptions.groups}
+              lockedGroup={pickerOptions.lockedProGroup}
               currentId={displayModelId}
-              showNative={showNative}
-              showOpenRouter={showOpenRouter}
-              showDevin={showDevin}
               emptyMessage={
                 pickerOptions.emptyReadiness?.reason
                   ? t(engineReasonKey(pickerOptions.emptyReadiness.reason))

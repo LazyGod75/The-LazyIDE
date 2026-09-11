@@ -437,8 +437,14 @@ function modelSupportsCacheControl(model: string): boolean {
  * (2) verify a real call returns `cacheReadTokens > 0` on a second request;
  * (3) flip this flag to true; (4) ship the client build. NEVER ship with this true
  * before the proxy deploy lands.
+ *
+ * 2026-09-11: ai-proxy DEPLOYED to project afjrltfwhksdipchwqsf with the
+ * block-array support (isValidSystemContent / buildSystemMessages live in
+ * pricing.ts and index.ts forwards the array to OpenRouter as-is). The gate
+ * opens — Anthropic-family managed calls now send the real two-block
+ * system and the ~73k-char static core is cached 5 min per conversation.
  */
-const AI_PROXY_SUPPORTS_CACHE_BLOCKS = false;
+const AI_PROXY_SUPPORTS_CACHE_BLOCKS = true;
 
 /**
  * Resolve the `system` field of the ai-proxy request body. When the caller

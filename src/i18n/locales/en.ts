@@ -590,6 +590,10 @@ export const en: TranslationDict = {
   'models.picker.noModelFallback': 'No model available — configure a Claude subscription or Lazy Pro.',
   'models.picker.codexManaged': "Codex manages its own models — model selection doesn't apply here.",
   'models.picker.devinLabel': 'Devin CLI',
+  'models.picker.search': 'Search models…',
+  'models.picker.noMatch': 'No model matches "{query}"',
+  'models.picker.lockedHint': 'Pro',
+  'models.picker.recent': 'Recent',
 
   // ── Assistant ────────────────────────────────────────────────
   'assistant.brainNotRunning': 'No results — check brain is running on port {port}',

@@ -14,6 +14,7 @@
    LazyManagerStoreProvider wraps both into a unified adapter. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { SafeResizeObserver } from '../../lib/safeResizeObserver';
 import { useLazyManagerStore, type ManagerMode } from './lazyManagerStore';
 import { LazyManagerHistoryDrawer } from './LazyManagerHistoryDrawer';
 import { LazyManagerHeader } from './LazyManagerHeader';
@@ -445,7 +446,7 @@ export function LazyManager({
   useEffect(() => {
     const el = panelRootRef.current;
     if (!el || typeof ResizeObserver !== 'function') return;
-    const observer = new ResizeObserver((entries) => {
+    const observer = new SafeResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) setPanelWidth(entry.contentRect.width);
     });

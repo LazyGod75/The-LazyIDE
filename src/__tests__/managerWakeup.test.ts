@@ -330,11 +330,13 @@ describe('pickWakeupTargetConversationId', () => {
 });
 
 describe('isCriticalWakeupKind', () => {
-  it('treats bot completion, mission failure, blocked approval, and brain ops orphan as critical', () => {
+  it('treats bot completion, mission failure, blocked approval as critical — brain ops orphan stays under the hourly cap (recurring infra signal)', () => {
     expect(isCriticalWakeupKind('bot_completed')).toBe(true);
     expect(isCriticalWakeupKind('mission_failed')).toBe(true);
     expect(isCriticalWakeupKind('approve_blocked')).toBe(true);
-    expect(isCriticalWakeupKind('brain_ops_orphan')).toBe(true);
+    // 2026-09-11: the dream/kill cycle recurs per consolidation interval —
+    // a critical wakeup each time burned a full manager turn on infra noise.
+    expect(isCriticalWakeupKind('brain_ops_orphan')).toBe(false);
     expect(isCriticalWakeupKind('fleet_hygiene')).toBe(false);
   });
 });

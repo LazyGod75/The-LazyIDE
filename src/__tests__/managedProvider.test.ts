@@ -544,19 +544,19 @@ describe('resolveProxySystemField', () => {
     expect((result as { text: string }[]).map((b) => b.text).join('')).toBe(flatFallback);
   });
 
-  it('flattens to a single string by default (pre-deploy safety: AI_PROXY_SUPPORTS_CACHE_BLOCKS is false until ai-proxy ships)', () => {
-    // Same call as the previous test, but relying on the module's own
-    // default instead of pinning supportsCacheBlocks=true — this is what
-    // every real caller (managerEngine.ts's runManagerTurn) actually does.
-    // While AI_PROXY_SUPPORTS_CACHE_BLOCKS is false (pre-deploy safety gate),
-    // the system must be flattened to a single string to avoid 500s on the
-    // deployed proxy that still expects `body.system.trim()` to work.
+  it('emits the real block array by default now that ai-proxy is deployed (AI_PROXY_SUPPORTS_CACHE_BLOCKS=true since 2026-09-11)', () => {
+    // The pre-deploy gate is OPEN — the deployed proxy accepts block arrays,
+    // so an Anthropic-family managed call emits the real cacheable split:
+    // static core block with cache_control, dynamic tail uncached.
     const result = resolveProxySystemField({
       system: flatFallback,
       model: 'anthropic/claude-sonnet-5',
       cacheableSystem: { core, dynamic },
     });
-    expect(result).toBe(flatFallback);
+    expect(result).toEqual([
+      { type: 'text', text: core, cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: dynamic },
+    ]);
   });
 
   it('still flattens by default for a non-Anthropic model (the true default only ever affects Anthropic-family models)', () => {

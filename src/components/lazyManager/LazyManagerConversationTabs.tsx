@@ -41,6 +41,7 @@
       one of the things that can scroll out of view. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { SafeResizeObserver } from '../../lib/safeResizeObserver';
 import { useI18n } from '../../i18n';
 import { conversationAccentColor } from '../../lib/agents/conversationColor';
 import type { PanelWidthTier } from './panelWidthTier';
@@ -173,7 +174,7 @@ export function LazyManagerConversationTabs({
     updateScrollState();
     const el = scrollRef.current;
     if (!el || typeof ResizeObserver !== 'function') return;
-    const observer = new ResizeObserver(updateScrollState);
+    const observer = new SafeResizeObserver(updateScrollState);
     observer.observe(el);
     return () => observer.disconnect();
     // conversations.length: adding/closing a tab changes the strip's own

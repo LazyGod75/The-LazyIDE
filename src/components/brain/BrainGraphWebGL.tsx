@@ -7,6 +7,7 @@
 */
 
 import { useEffect, useRef, useState } from 'react';
+import { SafeResizeObserver } from '../../lib/safeResizeObserver';
 import type { ForceGraph3DInstance } from '3d-force-graph';
 import type { AdaptedBrainData, AdaptedNode } from '../../lib/brain/brainAdapter';
 import type { PaletteId } from './canvas/palettes';
@@ -276,7 +277,7 @@ export function BrainGraphWebGL({
         fg.height(hostRef.current.clientHeight);
       };
       size();
-      ro = new ResizeObserver(size);
+      ro = new SafeResizeObserver(size);
       ro.observe(host);
 
       destroy = () => (fg as unknown as { _destructor: () => void })._destructor();

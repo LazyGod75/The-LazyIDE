@@ -98,8 +98,18 @@ describe('registry — OpenRouter catalog (managed Pro path)', () => {
   //           MiniMax M3 became the default free id (GLM 5.2 kept but its
   //           provider errors were confirmed in real-app testing), and
   //           Fable 5.1 / GPT-6 Astra joined the paid tiers.
-  it('OPENROUTER_MODELS contains 24 entries', () => {
-    expect(OPENROUTER_MODELS.length).toBe(24);
+  // 24 -> 25: BOTH free ids were pulled upstream (verified live via
+  //           /api/v1/models 2026-09-11 — every free turn 404'd); the rail
+  //           rebuilt around Nemotron 3 Super 120B (new default), Gemma 4
+  //           31B (back online) and Nemotron 3 Nano Omni (reasoning).
+  // 25 -> 26: endpoint-level verification the same day — nemotron-super's
+  //           free route 404'd on a real send (zero free-serving endpoints)
+  //           and nano-omni reports 0 endpoints; the rail rebuilt around
+  //           four entries whose :free routes are actually routable:
+  //           Gemma 4 31B (default, 14 endpoints), Nemotron Ultra 550B,
+  //           Inkling, Nemotron 3.5 Lightning.
+  it('OPENROUTER_MODELS contains 26 entries', () => {
+    expect(OPENROUTER_MODELS.length).toBe(26);
   });
 
   it('has no duplicate model ids', () => {
@@ -127,6 +137,7 @@ describe('registry — OpenRouter catalog (managed Pro path)', () => {
     expect(providers.has('Mistral')).toBe(true);
     expect(providers.has('Qwen')).toBe(true);
     expect(providers.has('Z.ai')).toBe(true);
+    expect(providers.has('NVIDIA')).toBe(true);
     expect(providers.has('Free')).toBe(false);
     // Groq's two ids do not exist on OpenRouter — see the count note above.
     expect(providers.has('Groq')).toBe(false);
@@ -141,15 +152,17 @@ describe('registry — OpenRouter catalog (managed Pro path)', () => {
   it('OPENROUTER_MODELS_BY_PROVIDER groups correctly', () => {
     expect(OPENROUTER_MODELS_BY_PROVIDER['Anthropic']).toHaveLength(5);
     expect(OPENROUTER_MODELS_BY_PROVIDER['OpenAI']).toHaveLength(4);
-    expect(OPENROUTER_MODELS_BY_PROVIDER['Google']).toHaveLength(2);
+    expect(OPENROUTER_MODELS_BY_PROVIDER['Google']).toHaveLength(3);
     expect(OPENROUTER_MODELS_BY_PROVIDER['Moonshot']).toHaveLength(2);
     expect(OPENROUTER_MODELS_BY_PROVIDER['xAI']).toHaveLength(2);
     expect(OPENROUTER_MODELS_BY_PROVIDER['DeepSeek']).toHaveLength(2);
     expect(OPENROUTER_MODELS_BY_PROVIDER['Meta']).toHaveLength(1);
     expect(OPENROUTER_MODELS_BY_PROVIDER['Mistral']).toHaveLength(1);
     expect(OPENROUTER_MODELS_BY_PROVIDER['Qwen']).toHaveLength(2);
-    expect(OPENROUTER_MODELS_BY_PROVIDER['Z.ai']).toHaveLength(2);
-    expect(OPENROUTER_MODELS_BY_PROVIDER['MiniMax']).toHaveLength(1);
+    expect(OPENROUTER_MODELS_BY_PROVIDER['Z.ai']).toHaveLength(1);
+    expect(OPENROUTER_MODELS_BY_PROVIDER['NVIDIA']).toHaveLength(2);
+    expect(OPENROUTER_MODELS_BY_PROVIDER['Thinking Machines']).toHaveLength(1);
+    expect(OPENROUTER_MODELS_BY_PROVIDER['MiniMax']).toBeUndefined();
     expect(OPENROUTER_MODELS_BY_PROVIDER['Groq']).toBeUndefined();
     expect(OPENROUTER_MODELS_BY_PROVIDER['Free']).toBeUndefined();
   });
@@ -173,9 +186,9 @@ describe('registry — OpenRouter catalog (managed Pro path)', () => {
 
   it('every isFree catalog entry uses tier free and includes the default free id', () => {
     const freeModels = OPENROUTER_MODELS.filter(m => m.isFree);
-    expect(freeModels).toHaveLength(2);
+    expect(freeModels).toHaveLength(4);
     expect(freeModels.some(m => m.id === FREE_OPENROUTER_MODEL_ID)).toBe(true);
-    expect(OPENROUTER_MODELS.filter(m => m.tier === 'free')).toHaveLength(2);
+    expect(OPENROUTER_MODELS.filter(m => m.tier === 'free')).toHaveLength(4);
     for (const m of freeModels) {
       expect(m.tier).toBe('free');
       expect(m.id.endsWith(':free') || m.id === FREE_OPENROUTER_MODEL_ID).toBe(true);

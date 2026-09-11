@@ -32,6 +32,41 @@ export interface BotSchedulerDeps {
   onRoutineFired?: (bot: BotConfig, routine: BotRoutine) => void;
   /** Called when a routine launch fails after lastRunAt was advanced (C76). */
   onRoutineFailed?: (bot: BotConfig, routine: BotRoutine, error: string) => void;
+  /** Event-trigger context for this tick (Cursor Projects "subscriptions"
+   *  parity, local-first): current HEAD sha + missions that reached a
+   *  terminal status recently. `sinceMs` is the previous tick time — the
+   *  caller returns only events at/after it. Absent = event triggers never
+   *  fire (web builds, tests). */
+  getTriggerContext?: (sinceMs: number) => Promise<RoutineTriggerContext>;
+}
+
+export interface RoutineTriggerContext {
+  /** Current HEAD sha of the active project (empty string = unborn repo). */
+  headSha: string | null;
+  /** Missions that reached a terminal status since the previous tick. */
+  terminalMissions: Array<{ id: string; status: 'done' | 'failed' }>;
+}
+
+/** Does this routine's event trigger fire on this tick? Returns the token to
+ *  persist in `lastTriggerToken` when it does (dedupes the same event across
+ *  ticks AND restarts), null when it doesn't. */
+export function routineTriggerToken(
+  routine: BotRoutine,
+  ctx: RoutineTriggerContext,
+): string | null {
+  const trigger = routine.trigger;
+  if (!trigger) return null;
+  if (trigger.kind === 'git_commit') {
+    if (!ctx.headSha) return null;
+    return ctx.headSha === routine.lastTriggerToken ? null : ctx.headSha;
+  }
+  // mission_done — the freshest matching terminal mission fires once.
+  const wanted = trigger.status;
+  const match = ctx.terminalMissions
+    .filter((m) => !wanted || m.status === wanted)
+    .pop();
+  if (!match || match.id === routine.lastTriggerToken) return null;
+  return match.id;
 }
 
 /** C67 — clear message when routines cannot run (web / no Tauri). */
@@ -133,34 +168,60 @@ export interface BotSchedulerHandle {
 export function startBotScheduler(deps: BotSchedulerDeps): BotSchedulerHandle {
   let stopped = false;
   let ticking = false;
+  // Events strictly AFTER this instant fire triggers — boot-time state never
+  // re-fires (a mission that failed while the app was closed does not wake
+  // every mission_done routine on next launch).
+  let lastTickMs = Date.now();
 
   const runTick = async (): Promise<void> => {
     if (stopped || ticking) return;
     ticking = true;
+    const tickStart = Date.now();
     try {
       const bots = await listBots();
       const now = new Date();
+      const triggerCtx = deps.getTriggerContext
+        ? await deps.getTriggerContext(lastTickMs).catch(() => undefined)
+        : undefined;
       for (const bot of bots) {
         if (!bot.enabled) continue;
         const dueRoutines = bot.routines.filter((r) => isRoutineDue(r, now));
-        if (dueRoutines.length === 0) continue;
+        // Event-triggered routines: schedule may be empty (pure trigger) —
+        // evaluate the trigger even when the cron side isn't due.
+        const triggered = new Map<string, string>();
+        if (triggerCtx) {
+          for (const r of bot.routines) {
+            if (!r.enabled || dueRoutines.includes(r)) continue;
+            const token = routineTriggerToken(r, triggerCtx);
+            if (token) triggered.set(r.id, token);
+          }
+        }
+        const firing = new Set([...dueRoutines.map((r) => r.id), ...triggered.keys()]);
+        if (firing.size === 0) continue;
 
-        // Advance lastRunAt for ALL due routines in a single write so saving
-        // one routine never erases another's just-saved lastRunAt (stale
-        // snapshot overwrite). lastRunAt is advanced BEFORE launching so a
-        // crash doesn't re-fire the same tick.
-        const dueIds = new Set(dueRoutines.map((r) => r.id));
+        // Advance lastRunAt/lastTriggerToken for ALL firing routines in a
+        // single write so saving one never erases another's just-saved state
+        // (stale snapshot overwrite). lastRunAt is advanced BEFORE launching
+        // so a crash doesn't re-fire the same tick; lastTriggerToken dedupes
+        // the event across restarts.
         const updatedBot: BotConfig = {
           ...bot,
           routines: bot.routines.map((r) =>
-            dueIds.has(r.id) ? { ...r, lastRunAt: now.toISOString() } : r,
+            firing.has(r.id)
+              ? {
+                  ...r,
+                  lastRunAt: now.toISOString(),
+                  ...(triggered.has(r.id) ? { lastTriggerToken: triggered.get(r.id) } : {}),
+                }
+              : r,
           ),
           updatedAt: now.toISOString(),
         };
         await saveBot(updatedBot);
 
-        // Launch each due run (fire-and-forget — the engine tracks it).
-        for (const routine of dueRoutines) {
+        // Launch each firing run (fire-and-forget — the engine tracks it).
+        const firingRoutines = updatedBot.routines.filter((r) => firing.has(r.id));
+        for (const routine of firingRoutines) {
           const updatedRoutine = updatedBot.routines.find((r) => r.id === routine.id)!;
           void launchBotRun(updatedBot, routine.task, {
             createMission: deps.createMission,
@@ -194,6 +255,7 @@ export function startBotScheduler(deps: BotSchedulerDeps): BotSchedulerHandle {
         },
       });
     } finally {
+      lastTickMs = tickStart;
       ticking = false;
     }
   };

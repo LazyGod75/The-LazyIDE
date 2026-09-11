@@ -14,6 +14,7 @@ import { ToastProvider } from '../components/ui/Toast';
 import { runManagerTurn } from '../lib/agents/managerEngine';
 import { getProviderMode } from '../lib/models/index';
 import { hasManagedSession } from '../lib/agents/managerSessionGate';
+import { FREE_OPENROUTER_MODEL_ID } from '../lib/models/openrouterCatalog';
 
 vi.mock('../lib/brain/capture', () => ({
   captureAgentMission: vi.fn(),
@@ -83,7 +84,7 @@ describe('sendManagerMessage — unsigned free-model session preflight', () => {
       await result.current.sendManagerMessage(
         result.current.activeConversationId,
         'ping',
-        'z-ai/glm-5.2:free',
+        FREE_OPENROUTER_MODEL_ID,
       );
     });
 
@@ -108,7 +109,7 @@ describe('sendManagerMessage — unsigned free-model session preflight', () => {
       await result.current.sendManagerMessage(
         result.current.activeConversationId,
         'ping',
-        'z-ai/glm-5.2:free',
+        FREE_OPENROUTER_MODEL_ID,
       );
     });
 

@@ -162,6 +162,11 @@ function SpaceContent({ space, showTeamTab, settingsInitialTab }: SpaceContentPr
     }
     case 'terminals': return <SpaceErrorBoundary name="Terminals"><TerminalsSpace /></SpaceErrorBoundary>;
     case 'team':      return showTeamTab ? <SpaceErrorBoundary name="Team"><TeamSpace /></SpaceErrorBoundary> : null;
+    // 'bots' stays in the SpaceId union for persisted-session compat, but
+    // BotsSpace itself was retired (bots live on the canvas via BotVmHost +
+    // the manager's create_lazybot/run_lazybot actions) — redirect to the
+    // agents surface instead of a blank screen.
+    case 'bots':      return <SpaceErrorBoundary name="Agents"><AgentsSpace /></SpaceErrorBoundary>;
     default:          return null;
   }
 }

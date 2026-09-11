@@ -175,6 +175,7 @@
 */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { SafeResizeObserver } from '../../lib/safeResizeObserver';
 import { useI18n } from '../../i18n';
 import { emit, _debugLogOverlayWidth } from '../../lib/bus';
 import { Skeleton } from '../ui';
@@ -186,6 +187,8 @@ import {
 } from '../../lib/models/modelPickerOptions';
 import { ENGINE_I18N_KEY, CREDIT_METERED_ENGINES, type EngineKey } from './LazyManagerHeader';
 import { typeAccentColor, TypeGlyph } from '../agents/canvas/chrome/nodeChrome';
+import { ModelPickerDropdown } from '../common/ModelPickerDropdown';
+import { useDismissable } from '../common/useDismissable';
 import { layoutPreviewGraph, type PreviewGraphLayout } from '../agents/canvas/layout';
 import { computePreviewGraphSignature, _debugLogPreviewLayout } from '../agents/canvas/previewLayoutWorkerClient';
 import {
@@ -753,7 +756,7 @@ function ProposalGraphPreview({
   useEffect(() => {
     const el = previewContainerRef.current;
     if (!el || typeof ResizeObserver !== 'function') return;
-    const observer = new ResizeObserver((entries) => {
+    const observer = new SafeResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) setContainerWidth(entry.contentRect.width);
     });
@@ -1013,6 +1016,92 @@ export function resolveStepModelId(
     if (byLabel) return byLabel.id;
   }
   return fallback.defaultModelId;
+}
+
+/** Per-step model chip — the shared searchable picker (ModelPickerDropdown)
+ *  replaces the native <select> this used to render (a ~200-row optgroup
+ *  list is unusable once the Devin catalog is in the group set). Keeps the
+ *  same chip look and the same data-testid per step; onPick receives the
+ *  chosen model id exactly like the old select's onChange. */
+function StepModelChip({
+  testId,
+  ariaLabel,
+  currentId,
+  unknownCurrent,
+  groups,
+  lockedGroup,
+  title,
+  t,
+  onPick,
+}: {
+  testId: string;
+  ariaLabel: string;
+  currentId: string;
+  unknownCurrent?: { id: string; label: string };
+  groups: ModelOptionGroup[];
+  lockedGroup?: ModelOptionGroup;
+  title: string;
+  t: (key: string, params?: Record<string, string | number>) => string;
+  onPick: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popRef = useDismissable<HTMLDivElement>({
+    open,
+    onClose: () => setOpen(false),
+    ignoreRefs: [triggerRef],
+  });
+  const currentLabel =
+    [...groups, ...(lockedGroup ? [lockedGroup] : [])]
+      .flatMap((g) => g.models)
+      .find((m) => m.id === currentId)?.label ?? currentId;
+  return (
+    <span style={{ position: 'relative', alignSelf: 'flex-start', flexShrink: 0 }}>
+      <button
+        type="button"
+        ref={triggerRef}
+        data-testid={testId}
+        aria-label={ariaLabel}
+        title={title}
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        style={{
+          width: 150,
+          fontSize: 10,
+          fontFamily: 'var(--font-mono)',
+          fontWeight: 600,
+          background: 'rgba(124,92,255,0.22)',
+          color: '#EDE7FF',
+          border: '1px solid rgba(124,92,255,0.6)',
+          borderRadius: 5,
+          padding: '3px 6px',
+          outline: 'none',
+          cursor: 'pointer',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          textAlign: 'left',
+        }}
+      >
+        {currentLabel} ▾
+      </button>
+      {open && (
+        <div ref={popRef}>
+          <ModelPickerDropdown
+            groups={groups}
+            lockedGroup={lockedGroup}
+            currentId={currentId}
+            unknownCurrent={unknownCurrent}
+            direction="down"
+            onSelect={onPick}
+            onClose={() => setOpen(false)}
+            t={t}
+            optionTestId="graph-proposal-step-model-option"
+            lockedOptionTestId="graph-proposal-step-model-option-locked"
+          />
+        </div>
+      )}
+    </span>
+  );
 }
 
 export function GraphProposalCard({ msg, onAccept, onModify, onReject, onStepModelChange, isActionQueued = false }: GraphProposalCardProps) {
@@ -1352,76 +1441,24 @@ export function GraphProposalCard({ msg, onAccept, onModify, onReject, onStepMod
                       "manager-model-select" treatment line for line rather
                       than a second, drifting picker layout. */}
                   {isPending && onStepModelChange && step.id && resolvedModelId !== undefined && (
-                    <select
-                      data-testid={`graph-proposal-step-model-${step.id}`}
-                      aria-label={t('lazyManager.proposal.stepModel')}
-                      value={resolvedModelId}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (!value) return;
+                    <StepModelChip
+                      testId={`graph-proposal-step-model-${step.id}`}
+                      ariaLabel={t('lazyManager.proposal.stepModel')}
+                      currentId={resolvedModelId}
+                      unknownCurrent={
+                        !isKnownModelId
+                          ? { id: resolvedModelId, label: modelLabelFor(resolvedModelId, step.model) || resolvedModelId }
+                          : undefined
+                      }
+                      groups={pickerOptions.groups}
+                      lockedGroup={pickerOptions.lockedProGroup}
+                      title={modelLabelFor(resolvedModelId, step.model) || t('lazyManager.proposal.stepModel')}
+                      t={t}
+                      onPick={(value) => {
                         setStepModelOverrides((prev) => ({ ...prev, [step.id as string]: value }));
                         if (proposal.planId) onStepModelChange(proposal.planId, step.id as string, value);
                       }}
-                      title={modelLabelFor(resolvedModelId, step.model) || t('lazyManager.proposal.stepModel')}
-                      style={{
-                        alignSelf: 'flex-start',
-                        width: 150,
-                        flexShrink: 0,
-                        fontSize: 10,
-                        fontFamily: 'var(--font-mono)',
-                        // 2026-08-06 (founder: "le texte dans la chip est
-                        // illisible, c'est gris sur gris") — much stronger
-                        // light-on-dark contrast inside the chip itself;
-                        // the <option> popup is forced dark-on-light by
-                        // index.css's rule below.
-                        fontWeight: 600,
-                        background: 'rgba(124,92,255,0.22)',
-                        color: '#EDE7FF',
-                        border: '1px solid rgba(124,92,255,0.6)',
-                        borderRadius: 5,
-                        padding: '3px 6px',
-                        outline: 'none',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {/* Guards a resolved id that matches no rendered option
-                          below (e.g. a BYOK model persisted while that
-                          provider was keyed, viewed again later after the key
-                          was removed) — without this the <select> would show
-                          a blank/first-option control for a perfectly real,
-                          persisted per-step choice. Generalizes the old
-                          "modelOptions.length === 0" fallback (only the
-                          whole-list-empty case) to "this one id isn't in the
-                          list", which also covers it. */}
-                      {!isKnownModelId && (
-                        <option value={resolvedModelId}>{modelLabelFor(resolvedModelId, step.model) || resolvedModelId}</option>
-                      )}
-                      {pickerOptions.groups.map((group) => (
-                        <optgroup key={group.id} label={group.label}>
-                          {group.models.map((m) => (
-                            <option key={m.id} value={m.id} data-testid="graph-proposal-step-model-option">
-                              {m.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                      {pickerOptions.lockedProGroup && (
-                        <optgroup label={pickerOptions.lockedProGroup.label}>
-                          {pickerOptions.lockedProGroup.models.map((m) => (
-                            <option
-                              key={m.id}
-                              value={m.id}
-                              disabled
-                              title={t('cockpit.manager.proUpsell')}
-                              data-testid="graph-proposal-step-model-option-locked"
-                            >
-                              {m.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                    </select>
+                    />
                   )}
                   {/* Fix E (2026-08-19 incident) — warn BEFORE launch, not
                       after: a plan step whose own estimate already exceeds

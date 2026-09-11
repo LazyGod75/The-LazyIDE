@@ -195,4 +195,97 @@ describe('startBotScheduler', () => {
     );
     handle.stop();
   });
+
+  it('fires a git_commit-triggered routine when HEAD changes (event, no cron)', async () => {
+    const { listBots, saveBot } = await import('../lib/bots/botStorage');
+    const bot: BotConfig = {
+      id: 'bot_1', name: 'Reviewer', description: 'test',
+      systemPrompt: 'You are a bot.', autonomy: 'supervised',
+      capabilities: { browser: true, desktop: false, sandbox: false, maxConcurrentSessions: 1 },
+      routines: [{
+        id: 'rtn_1', name: 'On commit', schedule: '',
+        task: 'Review the new commit', enabled: true, lastRunAt: null,
+        trigger: { kind: 'git_commit' }, lastTriggerToken: 'aaa111',
+      }],
+      profileIds: [], enabled: true,
+      createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+    vi.mocked(listBots).mockResolvedValue([bot]);
+
+    const onRoutineFired = vi.fn();
+    const handle = startBotScheduler({
+      createMission: async () => 'M1',
+      defaultModelId: () => 'test-model',
+      onRoutineFired,
+      getTriggerContext: async () => ({ headSha: 'bbb222', terminalMissions: [] }),
+    });
+    await handle.tickNow();
+    handle.stop();
+
+    expect(onRoutineFired).toHaveBeenCalledTimes(1);
+    const saved = vi.mocked(saveBot).mock.calls.at(-1)?.[0] as BotConfig;
+    expect(saved.routines[0].lastTriggerToken).toBe('bbb222');
+  });
+
+  it('does not re-fire a git_commit routine for the already-seen HEAD', async () => {
+    const { listBots } = await import('../lib/bots/botStorage');
+    const bot: BotConfig = {
+      id: 'bot_1', name: 'Reviewer', description: 'test',
+      systemPrompt: 'You are a bot.', autonomy: 'supervised',
+      capabilities: { browser: true, desktop: false, sandbox: false, maxConcurrentSessions: 1 },
+      routines: [{
+        id: 'rtn_1', name: 'On commit', schedule: '',
+        task: 'Review', enabled: true, lastRunAt: null,
+        trigger: { kind: 'git_commit' }, lastTriggerToken: 'aaa111',
+      }],
+      profileIds: [], enabled: true,
+      createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+    vi.mocked(listBots).mockResolvedValue([bot]);
+
+    const onRoutineFired = vi.fn();
+    const handle = startBotScheduler({
+      createMission: async () => 'M1',
+      defaultModelId: () => 'test-model',
+      onRoutineFired,
+      getTriggerContext: async () => ({ headSha: 'aaa111', terminalMissions: [] }),
+    });
+    await handle.tickNow();
+    handle.stop();
+    expect(onRoutineFired).not.toHaveBeenCalled();
+  });
+
+  it('fires a mission_done routine on a fresh terminal mission', async () => {
+    const { listBots } = await import('../lib/bots/botStorage');
+    const bot: BotConfig = {
+      id: 'bot_1', name: 'Notifier', description: 'test',
+      systemPrompt: 'You are a bot.', autonomy: 'supervised',
+      capabilities: { browser: true, desktop: false, sandbox: false, maxConcurrentSessions: 1 },
+      routines: [{
+        id: 'rtn_1', name: 'On failure', schedule: '',
+        task: 'Investigate the failure', enabled: true, lastRunAt: null,
+        trigger: { kind: 'mission_done', status: 'failed' },
+      }],
+      profileIds: [], enabled: true,
+      createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+    vi.mocked(listBots).mockResolvedValue([bot]);
+
+    const onRoutineFired = vi.fn();
+    const handle = startBotScheduler({
+      createMission: async () => 'M1',
+      defaultModelId: () => 'test-model',
+      onRoutineFired,
+      getTriggerContext: async () => ({
+        headSha: null,
+        terminalMissions: [
+          { id: 'M50', status: 'done' },
+          { id: 'M51', status: 'failed' },
+        ],
+      }),
+    });
+    await handle.tickNow();
+    handle.stop();
+    expect(onRoutineFired).toHaveBeenCalledTimes(1);
+  });
 });

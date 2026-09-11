@@ -14,6 +14,7 @@
 */
 
 import { useEffect, useLayoutEffect, useRef, lazy, Suspense } from 'react';
+import { SafeResizeObserver } from '../../lib/safeResizeObserver';
 import type { AdaptedBrainData, AdaptedNode } from '../../lib/brain/brainAdapter';
 import type { PaletteId } from './canvas/palettes';
 import { DEFAULT_PALETTE } from './canvas/palettes';
@@ -358,7 +359,7 @@ function BrainGraphCanvas2D({
 
     // ── Resize (explicit canvas pixel size — avoids the flex/aspect-ratio ballooning footgun) ──
 
-    const resizeObserver = new ResizeObserver((entries) => {
+    const resizeObserver = new SafeResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
       sizeRef.current = { width: entry.contentRect.width, height: entry.contentRect.height };

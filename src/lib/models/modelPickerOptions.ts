@@ -29,7 +29,7 @@ import type { ModelInfo } from './types.js';
 import { isTauri as isTauriRuntime } from '../platform/index.js';
 import { ALL_MODELS, DEFAULT_MODEL } from './registry.js';
 import { OPENROUTER_MODELS, DEFAULT_OPENROUTER_MODEL_ID } from './openrouterCatalog.js';
-import { devinModelInfos, DEFAULT_DEVIN_MODEL_ID } from './devinCatalog.js';
+import { devinModelInfos, DEFAULT_DEVIN_MODEL_ID, isDevinModel } from './devinCatalog.js';
 import { loadAccessSettings } from './accessSettings.js';
 import { isCliBackendAvailable } from './cliBackendProvider.js';
 import { hasAnthropicKey } from './anthropicProvider.js';
@@ -59,7 +59,10 @@ export interface ModelOption {
 }
 
 export interface ModelOptionGroup {
-  id: ModelGroupId;
+  /** Known rail ids drive the group accent colour; any other string is a
+      valid custom-group id (e.g. per-provider groups in the assistant
+      settings panel) and falls back to the neutral colour. */
+  id: ModelGroupId | (string & {});
   /** Display label for the group header (optgroup / section), e.g.
       "Abonnement Claude" / "LazyPro / Managé". */
   label: string;
@@ -420,4 +423,31 @@ export function getModelPickerOptions(t?: Translate): ModelPickerOptions {
 export function isSelectablePickerModel(id: string): boolean {
   const opts = getModelPickerOptions();
   return opts.groups.some((g) => g.models.some((m) => m.id === id));
+}
+
+/** True when `id` belongs to a rail whose availability probe has NOT
+ *  settled yet — i.e. the model is temporarily invisible in the picker
+ *  purely because detection is still running, not because it is unusable.
+ *  Used by persistence loaders (loadManagerModel) and the header's
+ *  validation effect: the user's stored choice must survive the boot
+ *  window and be re-evaluated once probes land (real repro: persisted
+ *  swe-2-medium dropped to BYOK DeepSeek at boot -> next turn 402'd).
+ *  Once every relevant probe resolves, this returns false and a
+ *  non-selectable id correctly falls back to the default. */
+export function isModelRailPending(id: string): boolean {
+  if (!id) return false;
+  // Outside Tauri the CLI probes never run — `null` there means "will
+  // never be available", not "detection in flight". Treating it as pending
+  // would pin a native/devin id forever on the web mock rail (real test:
+  // agentsStore.test.tsx's "ignores a persisted native Claude id outside
+  // Tauri").
+  if (isTauriRuntime()) {
+    if (isDevinModel(id)) return isCliBackendAvailable('devin') === null;
+    if (ALL_MODELS.some((m) => m.id === id)) {
+      // Native ids can be served by either CLI — pending while either probe is.
+      return isCliBackendAvailable('claude') === null || isCliBackendAvailable('codex') === null;
+    }
+  }
+  if (id.includes('/')) return getProPlanState() === 'unknown';
+  return false;
 }

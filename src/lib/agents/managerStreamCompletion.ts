@@ -24,7 +24,7 @@ import {
 import type { ByokProviderDef } from '../models/byokProviders.js';
 import type { ProviderMode, ChatMessage, ModelInfo, StreamChatRequest } from '../models/index.js';
 import { ALL_MODELS } from '../models/registry.js';
-import { OPENROUTER_MODELS, DEFAULT_OPENROUTER_MODEL_ID, findOpenRouterModel, isOpenRouterFreeModel, migrateRetiredOpenRouterId } from '../models/openrouterCatalog.js';
+import { OPENROUTER_MODELS, DEFAULT_OPENROUTER_MODEL_ID, findOpenRouterModel, isOpenRouterFreeModel, migrateRetiredOpenRouterId, nextFreeOpenRouterModelId } from '../models/openrouterCatalog.js';
 import { isDevinModel } from '../models/devinCatalog.js';
 import { RECALL_TEACHING } from '../models/systemPrompts.js';
 import type { ManagerMessage } from './types.js';
@@ -424,7 +424,14 @@ async function streamLiveKeyRail(
 
 /** Managed (Pro/ai-proxy) rail — streams the manager turn through the proxy
  *  and retries transient provider errors. Extracted from dispatchAmbientRail
- *  so that dispatcher stays under the ESLint complexity ratchet. */
+ *  so that dispatcher stays under the ESLint complexity ratchet.
+ *
+ *  Free-rail fallthrough (2026-09-11, live-verified): retrying the SAME free
+ *  model on upstream_error_429 was useless — the shared :free quota stays
+ *  saturated for minutes, so all 3 attempts hit the same wall and the turn
+ *  still failed. A :free model that 429s or 404s now rotates to the NEXT
+ *  free catalog entry (nextFreeOpenRouterModelId) — different upstream
+ *  provider, different quota bucket — before giving up. */
 async function streamManagedRailWithRetry(
   model: string,
   systemFinal: string,
@@ -433,7 +440,9 @@ async function streamManagedRailWithRetry(
   signal: AbortSignal | undefined,
   ingest: IngestChunk,
 ): Promise<void> {
-  const attempts = isOpenRouterFreeModel(model) ? 3 : 1;
+  const free = isOpenRouterFreeModel(model);
+  const attempts = free ? 4 : 1;
+  let currentModel = model;
   let lastErr: unknown;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
@@ -441,7 +450,7 @@ async function streamManagedRailWithRetry(
         messages: apiMessages,
         system: systemFinal,
         cacheableSystem: cacheableSystemFinal,
-        model: toManagedModelId(model),
+        model: toManagedModelId(currentModel),
         signal,
       } satisfies AgentTurnOpts), ingest);
       return;
@@ -450,6 +459,13 @@ async function streamManagedRailWithRetry(
       const msg = err instanceof Error ? err.message : String(err);
       const retryable = /fournisseur de modèle|upstream_error|502|503|504|Provider returned error/i.test(msg);
       if (!retryable || attempt === attempts || signal?.aborted) throw err;
+      // On an upstream 429/404 the SAME free model will keep failing for a
+      // while — rotate to the next free catalog entry (a different provider
+      // with its own quota) instead of pointlessly re-hitting it.
+      if (free && /upstream_error_(429|404)/i.test(msg)) {
+        const next = nextFreeOpenRouterModelId(toManagedModelId(currentModel));
+        if (next) currentModel = next;
+      }
       await new Promise((r) => setTimeout(r, 400 * attempt));
     }
   }

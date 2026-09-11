@@ -31,7 +31,22 @@ export function normalizeProfileIds(raw: unknown): string[] | undefined {
   return ids;
 }
 
-/** Coerce model-emitted routines into BotRoutine shapes; skip junk entries. */
+/** Coerce a model-emitted routine trigger into a BotRoutineTrigger; undefined
+ *  for junk/unknown kinds (never fabricates a trigger the model didn't mean). */
+function normalizeTrigger(raw: unknown): BotRoutine['trigger'] | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const t = raw as Record<string, unknown>;
+  if (t.kind === 'git_commit') return { kind: 'git_commit' };
+  if (t.kind === 'mission_done') {
+    const status = t.status === 'done' || t.status === 'failed' ? t.status : undefined;
+    return { kind: 'mission_done', ...(status ? { status } : {}) };
+  }
+  return undefined;
+}
+
+/** Coerce model-emitted routines into BotRoutine shapes; skip junk entries.
+ *  A routine is valid with a cron `schedule`, an event `trigger`, or both —
+ *  a trigger-only routine has an empty schedule by design. */
 export function normalizeRoutines(raw: unknown): BotRoutine[] | undefined {
   if (raw === undefined) return undefined;
   if (!Array.isArray(raw)) return undefined;
@@ -42,7 +57,8 @@ export function normalizeRoutines(raw: unknown): BotRoutine[] | undefined {
     const name = typeof r.name === 'string' ? r.name.trim() : '';
     const schedule = typeof r.schedule === 'string' ? r.schedule.trim() : '';
     const task = typeof r.task === 'string' ? r.task.trim() : '';
-    if (!name || !schedule || !task) continue;
+    const trigger = normalizeTrigger(r.trigger);
+    if (!name || !task || (!schedule && !trigger)) continue;
     const id =
       typeof r.id === 'string' && r.id.trim()
         ? r.id.trim()
@@ -54,6 +70,7 @@ export function normalizeRoutines(raw: unknown): BotRoutine[] | undefined {
       task,
       enabled: typeof r.enabled === 'boolean' ? r.enabled : true,
       lastRunAt: typeof r.lastRunAt === 'string' ? r.lastRunAt : null,
+      ...(trigger ? { trigger } : {}),
     });
   }
   return out;

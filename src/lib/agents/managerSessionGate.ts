@@ -43,22 +43,47 @@ const STRIP = [
   /^ManagedUnavailableError:\s*/i,
 ];
 
-/** Innermost human message — strips nested Error:/LazyManager error: wrappers. */
+/** Innermost human message — strips nested Error:/LazyManager error: wrappers.
+ *  Appends the error's diagnostic `code` (e.g. ManagedUnavailableError's
+ *  `upstream_error_429` — the ai-proxy's real upstream status) when it is
+ *  informative and not already present in the message text: "Erreur du
+ *  fournisseur de modèle" alone hides a 429 rate-limit from a hard-down
+ *  upstream, which is exactly the distinction a user needs to pick between
+ *  "retry in a minute" and "this rail is dead". */
 export function formatManagerUserError(err: unknown): string {
   const seen = new Set<unknown>();
   let current: unknown = err;
   let msg = '';
+  let code: string | undefined;
   while (current !== null && current !== undefined && !seen.has(current)) {
     seen.add(current);
     if (current instanceof Error) {
       msg = current.message || String(current);
+      const maybeCode = (current as { code?: unknown }).code;
+      if (typeof maybeCode === 'string' && maybeCode && !code) code = maybeCode;
       current = current.cause;
     } else {
       msg = String(current);
       break;
     }
   }
-  return stripManagerErrorPrefixes(msg) || 'unknown error';
+  const stripped = stripManagerErrorPrefixes(msg) || 'unknown error';
+  return decorateWithDiagnosticCode(stripped, code);
+}
+
+/** Appends the diagnostic code to the stripped message — with named
+ *  translations for codes where the bare string is not actionable.
+ *  2026-09-11: "Erreur du fournisseur de modèle (upstream_error_429)" told
+ *  the user nothing — a shared-quota rate limit reads exactly like a dead
+ *  upstream. Name the actual condition; keep the code for support. */
+function decorateWithDiagnosticCode(stripped: string, code: string | undefined): string {
+  if (code === 'upstream_error_429') {
+    return 'Limite de débit atteinte côté fournisseur (quota partagé) — réessayez dans quelques instants ou changez de modèle (upstream_error_429)';
+  }
+  if (code && code !== 'managed_unavailable' && !stripped.includes(code)) {
+    return `${stripped} (${code})`;
+  }
+  return stripped;
 }
 
 /** Render-time backstop for persisted bubbles that still carry nested

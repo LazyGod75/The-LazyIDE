@@ -35,25 +35,47 @@ export interface OpenRouterModel {
   isFree: boolean;
 }
 
-/** OpenRouter id of the free rail's default model. Retired aliases map here. */
-export const FREE_OPENROUTER_MODEL_ID = 'minimax/minimax-m3:free';
+/** OpenRouter id of the free rail's default model. Retired aliases map here.
+ *  Verified live against openrouter.ai/api/v1/models AND /endpoints on
+ *  2026-09-11: minimax-m3:free and glm-5.2:free were pulled upstream, and
+ *  nemotron-3-super-120b-a12b:free (the first replacement pick) is listed
+ *  but its free route returns "no endpoints" (live send → upstream_error_404).
+ *  Gemma 4 31B is the default: 14 endpoints, and its :free route demonstrably
+ *  serves (a real send hit the shared rate limit — 429, not 404). */
+export const FREE_OPENROUTER_MODEL_ID = 'google/gemma-4-31b-it:free';
 
 const RETIRED_OPENROUTER_IDS: ReadonlySet<string> = new Set([
   'stealth/ox-alpha',
   'z-ai/glm-5.3-flash',
-  // Removed from the catalog in the verified-free rail rebuild — a persisted
-  // selection of any of these must migrate to the current free default
-  // instead of failing launches with OpenRouter invalid_model.
-  'google/gemma-4-31b-it:free',
-  'nvidia/nemotron-3-ultra-550b-a55b:free',
+  // Pulled upstream (confirmed via the live /models listing, 2026-09-11) —
+  // a persisted selection of either must migrate to the current free
+  // default instead of failing every launch with upstream_error_404.
+  'minimax/minimax-m3:free',
+  'z-ai/glm-5.2:free',
+  // Listed but dead free routes (live-verified upstream_error_404 on
+  // 2026-09-11): nemotron-super has zero free-serving endpoints despite
+  // appearing in /models, and nano-omni reports 0 endpoints total.
+  'nvidia/nemotron-3-super-120b-a12b:free',
+  'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+  // Older removals kept for migration of persisted selections.
   'poolside/laguna-s-2.1:free',
-  'thinkingmachines/inkling:free',
   'cohere/north-mini-code:free',
 ]);
 
 /** Rewrite a persisted / in-flight id that OpenRouter no longer serves. */
 export function migrateRetiredOpenRouterId(id: string): string {
   return RETIRED_OPENROUTER_IDS.has(id) ? FREE_OPENROUTER_MODEL_ID : id;
+}
+
+/** Next free catalog id after `currentId` (round-robin over isFree entries,
+ *  skipping the current one) — used to fall through the shared free rail
+ *  when one upstream 429s/404s. Returns undefined when `currentId` is not a
+ *  free catalog id or there is no other free entry to try. */
+export function nextFreeOpenRouterModelId(currentId: string): string | undefined {
+  const frees = OPENROUTER_MODELS.filter((m) => m.isFree).map((m) => m.id);
+  const idx = frees.indexOf(currentId);
+  if (idx === -1 || frees.length < 2) return undefined;
+  return frees[(idx + 1) % frees.length];
 }
 
 // Provider groups ordered: Z.ai (free), Anthropic, OpenAI, Google, xAI, DeepSeek, Meta
@@ -64,11 +86,27 @@ export const OPENROUTER_MODELS: readonly OpenRouterModel[] = [
   // and every client gate below treats them as always-ready. The privacy
   // trade-off (upstream provider may train on submitted data) is surfaced by
   // FreeModelPrivacyNotice at the point of selection.
-  // Confirmed working in real-app testing — used as the free rail default.
+  // Verified live on openrouter.ai/api/v1/models + /endpoints (2026-09-11) —
+  // every entry below has free-serving endpoints actually routable right now.
+  // The previous pair (MiniMax M3, GLM 5.2) was pulled upstream; the interim
+  // Nemotron replacements were listed but returned upstream_error_404 /
+  // reported 0 endpoints, so they joined RETIRED_OPENROUTER_IDS instead.
   {
     id: FREE_OPENROUTER_MODEL_ID,
-    label: 'MiniMax M3 (free)',
-    provider: 'MiniMax',
+    label: 'Gemma 4 31B (free)',
+    provider: 'Google',
+    tier: 'free',
+    reasoning: false,
+    priceIn: 0,
+    priceOut: 0,
+    maxTokens: 8192,
+    webSearch: false,
+    isFree: true,
+  },
+  {
+    id: 'nvidia/nemotron-3-ultra-550b-a55b:free',
+    label: 'Nemotron 3 Ultra 550B (free)',
+    provider: 'NVIDIA',
     tier: 'free',
     reasoning: true,
     priceIn: 0,
@@ -77,17 +115,28 @@ export const OPENROUTER_MODELS: readonly OpenRouterModel[] = [
     webSearch: false,
     isFree: true,
   },
-  // Kept in catalog despite current provider errors — may come back online.
   {
-    id: 'z-ai/glm-5.2:free',
-    label: 'GLM 5.2 (free)',
-    provider: 'Z.ai',
+    id: 'thinkingmachines/inkling:free',
+    label: 'Inkling (free)',
+    provider: 'Thinking Machines',
     tier: 'free',
     reasoning: true,
     priceIn: 0,
     priceOut: 0,
     maxTokens: 8192,
-    webSearch: true,
+    webSearch: false,
+    isFree: true,
+  },
+  {
+    id: 'nvidia/nemotron-3.5-lightning:free',
+    label: 'Nemotron 3.5 Lightning (free)',
+    provider: 'NVIDIA',
+    tier: 'free',
+    reasoning: true,
+    priceIn: 0,
+    priceOut: 0,
+    maxTokens: 8192,
+    webSearch: false,
     isFree: true,
   },
   // ── Z.ai — PAID (the bare `z-ai/glm-5.2` route requires credits; the free

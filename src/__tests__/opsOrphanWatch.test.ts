@@ -69,7 +69,39 @@ describe('pollBrainOpsOrphan', () => {
     const second = await pollBrainOpsOrphan({ projectId: 'proj', readStatus });
     expect(first).toEqual(orphan);
     expect(second).toEqual(orphan);
-    expect(opsOrphanFingerprint(orphan)).toContain('timed_out|dream|42');
+    // 2026-09-11: fingerprint identifies the orphan CONDITION (phase+step),
+    // not the snapshot — a freshly-timed-out dream with a new pid/updatedAt
+    // is the same recurring condition, not a new signal.
+    expect(opsOrphanFingerprint(orphan)).toBe('timed_out|dream');
     expect(readStatus).toHaveBeenCalledTimes(2);
+  });
+
+  it('does NOT re-emit for a new orphan cycle of the same step (the recurring dream/kill spam fix)', async () => {
+    const { emitEvent } = await import('../lib/journal/journal');
+    const orphan1 = status({ phase: 'timed_out', step: 'dream', pid: 42, updatedAt: '2026-09-03T01:00:00Z' });
+    // Next consolidation cycle: a NEW dream run timed out again — new pid,
+    // new updatedAt, same condition.
+    const orphan2 = status({ phase: 'timed_out', step: 'dream', pid: 99, updatedAt: '2026-09-03T02:00:00Z' });
+    const readStatus = vi.fn()
+      .mockResolvedValueOnce(orphan1)
+      .mockResolvedValueOnce(orphan2);
+    await pollBrainOpsOrphan({ projectId: 'proj', readStatus });
+    await pollBrainOpsOrphan({ projectId: 'proj', readStatus });
+    expect(vi.mocked(emitEvent)).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-arms the dedupe after a healthy status read (a recovered-then-orphaned dream IS a new signal)', async () => {
+    const { emitEvent } = await import('../lib/journal/journal');
+    const orphan = status({ phase: 'timed_out', step: 'dream', pid: 42 });
+    const healthy = status({ phase: 'idle' });
+    const orphanAgain = status({ phase: 'timed_out', step: 'dream', pid: 77 });
+    const readStatus = vi.fn()
+      .mockResolvedValueOnce(orphan)
+      .mockResolvedValueOnce(healthy)
+      .mockResolvedValueOnce(orphanAgain);
+    await pollBrainOpsOrphan({ projectId: 'proj', readStatus });
+    await pollBrainOpsOrphan({ projectId: 'proj', readStatus });
+    await pollBrainOpsOrphan({ projectId: 'proj', readStatus });
+    expect(vi.mocked(emitEvent)).toHaveBeenCalledTimes(2);
   });
 });

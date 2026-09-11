@@ -21,7 +21,7 @@
  * does the card settle on "Accepted", in lockstep with a real new user
  * bubble actually appearing.
  */
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { AgentsStoreProvider } from '../components/agents/agentsStore';
@@ -42,11 +42,18 @@ vi.mock('../lib/brain/capture', () => ({
   captureAgentMission: vi.fn(),
 }));
 
-vi.mock('../lib/agents/runtime', () => ({
-  runMission: vi.fn().mockResolvedValue(undefined),
-  mergeWorktree: vi.fn().mockResolvedValue(undefined),
-  discardWorktree: vi.fn().mockResolvedValue(undefined),
-}));
+// Partial mock — importOriginal keeps every other export (agentsStore
+// imports classifyMissionModel from this module for rail routing; a
+// mock without it throws mid-turn and silently eats the charter action).
+vi.mock('../lib/agents/runtime', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/agents/runtime')>();
+  return {
+    ...actual,
+    runMission: vi.fn().mockResolvedValue(undefined),
+    mergeWorktree: vi.fn().mockResolvedValue(undefined),
+    discardWorktree: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 vi.mock('../lib/agents/managerEngine', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../lib/agents/managerEngine')>();
@@ -57,6 +64,15 @@ vi.mock('../lib/agents/managerEngine', async (importOriginal) => {
 });
 
 const mockRunManagerTurn = vi.mocked(runManagerTurn);
+
+// jsdom resolves providerMode 'mock' whose default model is the free
+// OpenRouter rail — and managerTurnNeedsSession (managerSessionGate.ts)
+// then short-circuits the turn BEFORE runManagerTurn (unsigned web can
+// never reach the ai-proxy). Seed a native id so the exercised path is
+// the real send/queue mechanics this file exists for.
+beforeEach(() => {
+  localStorage.setItem('lazy.manager.model', 'claude-sonnet-5');
+});
 
 function Harness() {
   return (

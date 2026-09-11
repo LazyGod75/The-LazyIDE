@@ -167,20 +167,32 @@ interface ProviderGroupProps {
   locked: boolean;
   onSelect: (id: string) => void;
   t: (key: string) => string;
+  collapsed: boolean;
+  onToggle: () => void;
 }
 
-function ProviderGroup({ name, models, selectedId, locked, onSelect, t }: ProviderGroupProps) {
+function ProviderGroup({ name, models, selectedId, locked, onSelect, t, collapsed, onToggle }: ProviderGroupProps) {
   const color = PROVIDER_COLOR[name] ?? '#888';
   return (
     <div style={{ marginBottom: 8 }}>
-      {/* Provider header */}
-      <div
+      {/* Provider header — collapsible: a full Pro catalog expanded by
+          default was a wall of ~40 rows (real founder feedback: "ça scroll
+          bcp"). Only the group holding the current selection starts open. */}
+      <button
+        type="button"
+        onClick={onToggle}
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 7,
           padding: '4px 8px',
           marginBottom: 3,
+          width: '100%',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          textAlign: 'left',
         }}
       >
         <span
@@ -199,25 +211,31 @@ function ProviderGroup({ name, models, selectedId, locked, onSelect, t }: Provid
             color,
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
+            flex: 1,
           }}
         >
           {name}
         </span>
-      </div>
+        <span style={{ fontSize: 9, color: 'var(--color-text-muted)' }}>
+          {models.length} {collapsed ? '▸' : '▾'}
+        </span>
+      </button>
 
       {/* Model rows */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: 8 }}>
-        {models.map(model => (
-          <ModelRow
-            key={model.id}
-            model={model}
-            selected={selectedId === model.id}
-            locked={locked}
-            onSelect={() => onSelect(model.id)}
-            t={t}
-          />
-        ))}
-      </div>
+      {!collapsed && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: 8 }}>
+          {models.map(model => (
+            <ModelRow
+              key={model.id}
+              model={model}
+              selected={selectedId === model.id}
+              locked={locked}
+              onSelect={() => onSelect(model.id)}
+              t={t}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -317,6 +335,7 @@ export function ModelPicker() {
     initial.reasoningEffort ?? 'medium',
   );
   const [webSearch, setWebSearch] = useState<boolean>(initial.webSearch ?? false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   // Honest lock (v0.1.5 W2.8): evaluate the Pro engine SPECIFICALLY —
   // choosing the Pro radio is allowed so users can browse the offer, but
@@ -431,7 +450,8 @@ export function ModelPicker() {
         </div>
       )}
 
-      {/* Provider groups */}
+      {/* Provider groups — collapsed by default except the group holding
+          the current selection (see ProviderGroup's own comment). */}
       {PROVIDER_ORDER.map(providerName => {
         const models = OPENROUTER_MODELS_BY_PROVIDER[providerName];
         if (!models || models.length === 0) return null;
@@ -444,6 +464,8 @@ export function ModelPicker() {
             locked={locked}
             onSelect={handleSelectModel}
             t={t}
+            collapsed={collapsedGroups[providerName] ?? !models.some((m) => m.id === selectedId)}
+            onToggle={() => setCollapsedGroups((c) => ({ ...c, [providerName]: !(c[providerName] ?? !models.some((m) => m.id === selectedId)) }))}
           />
         );
       })}

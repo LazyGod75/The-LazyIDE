@@ -1614,7 +1614,25 @@ async fn devin_chat_stream_inner(
                 Ok(())
             }
             Err(e) => {
-                let msg = if stderr_text.is_empty() { e } else { format!("{e}\n\n{stderr_text}") };
+                // Devin's stderr is chisel INFO/DEBUG logging, not errors —
+                // appending it verbatim flooded the error bubble with
+                // "INFO chisel: logging initialized" noise (real QA). Keep
+                // only lines that are not timestamped log records.
+                let stderr_useful: String = stderr_text
+                    .lines()
+                    .filter(|l| {
+                        let t = l.trim();
+                        !t.is_empty()
+                            && !(t.contains(" INFO ")
+                                || t.contains(" DEBUG ")
+                                || t.contains(" TRACE ")
+                                || t.starts_with("INFO")
+                                || t.starts_with("DEBUG"))
+                    })
+                    .take(20)
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                let msg = if stderr_useful.is_empty() { e } else { format!("{e}\n\n{stderr_useful}") };
                 let _ = app2.emit(&error_event, &msg);
                 Err(msg)
             }
@@ -1627,6 +1645,39 @@ async fn devin_chat_stream_inner(
 /// One full ACP turn on an already-spawned `devin acp` child: handshake,
 /// session, mode, prompt. Returns the session/prompt result's usage object
 /// for the done event. All text arrives via on_update -> the emit closures.
+/// True for a devin-CLI internal log line leaked into the ACP chunk stream:
+/// "2026-09-11T03:25:53.581922Z WARN message_forest: MessageChain tree
+/// duplication…". These are telemetry, not agent output — they belong in the
+/// CLI's own log file, never in a user-facing bubble.
+fn is_devin_log_line(line: &str) -> bool {
+    let b = line.as_bytes();
+    // Cheap shape check: ISO-8601 UTC timestamp + space + LEVEL + space.
+    // Timestamps are fixed-width (YYYY-MM-DDTHH:MM:SS then fractional secs).
+    if b.len() < 26 || b[4] != b'-' || b[7] != b'-' || b[10] != b'T' {
+        return false;
+    }
+    let after_ts = match line.find(' ') {
+        Some(i) => &line[i + 1..],
+        None => return false,
+    };
+    for level in ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"] {
+        if after_ts.starts_with(level) && after_ts[level.len()..].starts_with(' ') {
+            return true;
+        }
+    }
+    false
+}
+
+/// Drop devin-CLI log lines from a chunk (keeping any real content around
+/// them). A chunk that is ONLY log lines reduces to empty — callers skip
+/// emitting it.
+fn strip_devin_log_lines(text: &str) -> String {
+    text.lines()
+        .filter(|l| !is_devin_log_line(l))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn devin_acp_turn(
     child: &mut std::process::Child,
     api_key: String,
@@ -1644,12 +1695,22 @@ fn devin_acp_turn(
         match update.get("sessionUpdate").and_then(|v| v.as_str()) {
             Some("agent_message_chunk") => {
                 if let Some(text) = update.pointer("/content/text").and_then(|v| v.as_str()) {
-                    let _ = app.emit(chunk_event, text);
+                    // The devin CLI leaks its own log lines (e.g.
+                    // "2026-09-11T03:25:53.581922Z WARN message_forest: …")
+                    // into the chunk stream — internal telemetry, not agent
+                    // output. Drop those lines so they never reach the bubble.
+                    let cleaned = strip_devin_log_lines(text);
+                    if !cleaned.is_empty() {
+                        let _ = app.emit(chunk_event, &cleaned);
+                    }
                 }
             }
             Some("agent_thought_chunk") => {
                 if let Some(text) = update.pointer("/content/text").and_then(|v| v.as_str()) {
-                    let _ = app.emit(chunk_event, &mark_reasoning_lines(text));
+                    let cleaned = strip_devin_log_lines(text);
+                    if !cleaned.is_empty() {
+                        let _ = app.emit(chunk_event, &mark_reasoning_lines(&cleaned));
+                    }
                 }
             }
             Some("tool_call") => {
@@ -2164,5 +2225,27 @@ mod tests {
     fn parse_anthropic_sse_ignores_input_json_delta() {
         let data = r#"{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"a\":"}}"#;
         assert!(parse_anthropic_sse(data).is_none());
+    }
+
+    // ── devin log-line stripping — the CLI leaks its own telemetry into the
+    // ACP chunk stream (real QA finding: a WARN message_forest line landed
+    // verbatim in the user's error bubble) ────────────────────────────────
+
+    #[test]
+    fn is_devin_log_line_matches_timestamped_level_lines() {
+        assert!(is_devin_log_line(
+            "2026-09-11T03:25:53.581922Z WARN message_forest: MessageChain tree duplication"
+        ));
+        assert!(is_devin_log_line("2026-09-11T03:25:53Z INFO foo: bar"));
+        assert!(!is_devin_log_line("The weekly quota is exhausted."));
+        assert!(!is_devin_log_line("WARN this is plain agent text, not a log"));
+        assert!(!is_devin_log_line(""));
+    }
+
+    #[test]
+    fn strip_devin_log_lines_keeps_real_content() {
+        let chunk = "real answer\n2026-09-11T03:25:53.581922Z WARN noise: x\nmore answer";
+        assert_eq!(strip_devin_log_lines(chunk), "real answer\nmore answer");
+        assert!(strip_devin_log_lines("2026-09-11T03:25:53Z ERROR e: m").is_empty());
     }
 }

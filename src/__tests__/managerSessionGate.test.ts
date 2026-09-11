@@ -6,10 +6,11 @@ import {
   managerTurnNeedsSession,
   formatManagerUserError,
 } from '../lib/agents/managerSessionGate';
+import { FREE_OPENROUTER_MODEL_ID } from '../lib/models/openrouterCatalog';
 
 describe('managerTurnNeedsSession', () => {
-  it('web mock + GLM 5.2 free tier needs a session (measured 2026-08-28; free rail is the :free id since the 2026-09-02 catalog split)', () => {
-    expect(managerTurnNeedsSession('z-ai/glm-5.2:free', 'mock')).toBe(true);
+  it('web mock + free rail tier needs a session (free rail rides the ai-proxy; id updated to the live default after the 2026-09-11 upstream pull)', () => {
+    expect(managerTurnNeedsSession(FREE_OPENROUTER_MODEL_ID, 'mock')).toBe(true);
   });
 
   it('web mock + native Claude id does not use the proxy', () => {

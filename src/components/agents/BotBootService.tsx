@@ -86,6 +86,31 @@ export function BotBootService() {
       schedulerRef.current = startBotScheduler({
         createMission,
         defaultModelId: resolveModel,
+        // Event triggers (git_commit / mission_done): HEAD via the zero-
+        // subprocess gix command, terminal missions from the journal.
+        getTriggerContext: async (sinceMs) => {
+          const root = getCachedProjectRoot();
+          let headSha: string | null = null;
+          if (root) {
+            const { invoke } = await import('@tauri-apps/api/core');
+            headSha = await invoke<string>('git_head_sha', { repoPath: root }).catch(() => null);
+          }
+          const { journalQuery } = await import('../../lib/journal/journal');
+          const { projectIdFromRoot } = await import('../../lib/journal/projectId');
+          const rows = await journalQuery({
+            projectId: root ? projectIdFromRoot(root) : undefined,
+            types: ['mission.completed', 'mission.failed'],
+            sinceMs,
+            limit: 50,
+          });
+          const terminalMissions = rows
+            .filter((r) => r.mission_id)
+            .map((r) => ({
+              id: r.mission_id as string,
+              status: (r.type === 'mission.completed' ? 'done' : 'failed') as 'done' | 'failed',
+            }));
+          return { headSha, terminalMissions };
+        },
         onRoutineFired: (bot, routine) => {
           toast(
             t('agents.notification.botRoutineFired', { bot: bot.name, routine: routine.name }),

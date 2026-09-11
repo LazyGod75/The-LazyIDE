@@ -102,7 +102,11 @@ const CRITICAL_WAKEUP_KINDS: ReadonlySet<WakeupEventKind> = new Set([
   'bot_completed',
   'bot_routine_failed',
   'review_failed',
-  'brain_ops_orphan',
+  // brain_ops_orphan deliberately NOT critical (2026-09-11): the dream/kill
+  // maintenance loop can recur every consolidation cycle — a bypass-cap
+  // wakeup each time burns a full manager turn to report infra noise the
+  // manager cannot act on. The journal event + FLUX trace stay; the wakeup
+  // still fires, just under the ordinary hourly cap instead of bypassing it.
 ]);
 
 export function isCriticalWakeupKind(kind: WakeupEventKind | string): boolean {

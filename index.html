@@ -22,7 +22,13 @@
     </div>
     <script>
       window.__lazyErrors = [];
+      // "ResizeObserver loop completed with undelivered notifications" is a
+      // benign browser artifact (an RO callback queued a same-frame
+      // notification) — not an app fault; keep it out of the error surface
+      // so the status bar's "frontend error" badge stays meaningful.
+      const BENIGN = /ResizeObserver loop/;
       window.addEventListener('error', (e) => {
+        if (BENIGN.test(e.message || '')) return;
         window.__lazyErrors.push({ type: 'error', message: e.message, filename: e.filename, line: e.lineno, stack: e.error?.stack?.slice(0, 800) });
       });
       window.addEventListener('unhandledrejection', (e) => {

@@ -47,7 +47,8 @@ export interface BotCapabilities {
 export interface BotRoutine {
   id: string;
   name: string;
-  /** Cron expression (e.g. "0 9 * * 1-5" = weekdays at 9am). */
+  /** Cron expression (e.g. "0 9 * * 1-5" = weekdays at 9am). Empty when the
+   *  routine is purely event-driven (see `trigger`). */
   schedule: string;
   /** The task prompt to run on each tick. */
   task: string;
@@ -55,7 +56,24 @@ export interface BotRoutine {
   enabled: boolean;
   /** Last run timestamp (ISO), or null if never run. */
   lastRunAt: string | null;
+  /** Optional event trigger — the routine fires when the event happens,
+   *  independent of (or instead of) the cron schedule. Deduped via
+   *  `lastTriggerToken` so the same event never fires twice. */
+  trigger?: BotRoutineTrigger;
+  /** Token of the last event that fired this routine (e.g. a commit SHA for
+   *  git triggers, a mission id for mission triggers). Persisted so a
+   *  restart never re-fires an already-seen event. */
+  lastTriggerToken?: string | null;
 }
+
+/** Event-driven trigger (Cursor Projects "subscriptions" parity, local-first):
+ *  the routine fires when something HAPPENS, not only on a clock tick.
+ *  - git_commit: a new HEAD lands on the project's current branch
+ *  - mission_done: a mission of this project reaches a terminal status
+ *    (arg = optional status filter 'done'|'failed', default both) */
+export type BotRoutineTrigger =
+  | { kind: 'git_commit' }
+  | { kind: 'mission_done'; status?: 'done' | 'failed' };
 
 /** A bot run — a mission launched by a bot (manual or routine). */
 export interface BotRun {

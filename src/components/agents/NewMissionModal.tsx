@@ -10,7 +10,7 @@ import {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { ALL_MODELS, DEFAULT_MODEL } from '../../lib/models/registry';
+import { ALL_MODELS } from '../../lib/models/registry';
 import { OPENROUTER_MODELS, findOpenRouterModel } from '../../lib/models/openrouterCatalog';
 import type { ReasoningEffort } from '../../lib/models/openrouterCatalog';
 import { getModelPickerOptions, noModelFallbackMessage, modelManagedByCodexMessage } from '../../lib/models/modelPickerOptions';
@@ -29,6 +29,8 @@ import { useAppContext } from '../../app/AppContext';
 import { emit } from '../../lib/bus';
 import { basename } from '../../lib/paths';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { ModelPickerDropdown } from '../common/ModelPickerDropdown';
+import { useDismissable } from '../common/useDismissable';
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -229,6 +231,20 @@ export function NewMissionModal({ isOpen, onClose }: NewMissionModalProps) {
   const pickerOptions = getModelPickerOptions(t);
   const firstInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  // Model picker popover state — the same useDismissable contract as the
+  // LazyManager header's (outside click + Escape close, trigger ignored so
+  // re-clicking toggles).
+  const [showModelPicker, setShowModelPicker] = useState(false);
+  const modelTriggerRef = useRef<HTMLButtonElement>(null);
+  const modelPopoverRef = useDismissable<HTMLDivElement>({
+    open: showModelPicker,
+    onClose: () => setShowModelPicker(false),
+    ignoreRefs: [modelTriggerRef],
+  });
+  const currentModelLabel =
+    [...pickerOptions.groups, ...(pickerOptions.lockedProGroup ? [pickerOptions.lockedProGroup] : [])]
+      .flatMap((g) => g.models)
+      .find((m) => m.id === form.modelId)?.label ?? form.modelId;
 
   const scopePaths = useMemo(() => parseScopePaths(form.scopePathsRaw), [form.scopePathsRaw]);
 
@@ -456,7 +472,12 @@ export function NewMissionModal({ isOpen, onClose }: NewMissionModalProps) {
     // id families the same way (OpenRouter ids always carry a '/').
     const orModel = OPENROUTER_MODELS.find(m => m.id === form.modelId);
     const nativeModel = ALL_MODELS.find(m => m.id === form.modelId);
-    const modelLabel = orModel ? orModel.id : (nativeModel ?? DEFAULT_MODEL).label;
+    // Devin-catalog and BYOK-provider ids live in NEITHER static catalog —
+    // a `(nativeModel ?? DEFAULT_MODEL).label` fallback silently rewrote
+    // them to "Claude Haiku 4.5" and the mission ran the wrong engine
+    // (real repro 2026-09-08: picked swe-2-medium, node showed Claude
+    // Haiku). Keep the raw id — classifyMissionModel() routes on it.
+    const modelLabel = orModel ? orModel.id : (nativeModel?.label ?? form.modelId);
 
     // T1.2 note: NewMissionInput (agentsStore.tsx, out of scope for this
     // task) has no `contract` field, and addMission's current
@@ -664,24 +685,51 @@ export function NewMissionModal({ isOpen, onClose }: NewMissionModalProps) {
             <label htmlFor="nm-model" style={S.label}>
               {t('agents.modal.labelModel')}
             </label>
-            <select
-              id="nm-model"
-              value={form.modelId}
-              onChange={e => updateField('modelId', e.target.value)}
-              disabled={!pickerOptions.hasOptions}
-              style={S.select}
-            >
-              {pickerOptions.groups.map(group => (
-                <optgroup key={group.id} label={group.label}>
-                  {group.models.map(m => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}
-                      {m.description ? ` — ${m.description}` : ''}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+            {/* Shared searchable picker — a native <select> over the full
+                catalog (Devin's ACP list alone is ~80-240 entries) was a
+                scroll wall; the popover gives search + collapsed groups. */}
+            <div style={{ position: 'relative' }}>
+              <button
+                id="nm-model"
+                type="button"
+                ref={modelTriggerRef}
+                onClick={() => setShowModelPicker((v) => !v)}
+                disabled={!pickerOptions.hasOptions}
+                style={{
+                  ...S.select,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  cursor: pickerOptions.hasOptions ? 'pointer' : 'default',
+                }}
+              >
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {currentModelLabel}
+                </span>
+                <span style={{ fontSize: 8, opacity: 0.6, flexShrink: 0 }}>▾</span>
+              </button>
+              {showModelPicker && (
+                <div ref={modelPopoverRef}>
+                  <ModelPickerDropdown
+                    groups={pickerOptions.groups}
+                    lockedGroup={pickerOptions.lockedProGroup}
+                    currentId={form.modelId}
+                    direction="down"
+                    onSelect={(id) => updateField('modelId', id)}
+                    onClose={() => setShowModelPicker(false)}
+                    t={t}
+                    emptyMessage={
+                      pickerOptions.emptyReadiness?.reason
+                        ? t(engineReasonKey(pickerOptions.emptyReadiness.reason))
+                        : pickerOptions.codexManaged
+                          ? modelManagedByCodexMessage(t)
+                          : noModelFallbackMessage(t)
+                    }
+                  />
+                </div>
+              )}
+            </div>
             {!pickerOptions.hasOptions && (
               <span style={S.warnMsg}>
                 {pickerOptions.emptyReadiness?.reason
@@ -691,9 +739,16 @@ export function NewMissionModal({ isOpen, onClose }: NewMissionModalProps) {
                     : noModelFallbackMessage(t)}
               </span>
             )}
-            {pickerOptions.hasOptions && pickerOptions.proExhausted && (
-              <span style={S.hint}>{t(engineReasonKey('pro-no-credits'))}</span>
-            )}
+            {/* Pro-exhausted hint only matters when the SELECTED model is
+                actually credit-metered (managed rail, non-:free) — under a
+                BYOK/CLI/Devin pick it reads as a false blocker (real QA:
+                it rendered under a DeepSeek BYOK selection). */}
+            {pickerOptions.hasOptions &&
+              pickerOptions.proExhausted &&
+              classifyMissionModel(form.modelId) === 'managed' &&
+              !form.modelId.endsWith(':free') && (
+                <span style={S.hint}>{t(engineReasonKey('pro-no-credits'))}</span>
+              )}
           </div>
 
           {/* Reasoning effort — only shown when the selected model supports

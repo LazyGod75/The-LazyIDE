@@ -31,13 +31,18 @@ describe('estimateUsageUsd', () => {
   });
 
   it('charges nothing for a free catalog model', () => {
-    expect(estimateUsageUsd('z-ai/glm-5.2', 50_000, 2_000)).toBe(0);
-    expect(estimateUsageUsd('z-ai/glm-5.2:free', 50_000, 2_000)).toBe(0);
+    expect(estimateUsageUsd('google/gemma-4-31b-it:free', 50_000, 2_000)).toBe(0);
   });
 
-  it('does not bill the paid glm-5.2 route when the :free sibling exists (10k/12k used to be $0.0087)', () => {
-    expect(estimateUsageUsd('z-ai/glm-5.2', 10_000, 12_000)).toBe(0);
-    expect(catalogRatesFor('z-ai/glm-5.2')).toEqual({ priceIn: 0, priceOut: 0 });
+  it('bills the paid glm-5.2 route now that its :free sibling is retired (the sibling-zeroing only applied while a real free route existed)', () => {
+    expect(estimateUsageUsd('z-ai/glm-5.2', 10_000, 12_000)).toBeCloseTo(0.15 * 0.01 + 0.6 * 0.012, 5);
+    expect(catalogRatesFor('z-ai/glm-5.2')).toEqual({ priceIn: 0.15, priceOut: 0.6 });
+  });
+
+  it('zeroes the bare short name of a live free route (gemma-4-31b)', () => {
+    // 'gemma-4-31b-it' resolves to its :free catalog entry via the short-base
+    // match — a free route always prices at 0.
+    expect(catalogRatesFor('gemma-4-31b-it')).toEqual({ priceIn: 0, priceOut: 0 });
   });
 
   it('uses the historical Haiku fallback only when the id is unknown', () => {

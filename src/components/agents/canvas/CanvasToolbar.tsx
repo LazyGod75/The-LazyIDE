@@ -31,6 +31,7 @@
 */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { SafeResizeObserver } from '../../../lib/safeResizeObserver';
 import { Panel, useReactFlow, useViewport, getNodesBounds, getViewportForBounds } from '@xyflow/react';
 import { useI18n } from '../../../i18n';
 import { emit } from '../../../lib/bus';
@@ -1032,7 +1033,7 @@ export function CanvasToolbar({
     const containerEl = toolbarRootRef.current?.closest('[data-testid="canvas-view"]');
     if (!(containerEl instanceof HTMLElement) || typeof ResizeObserver === 'undefined') return;
     isFirstResizeRef.current = true;
-    const observer = new ResizeObserver(() => {
+    const observer = new SafeResizeObserver(() => {
       if (isFirstResizeRef.current) {
         isFirstResizeRef.current = false;
         return;

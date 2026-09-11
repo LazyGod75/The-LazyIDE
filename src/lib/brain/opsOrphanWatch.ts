@@ -27,18 +27,49 @@ export function isOpsOrphan(status: BrainOpsStatus, nowMs = Date.now()): boolean
 }
 
 export function opsOrphanFingerprint(status: BrainOpsStatus): string {
-  return `${status.phase}|${status.step ?? ''}|${status.pid ?? ''}|${status.updatedAt}`;
+  // Identity of the orphan CONDITION, not of this status snapshot: pid +
+  // updatedAt used to be part of it, which made every freshly-timed-out
+  // dream a "new" fingerprint — the recurring dream/kill cycle emitted a
+  // journal event (and woke the manager) every ~10 minutes forever.
+  return `${status.phase}|${status.step ?? ''}`;
 }
 
-let lastEmittedFingerprint: string | null = null;
+/** Persisted so an already-reported orphan does not re-emit after an HMR
+ *  module reload or an app restart — the timed_out status lives in
+ *  ops-status.json until the next maintenance run overwrites it, and an
+ *  in-memory-only dedupe re-fired once per reload (real incident:
+ *  "dream killed after 600s" journaled ~every poll after each reload). */
+const LAST_FP_STORAGE_KEY = 'lazy.opsOrphan.lastFingerprint';
+
+let lastEmittedFingerprint: string | null = loadPersistedFingerprint();
+
+function loadPersistedFingerprint(): string | null {
+  try {
+    return globalThis.localStorage?.getItem(LAST_FP_STORAGE_KEY) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function persistFingerprint(fp: string | null): void {
+  try {
+    if (fp === null) globalThis.localStorage?.removeItem(LAST_FP_STORAGE_KEY);
+    else globalThis.localStorage?.setItem(LAST_FP_STORAGE_KEY, fp);
+  } catch {
+    /* storage unavailable (tests, privacy mode) — in-memory dedupe still applies */
+  }
+}
 
 /** Reset dedupe (tests). */
 export function resetOpsOrphanDedupe(): void {
   lastEmittedFingerprint = null;
+  persistFingerprint(null);
 }
 
 /**
- * Read live ops status; if orphaned, emit bus + journal once per fingerprint.
+ * Read live ops status; if orphaned, emit bus + journal once per orphan
+ * condition. The dedupe RE-ARMS on any non-orphan status read — a dream
+ * that recovers and later orphans again IS a new signal worth reporting.
  * Returns the status when an orphan was reported, else null.
  */
 export async function pollBrainOpsOrphan(opts: {
@@ -48,11 +79,20 @@ export async function pollBrainOpsOrphan(opts: {
 }): Promise<BrainOpsStatus | null> {
   const read = opts.readStatus ?? readBrainOpsStatus;
   const status = await read();
-  if (!status || !isOpsOrphan(status, opts.nowMs ?? Date.now())) return null;
+  if (!status || !isOpsOrphan(status, opts.nowMs ?? Date.now())) {
+    // Re-arm: a healthy/absent status means the previous orphan condition
+    // resolved — the NEXT orphan must report fresh, not stay deduped away.
+    if (lastEmittedFingerprint !== null) {
+      lastEmittedFingerprint = null;
+      persistFingerprint(null);
+    }
+    return null;
+  }
 
   const fp = opsOrphanFingerprint(status);
   if (fp === lastEmittedFingerprint) return status;
   lastEmittedFingerprint = fp;
+  persistFingerprint(fp);
 
   const detail =
     status.detail ??

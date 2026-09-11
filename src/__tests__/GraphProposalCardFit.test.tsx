@@ -53,6 +53,16 @@ beforeEach(() => {
   vi.stubGlobal('ResizeObserver', MockResizeObserver as unknown as typeof ResizeObserver);
 });
 
+// SafeResizeObserver (src/lib/safeResizeObserver.ts) delivers observer
+// callbacks on the next animation frame, not synchronously — after each
+// trigger() a test must flush one frame before asserting on the state the
+// callback produces.
+async function flushRo() {
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 40));
+  });
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -146,6 +156,7 @@ describe('GraphProposalCard — dense-mode threshold gates on the rendered node 
     const observer = MockResizeObserver.instances[0];
     expect(observer).toBeDefined();
     await act(async () => observer!.trigger(769));
+    await flushRo();
 
     const firstNode = screen.getByTestId('graph-proposal-node-s0');
     // No text box inside the node anymore — the numbered badge + glyph
@@ -161,6 +172,7 @@ describe('GraphProposalCard — dense-mode threshold gates on the rendered node 
     const svg = await screen.findByTestId('graph-proposal-minigraph', {}, { timeout: 5_000 });
     const observer = MockResizeObserver.instances[0];
     await act(async () => observer!.trigger(244));
+    await flushRo();
 
     expect(svg.getAttribute('data-dense')).toBe('true');
     const firstNode = screen.getByTestId('graph-proposal-node-s0');
@@ -194,6 +206,7 @@ describe('GraphProposalCard — the successful graph fits the panel (fix #7)', (
     const observer = MockResizeObserver.instances[0];
     expect(observer).toBeDefined();
     await act(async () => observer!.trigger(300));
+    await flushRo();
 
     expect(svg.getAttribute('data-dense')).toBe('true');
     // The free-text label is gone from the rendered pixels — scoped to
@@ -214,9 +227,11 @@ describe('GraphProposalCard — the successful graph fits the panel (fix #7)', (
     await screen.findByTestId('graph-proposal-minigraph', {}, { timeout: 5_000 });
     const observer = MockResizeObserver.instances[0];
     await act(async () => observer!.trigger(300));
+    await flushRo();
     expect(screen.getByTestId('graph-proposal-minigraph').getAttribute('data-dense')).toBe('true');
 
     await act(async () => observer!.trigger(3000));
+    await flushRo();
     const svg = screen.getByTestId('graph-proposal-minigraph');
     expect(svg.getAttribute('width')).toBe('100%');
     expect(svg.getAttribute('data-dense')).toBeNull();
@@ -233,22 +248,26 @@ describe('GraphProposalCard — the successful graph fits the panel (fix #7)', (
 
     // Narrow -> dense.
     await act(async () => observer!.trigger(280));
+    await flushRo();
     expect(svg.getAttribute('data-dense')).toBe('true');
 
     // Dragged wider -> exits dense.
     await act(async () => observer!.trigger(2500));
+    await flushRo();
     expect(svg.getAttribute('data-dense')).toBeNull();
 
     // Dragged back narrow -> dense again (not a one-way/hysteresis switch —
     // this is exactly what a live drag-to-resize needs: the SAME width
     // always produces the SAME density, in either direction).
     await act(async () => observer!.trigger(280));
+    await flushRo();
     expect(svg.getAttribute('data-dense')).toBe('true');
 
     // And back wide again, to a DIFFERENT generous width than before —
     // still responsive, still exits dense, proving this isn't a fixed
     // two-state toggle but a continuous function of the real width.
     await act(async () => observer!.trigger(1800));
+    await flushRo();
     expect(svg.getAttribute('width')).toBe('100%');
     expect(svg.getAttribute('data-dense')).toBeNull();
   });

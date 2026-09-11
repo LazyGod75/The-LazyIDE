@@ -609,6 +609,10 @@ export const de: TranslationDict = {
   'models.picker.freeLabel': 'Gratis · Ox Alpha',
   'models.picker.proLabel': 'LazyPro / Verwaltet',
   'models.picker.devinLabel': 'Devin CLI',
+  'models.picker.search': 'Modelle suchen…',
+  'models.picker.noMatch': 'Kein Modell passt zu „{query}“',
+  'models.picker.lockedHint': 'Pro',
+  'models.picker.recent': 'Zuletzt',
   'models.picker.noModelFallback': 'Kein Modell verfügbar — richte ein Claude-Abonnement oder Lazy Pro ein.',
   'models.picker.codexManaged': 'Codex verwaltet seine eigenen Modelle — die Modellauswahl ist hier nicht anwendbar.',
 

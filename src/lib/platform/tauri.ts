@@ -117,10 +117,14 @@ const nativeTerminal: Terminal = {
     const dataCallbacks: Array<(data: string) => void> = [];
     const exitCallbacks: Array<(code: number) => void> = [];
 
-    // Subscribe to PTY output events from Rust
+    // Subscribe to PTY output events from Rust BEFORE signalling attach —
+    // the shell's first banner can be emitted while this listen() is still
+    // resolving; Rust buffers those bytes until terminal_attach flushes
+    // them, so the first prompt is never dropped (blank-pane bug).
     const unlisten = await listen<string>(`terminal://output/${id}`, (event) => {
       dataCallbacks.forEach((cb) => cb(event.payload));
     });
+    invoke('terminal_attach', { id }).catch(() => {});
 
     return {
       // TerminalProcess does not expose a real pid from the PTY; use 0 as

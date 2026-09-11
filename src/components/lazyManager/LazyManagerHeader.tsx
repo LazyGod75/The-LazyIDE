@@ -10,9 +10,11 @@ import { useLazyManagerStoreOptional } from './lazyManagerStore';
 import { useDismissable } from '../common/useDismissable';
 import type { ManagerMode } from './lazyManagerStore';
 import { useAgentsStoreOptional } from '../agents/agentsStore';
-import { getProviderMode, hasManagedCreditsActive, resolveByokDef, loadAccessSettings } from '../../lib/models';
-import { detectModelEntitlements, buildModelPickerOptions, isSelectablePickerModel } from '../../lib/models/modelPickerOptions';
-import { findOpenRouterModel } from '../../lib/models/openrouterCatalog';
+import { getProviderMode, hasManagedCreditsActive, resolveByokDef, loadAccessSettings, isCliBackendAvailable } from '../../lib/models';
+import { detectModelEntitlements, buildModelPickerOptions, isSelectablePickerModel, isModelRailPending, modelManagedByCodexMessage, noModelFallbackMessage } from '../../lib/models/modelPickerOptions';
+import { engineReasonKey } from '../../lib/models/entitlement';
+import { ModelPickerDropdown } from '../common/ModelPickerDropdown';
+import { findOpenRouterModel, isOpenRouterFreeModel, migrateRetiredOpenRouterId } from '../../lib/models/openrouterCatalog';
 import { useSubscriptionContext, formatRenewalDate } from '../../lib/billing';
 import { emit, on } from '../../lib/bus';
 import type { AutonomyMode } from '../../lib/agents/types';
@@ -101,7 +103,9 @@ interface LazyManagerHeaderProps {
   onShowHistory: () => void;
   onNewSession: () => void;
   disabled: boolean;
-  modelSelectRef: React.RefObject<HTMLSelectElement | null>;
+  /** Ref on the model-picker trigger — LazyManager.tsx's onFocusModel calls
+   *  .focus() on it (a button now, not a select; see the picker below). */
+  modelSelectRef: React.RefObject<HTMLElement | null>;
   autonomyLevel: AutonomyMode;
   onAutonomyChange: (mode: AutonomyMode) => void;
   phase: 'idle' | 'turn' | 'grounding' | 'streaming' | 'queued';
@@ -227,6 +231,17 @@ export function LazyManagerHeader({
     ignoreRefs: [acceptanceTriggerRef],
   });
 
+  // Model picker popover — same useDismissable contract as the acceptance
+  // popover above (outside click + Escape close; the trigger is in
+  // ignoreRefs so re-clicking it toggles instead of fighting the outside-
+  // pointerdown listener).
+  const [showModelPicker, setShowModelPicker] = useState(false);
+  const modelPickerPopoverRef = useDismissable<HTMLDivElement>({
+    open: showModelPicker,
+    onClose: () => setShowModelPicker(false),
+    ignoreRefs: [modelSelectRef],
+  });
+
   // "+ Nouvelle" busy-dot safety timeout (real user report: the pill read
   // grey/stuck for 30s+ with no turn actually running). Multi-conversation
   // LazyManager (wave 1, 2026-08-01) already made the button's own
@@ -298,13 +313,46 @@ export function LazyManagerHeader({
   // honesty fix would stay selected and keep failing CLI. Snap to the
   // first unlocked option. Depends on the model id, not pickerOptions
   // identity — that object is rebuilt every render.
+  // CLI probe states as effect inputs — detection completion re-renders via
+  // the cli-availability store update, and these changing null->bool is what
+  // lets the reset below re-run once the picker's groups are complete.
+  const devinAvail = isCliBackendAvailable('devin');
+  const claudeAvail = isCliBackendAvailable('claude');
+  const codexAvail = isCliBackendAvailable('codex');
   useEffect(() => {
     if (!agents) return;
     if (isSelectablePickerModel(agents.managerModel)) return;
+    // Detection-pending guard (real repro 2026-09-08): at cold boot the CLI
+    // backend probes haven't settled yet — isCliBackendAvailable returns
+    // null and the devin/claude-sub groups are absent from the picker, so a
+    // persisted swe-2-* or claude-* id LOOKS non-selectable. Resetting in
+    // that window silently rewrote the manager onto a different rail
+    // (persisted swe-2-medium -> BYOK DeepSeek -> the next turn 402'd on an
+    // empty BYOK balance). Defer the reset until the relevant probe has
+    // settled; once it resolves, this effect re-runs via the dep change and
+    // either finds the model selectable or resets it for real.
+    if (isModelRailPending(agents.managerModel)) return;
     agents.setManagerModel(pickerOptions.defaultModelId);
-  }, [agents, agents?.managerModel, pickerOptions.defaultModelId]);
+  }, [agents, agents?.managerModel, pickerOptions.defaultModelId, devinAvail, claudeAvail, codexAvail]);
 
-  const isSelectedModelProRouted = Boolean(findOpenRouterModel(agents?.managerModel ?? ''));
+  // Free OpenRouter ids route through the ai-proxy but never consume
+  // credits (isOpenRouterFreeModel — same exemption the send path applies
+  // at the credits gate) — the exhausted hint must not scare users off a
+  // model that costs nothing.
+  const isSelectedModelProRouted =
+    Boolean(findOpenRouterModel(agents?.managerModel ?? '')) &&
+    !isOpenRouterFreeModel(agents?.managerModel ?? '');
+  // Trigger label for the model picker: the selected model's display label
+  // when its id is in a picker group, else the raw id (a persisted choice
+  // whose catalog entry is gone) — never blank. migrateRetiredOpenRouterId
+  // first: a retired persisted id (e.g. minimax-m3:free after the 2026-09-11
+  // upstream pull) must render its MIGRATED label, not the dead raw id.
+  const migratedManagerModel = migrateRetiredOpenRouterId(agents?.managerModel ?? '');
+  const currentModelLabel =
+    pickerOptions.groups.flatMap((g) => g.models).find((m) => m.id === migratedManagerModel)?.label
+    ?? pickerOptions.lockedProGroup?.models.find((m) => m.id === migratedManagerModel)?.label
+    ?? agents?.managerModel
+    ?? t('models.picker.noModelFallback');
   const creditsRenewalDate = formatRenewalDate(subscription?.period_end, locale);
   const creditsHintText =
     pickerOptions.proExhausted && isSelectedModelProRouted
@@ -864,53 +912,59 @@ export function LazyManagerHeader({
           </div>
         )}
 
-        {/* Model picker — changes based on mode */}
+        {/* Model picker — searchable popover (ModelPickerDropdown), not a
+            native <select>: the Devin catalog alone is ~80-240 entries, a
+            flat optgroup list is unusable at that size. Same trigger id as
+            before (manager-model-select) — tests and onFocusModel's
+            .focus() both still land on it. */}
         {mode === 'orchestrator' ? (
-          <select
-            ref={modelSelectRef}
-            data-testid="manager-model-select"
-            value={agents?.managerModel ?? ''}
-            onChange={e => agents?.setManagerModel(e.target.value)}
-            disabled={!pickerOptions.hasOptions}
-            style={modelPickerStyle}
-          >
-            {pickerOptions.groups.map(group => (
-              <optgroup
-                key={group.id}
-                label={group.label}
-                style={{ backgroundColor: 'var(--color-panel-2)', color: 'var(--color-accent-pale)' }}
-              >
-                {group.models.map(m => (
-                  <option
-                    key={m.id}
-                    value={m.id}
-                    data-testid="manager-model-option"
-                    style={{ backgroundColor: 'var(--color-panel-2)', color: 'var(--color-text)' }}
-                  >
-                    {m.label}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-            {pickerOptions.lockedProGroup && (
-              <optgroup
-                label={pickerOptions.lockedProGroup.label}
-                style={{ backgroundColor: 'var(--color-panel-2)', color: 'var(--color-accent-pale)' }}
-              >
-                {pickerOptions.lockedProGroup.models.map(m => (
-                  <option
-                    key={m.id}
-                    value={m.id}
-                    disabled
-                    data-testid="manager-model-option-locked"
-                    style={{ backgroundColor: 'var(--color-panel-2)', color: 'var(--color-text-muted)' }}
-                  >
-                    {m.label}
-                  </option>
-                ))}
-              </optgroup>
+          <div style={{ position: 'relative', ...(tier === 'wide' ? {} : { width: '100%', flexBasis: '100%' }) }}>
+            <button
+              ref={modelSelectRef as React.RefObject<HTMLButtonElement>}
+              type="button"
+              data-testid="manager-model-select"
+              onClick={() => setShowModelPicker((v) => !v)}
+              // NO onFocus-open here (real user bug, 2026-09-11): a mouse
+              // click fires focus BEFORE click — focus would open the
+              // picker, then this same gesture's click would toggle it
+              // straight back shut, so it flashed open and closed
+              // instantly. Keyboard users don't lose anything: Enter/Space
+              // on a focused button fires click, which toggles it open.
+              disabled={!pickerOptions.hasOptions}
+              style={{
+                ...modelPickerStyle,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 8, textAlign: 'left', cursor: pickerOptions.hasOptions ? 'pointer' : 'default',
+              }}
+            >
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {currentModelLabel}
+              </span>
+              <span style={{ fontSize: 8, opacity: 0.6, flexShrink: 0 }}>▾</span>
+            </button>
+            {showModelPicker && (
+              <div ref={modelPickerPopoverRef}>
+                <ModelPickerDropdown
+                  groups={pickerOptions.groups}
+                  lockedGroup={pickerOptions.lockedProGroup}
+                  currentId={agents?.managerModel ?? ''}
+                  direction="down"
+                  onSelect={(id) => agents?.setManagerModel(id)}
+                  onClose={() => setShowModelPicker(false)}
+                  t={t}
+                  optionTestId="manager-model-option"
+                  lockedOptionTestId="manager-model-option-locked"
+                  emptyMessage={
+                    pickerOptions.emptyReadiness?.reason
+                      ? t(engineReasonKey(pickerOptions.emptyReadiness.reason))
+                      : pickerOptions.codexManaged
+                        ? modelManagedByCodexMessage(t)
+                        : noModelFallbackMessage(t)
+                  }
+                />
+              </div>
             )}
-          </select>
+          </div>
         ) : (
           <span style={{
             ...modelPickerStyle, border: 'none', padding: 0,

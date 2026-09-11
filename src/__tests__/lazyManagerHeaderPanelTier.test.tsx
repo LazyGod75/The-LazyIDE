@@ -15,7 +15,7 @@
  * visual check is out of this file's reach.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import React, { createRef } from 'react';
 import { I18nProvider } from '../i18n';
 import { LazyManagerStoreProvider } from '../components/lazyManager/lazyManagerStore';
@@ -135,5 +135,28 @@ describe('LazyManagerHeader — tier="compact"/"narrow" (deliberate two-row layo
     const select = screen.getByTestId('manager-model-select');
     expect(select.style.width).toBe('100%');
     expect(select.style.marginLeft).toBe('0px');
+  });
+});
+
+describe('LazyManagerHeader — model picker open/close (real user bug, 2026-09-11)', () => {
+  it('a real mouse click sequence (focus → click) leaves the picker OPEN', () => {
+    // The trigger used to carry BOTH onFocus={open} and onClick={toggle}:
+    // a mouse click fires focus first (opening the picker), then the click
+    // toggled it straight back shut — the picker flashed and "se ferme
+    // direct". This pins the real browser event order.
+    renderHeader('wide');
+    const trigger = screen.getByTestId('manager-model-select');
+    fireEvent.focus(trigger);
+    fireEvent.click(trigger);
+    expect(screen.getByTestId('model-picker-search')).toBeInTheDocument();
+  });
+
+  it('a second click closes it (toggle still works)', () => {
+    renderHeader('wide');
+    const trigger = screen.getByTestId('manager-model-select');
+    fireEvent.click(trigger);
+    expect(screen.getByTestId('model-picker-search')).toBeInTheDocument();
+    fireEvent.click(trigger);
+    expect(screen.queryByTestId('model-picker-search')).not.toBeInTheDocument();
   });
 });

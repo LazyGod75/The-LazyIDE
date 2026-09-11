@@ -57,23 +57,42 @@ beforeEach(() => {
 });
 
 describe('sendManagerMessage — real turn cost visibility (no fabrication)', () => {
-  it('attaches a measured approxCreditsUsed when the backend actually reported usage this turn', async () => {
+  it('attaches a measured approxCreditsUsed when the backend actually reported usage this turn on a credit-metered (managed) rail', async () => {
     const { result } = renderHook(() => useAgentsStore(), { wrapper });
 
     vi.mocked(runManagerTurn).mockImplementationOnce(async () => {
-      // Simulates what managedProvider.ts/claudeCodeProvider.ts really do:
+      // Simulates what managedProvider.ts really does:
       // addUsage() is called synchronously before the awaited call resolves.
-      addUsage({ inputTokens: 200, outputTokens: 3_000, model: 'haiku' });
+      addUsage({ inputTokens: 200, outputTokens: 3_000, model: 'anthropic/claude-sonnet-5' });
       return { responseText: 'Done.', actions: [], rawResponse: '' };
     });
 
     await act(async () => {
-      await result.current.sendManagerMessage(result.current.activeConversationId, 'do something', 'haiku');
+      await result.current.sendManagerMessage(result.current.activeConversationId, 'do something', 'anthropic/claude-sonnet-5');
     });
 
     const lastMsg = result.current.managerMessages[result.current.managerMessages.length - 1];
     expect(lastMsg.approxCreditsUsed).toBeDefined();
     expect(lastMsg.approxCreditsUsed).toBeGreaterThan(0);
+  });
+
+  it('a CLI-subscription (native/devin) or BYOK turn reports usage but shows NO credits — they are not metered by Lazy', async () => {
+    const { result } = renderHook(() => useAgentsStore(), { wrapper });
+
+    vi.mocked(runManagerTurn).mockImplementationOnce(async () => {
+      // The CLI backend DOES call addUsage (token counts feed the session
+      // ledger/budget) — but the "credits" chip must stay off: a flat-rate
+      // subscription turn never consumes Lazy credits.
+      addUsage({ inputTokens: 200, outputTokens: 3_000, model: 'swe-2-medium' });
+      return { responseText: 'Done.', actions: [], rawResponse: '' };
+    });
+
+    await act(async () => {
+      await result.current.sendManagerMessage(result.current.activeConversationId, 'do something', 'swe-2-medium');
+    });
+
+    const lastMsg = result.current.managerMessages[result.current.managerMessages.length - 1];
+    expect(lastMsg.approxCreditsUsed).toBeUndefined();
   });
 
   it('leaves approxCreditsUsed undefined when no measurable usage was reported — never a fabricated number', async () => {

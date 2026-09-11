@@ -612,6 +612,10 @@ export const ja: TranslationDict = {
   'models.picker.noModelFallback': '利用可能なモデルがありません — Claude サブスクリプションまたは Lazy Pro を設定してください。',
   'models.picker.codexManaged': 'Codex は独自にモデルを管理します — ここでのモデル選択は適用されません。',
   'models.picker.devinLabel': 'Devin CLI',
+  'models.picker.search': 'モデルを検索…',
+  'models.picker.noMatch': '「{query}」に一致するモデルがありません',
+  'models.picker.lockedHint': 'Pro',
+  'models.picker.recent': '最近',
 
   // ── アシスタント ─────────────────────────────────────────────
   'assistant.brainNotRunning': '結果がありません — Brain がポート {port} で動作しているか確認してください',
