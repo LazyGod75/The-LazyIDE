@@ -325,7 +325,10 @@ export async function reconcileIndex(
         deleteNote(row.id);
         ghostRowsDeleted += 1;
       } catch (err) {
-        log.warn({ id: row.id, err: (err as Error).message }, 'reindex --missing: ghost delete failed');
+        log.warn(
+          { id: row.id, err: (err as Error).message },
+          'reindex --missing: ghost delete failed',
+        );
       }
     }
   }
@@ -357,9 +360,7 @@ export async function reconcileIndex(
   const reconciled = indexedNotesAfter === expectedRowsAfter;
   const reconciliationNote = reconciled
     ? null
-    : `rows_before(${indexedRowsBefore.length}) + indexed(${indexed}) - ghost_rows_deleted(${ghostRowsDeleted}) ` +
-      `= ${expectedRowsAfter}, but rows_after = ${indexedNotesAfter} (diff ${indexedNotesAfter - expectedRowsAfter}). ` +
-      'This means the run touched the notes table in a way its own counters did not account for — investigate before trusting this run.';
+    : `rows_before(${indexedRowsBefore.length}) + indexed(${indexed}) - ghost_rows_deleted(${ghostRowsDeleted}) = ${expectedRowsAfter}, but rows_after = ${indexedNotesAfter} (diff ${indexedNotesAfter - expectedRowsAfter}). This means the run touched the notes table in a way its own counters did not account for — investigate before trusting this run.`;
 
   const report: ReindexMissingReport = {
     dryRun,
@@ -444,14 +445,16 @@ function formatReport(report: ReindexMissingReport): string {
   }
   w.push(`  Ghost rows:              ${report.ghost_rows}`);
   if (!report.dryRun) {
-    w.push(`  Ghost rows deleted:      ${report.ghost_rows_deleted}${report.ghost_rows_deleted === 0 && report.ghost_rows > 0 ? ' (pass --delete-ghosts to remove)' : ''}`);
+    w.push(
+      `  Ghost rows deleted:      ${report.ghost_rows_deleted}${report.ghost_rows_deleted === 0 && report.ghost_rows > 0 ? ' (pass --delete-ghosts to remove)' : ''}`,
+    );
   }
   w.push(`  Indexed rows after:      ${report.indexed_notes_after}`);
   w.push(
     `  Remaining unindexed:     ${report.remaining_unindexed_after}${report.remaining_unindexed_after > 0 ? ' (re-diffed post-run — see failures below)' : ''}`,
   );
   w.push(
-    `  Reconciled:              ${report.reconciled ? 'yes' : 'NO — ' + report.reconciliation_note}`,
+    `  Reconciled:              ${report.reconciled ? 'yes' : `NO — ${report.reconciliation_note}`}`,
   );
   w.push(`  Duration:                ${report.duration_ms}ms`);
   w.push('  ════════════════════════════════════════════');

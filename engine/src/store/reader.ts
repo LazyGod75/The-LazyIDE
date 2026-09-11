@@ -205,7 +205,10 @@ interface DiskNoteEntry {
   readonly path: string;
 }
 
-const monthDirEntriesCache = new Map<string, { mtimeMs: number; entries: readonly DiskNoteEntry[] }>();
+const monthDirEntriesCache = new Map<
+  string,
+  { mtimeMs: number; entries: readonly DiskNoteEntry[] }
+>();
 
 function entriesInDir(root: string): DiskNoteEntry[] {
   let entries: import('node:fs').Dirent[];

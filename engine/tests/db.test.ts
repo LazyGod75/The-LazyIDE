@@ -6,10 +6,10 @@
  */
 
 import { mkdirSync, mkdtempSync } from 'node:fs';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { getDb, getReadonlyDb, closeDb } from '../src/indexer/db.js';
+import { closeDb, getDb, getReadonlyDb } from '../src/indexer/db.js';
 import { resetConfigForTests } from '../src/util/config.js';
 
 describe('db — SQLite connection pragmas', () => {
@@ -52,7 +52,10 @@ describe('db — SQLite connection pragmas', () => {
     const readonlyDb = getReadonlyDb();
 
     const writableResult = db.prepare('PRAGMA journal_mode').get() as Record<string, unknown>;
-    const readonlyResult = readonlyDb.prepare('PRAGMA journal_mode').get() as Record<string, unknown>;
+    const readonlyResult = readonlyDb.prepare('PRAGMA journal_mode').get() as Record<
+      string,
+      unknown
+    >;
 
     expect(String(writableResult.journal_mode).toLowerCase()).toBe('wal');
     expect(String(readonlyResult.journal_mode).toLowerCase()).toBe('wal');

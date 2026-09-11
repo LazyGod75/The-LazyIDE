@@ -193,8 +193,7 @@ const CLASSIFIERS: Classifier[] = [
   },
   {
     kind: 'warning',
-    pattern:
-      /(?:warning|anti-pattern|gotcha|pitfall|caution|danger)/i,
+    pattern: /(?:warning|anti-pattern|gotcha|pitfall|caution|danger)/i,
   },
   {
     kind: 'idea',

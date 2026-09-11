@@ -30,12 +30,7 @@ let brainDir: string;
 
 /** Minimal file-neuron-shaped note — same root attributes writer.ts reads. */
 function fileNeuronHtml(id: string, createdIso: string, extra = ''): string {
-  return (
-    `<article id="${id}" data-cerveau-version="0.3.0" data-cerveau-type="file-neuron" ` +
-    `data-cerveau-created="${createdIso}" data-cerveau-source="code-scanner:test" ` +
-    `data-cerveau-tags="code file-neuron">${extra}<h1>${id}</h1>` +
-    `<section data-section="tldr"><p>demo file</p></section></article>`
-  );
+  return `<article id="${id}" data-cerveau-version="0.3.0" data-cerveau-type="file-neuron" data-cerveau-created="${createdIso}" data-cerveau-source="code-scanner:test" data-cerveau-tags="code file-neuron">${extra}<h1>${id}</h1><section data-section="tldr"><p>demo file</p></section></article>`;
 }
 
 /** All note file paths under notes/, relative to brainDir, across every month partition. */

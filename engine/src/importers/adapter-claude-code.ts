@@ -89,7 +89,7 @@ export class ClaudeCodeImportAdapter implements ImportAdapter {
               title: i === 0 ? humanTitle : `${humanTitle} (part ${i + 1})`,
               text,
               timestamp,
-              source: `import:claude-code`,
+              source: 'import:claude-code',
               topic,
               cwd: projectRoot,
               filesModified: chunk.filesModified,

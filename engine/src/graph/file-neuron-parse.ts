@@ -128,12 +128,16 @@ export function parseAstClassesFromHtml(html: string): NonNullable<CodeNode['ast
     /<div[^>]*\sid="cls-([^"]+)"[^>]*>([\s\S]*?)<\/div>|<h3[^>]*\sid="cls-([^"]+)"[^>]*>([\s\S]*?)<\/h3>(?:\s*<ul\s+class="method-list">([\s\S]*?)<\/ul>)?/gi;
   for (let m = clsRe.exec(childrenHtml); m !== null; m = clsRe.exec(childrenHtml)) {
     const headingContent = m[2] ?? m[4] ?? '';
-    const methodsHtml = (headingContent.match(/<ul\s+class="method-list">([\s\S]*?)<\/ul>/i) ||
-      [null, m[5] ?? ''])[1];
+    const methodsHtml = (headingContent.match(/<ul\s+class="method-list">([\s\S]*?)<\/ul>/i) || [
+      null,
+      m[5] ?? '',
+    ])[1];
     const isExported = headingContent.includes('class="export-badge"');
 
-    const codeMatch = headingContent.match(/<h3[\s\S]*?<code>([^<]+)<\/code>|id="cls-[^"]+"[^>]*>[\s\S]*?<code>([^<]+)<\/code>/i)
-      ?? headingContent.match(/<code>([^<]+)<\/code>/);
+    const codeMatch =
+      headingContent.match(
+        /<h3[\s\S]*?<code>([^<]+)<\/code>|id="cls-[^"]+"[^>]*>[\s\S]*?<code>([^<]+)<\/code>/i,
+      ) ?? headingContent.match(/<code>([^<]+)<\/code>/);
     if (!codeMatch) continue;
     const codeText = (codeMatch[1] ?? codeMatch[2] ?? '').trim();
     const extendsMatch = codeText.match(/^(\S+)\s+extends\s+(\S+)$/);

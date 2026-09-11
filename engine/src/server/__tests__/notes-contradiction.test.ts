@@ -94,7 +94,11 @@ function makeReq(url: string): IncomingMessage {
 describe('/_api/note-meta — contradiction signal', () => {
   it('serializes saliencyKind and conflictWith (as an id array) for a conflicting note', () => {
     const res = makeMockRes();
-    handleNoteMeta(makeReq('/_api/note-meta/note-sqlite'), res as unknown as ServerResponse, 'note-sqlite');
+    handleNoteMeta(
+      makeReq('/_api/note-meta/note-sqlite'),
+      res as unknown as ServerResponse,
+      'note-sqlite',
+    );
 
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body as string);
@@ -104,7 +108,11 @@ describe('/_api/note-meta — contradiction signal', () => {
 
   it('returns saliencyKind null and an empty conflictWith array for a plain note', () => {
     const res = makeMockRes();
-    handleNoteMeta(makeReq('/_api/note-meta/note-plain'), res as unknown as ServerResponse, 'note-plain');
+    handleNoteMeta(
+      makeReq('/_api/note-meta/note-plain'),
+      res as unknown as ServerResponse,
+      'note-plain',
+    );
 
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body as string);

@@ -15,8 +15,8 @@
  *      note tree, and knowledge-bearing projects must sort ahead of noisy
  *      code-scan-only aggregates so the real content isn't buried.
  */
-import { describe, it, expect } from 'vitest';
-import { buildTree, isActive, type NoteEntry, type TreeChild } from '../tree.js';
+import { describe, expect, it } from 'vitest';
+import { type NoteEntry, type TreeChild, buildTree, isActive } from '../tree.js';
 
 // ---------------------------------------------------------------------------
 // Fixture factory — IndexedNote has many required (if nullable) columns;
@@ -109,12 +109,18 @@ describe('buildTree — pure knowledge brain (no code scan)', () => {
 
   it('excludes notes whose valid_until has already passed, includes ones still in their window', () => {
     const notes: NoteEntry[] = [
-      makeNote({ id: 'still-active', topic: 'cerveau/auth', valid_until: '2026-09-29T00:00:00.000Z' }),
+      makeNote({
+        id: 'still-active',
+        topic: 'cerveau/auth',
+        valid_until: '2026-09-29T00:00:00.000Z',
+      }),
       makeNote({ id: 'expired', topic: 'cerveau/auth', valid_until: '2026-01-01T00:00:00.000Z' }),
     ];
 
     const { projects } = buildTree(notes, NOW);
-    const authTopic = projects.find((p) => p.id === 'cerveau')!.children.find((c) => c.id === 'cerveau/auth')!;
+    const authTopic = projects
+      .find((p) => p.id === 'cerveau')!
+      .children.find((c) => c.id === 'cerveau/auth')!;
     expect(authTopic.children.map((c) => c.id)).toEqual(['still-active']);
   });
 
@@ -161,7 +167,12 @@ describe('buildTree — code aggregates alongside knowledge notes', () => {
 
   it('merges a project scanned from code with its knowledge notes into one node', () => {
     const notes: NoteEntry[] = [
-      makeNote({ id: 'root-agg', type: 'aggregate-neuron', topic: 'myproject', title: 'myproject' }),
+      makeNote({
+        id: 'root-agg',
+        type: 'aggregate-neuron',
+        topic: 'myproject',
+        title: 'myproject',
+      }),
       makeNote({ id: 'file-1', type: 'file-neuron', topic: 'myproject', title: 'file-1' }),
       makeNote({ id: 'decision-1', type: 'decision', topic: 'myproject/auth' }),
     ];

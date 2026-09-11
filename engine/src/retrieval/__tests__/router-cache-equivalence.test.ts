@@ -77,10 +77,9 @@ describe('route() cache equivalence (loadBacklinks + notesForCwd + PageRank corp
     const { indexNote } = await import('../../indexer/note-index.js');
     const { readNote, readAllNotes } = await import('../../store/reader.js');
     const { buildBacklinks, saveBacklinks } = await import('../../graph/backlinks.js');
-    const {
-      forceEmbedderUnavailableForTests,
-      resetEmbedderForTests,
-    } = await import('../../indexer/embeddings.js');
+    const { forceEmbedderUnavailableForTests, resetEmbedderForTests } = await import(
+      '../../indexer/embeddings.js'
+    );
     const { route } = await import('../router.js');
 
     for (const seed of SEEDS) writeSeedFile(seed);

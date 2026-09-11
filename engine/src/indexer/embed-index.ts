@@ -22,8 +22,8 @@
  */
 
 import { getLogger } from '../util/logger.js';
-import { MODEL_ID, embed, getEmbedder, hashKey } from './embeddings.js';
 import { loadAllStoredEmbeddings, upsertNoteEmbedding } from './embedding-store.js';
+import { MODEL_ID, embed, getEmbedder, hashKey } from './embeddings.js';
 
 const EMBED_CHAR_LIMIT = 1800;
 
@@ -35,7 +35,11 @@ export interface EmbeddableNote {
   text?: string | null;
 }
 
-export function buildEmbedText(n: { title?: string | null; tags?: string | null; text?: string | null }): string {
+export function buildEmbedText(n: {
+  title?: string | null;
+  tags?: string | null;
+  text?: string | null;
+}): string {
   const title = (n.title ?? '').trim();
   const tags = (n.tags ?? '').trim();
   const body = (n.text ?? '').slice(0, EMBED_CHAR_LIMIT).trim();
@@ -62,7 +66,12 @@ export function buildEmbedText(n: { title?: string | null; tags?: string | null;
  * queries pay only the hot-path cost.
  */
 export async function resolveCorpusVectors(
-  corpus: ReadonlyArray<{ id: string; title?: string | null; tags?: string | null; text?: string | null }>,
+  corpus: ReadonlyArray<{
+    id: string;
+    title?: string | null;
+    tags?: string | null;
+    text?: string | null;
+  }>,
 ): Promise<Float32Array[]> {
   const stored = loadAllStoredEmbeddings();
   const vectors: Float32Array[] = new Array(corpus.length);
@@ -147,7 +156,9 @@ const NOOP_RESULT: EmbedIndexPassResult = { considered: 0, unavailable: false };
  *    (see call sites), and an embedding failure must never take that down —
  *    keyword search always keeps working.
  */
-export async function embedNotesForIndex(notes: ReadonlyArray<EmbeddableNote>): Promise<EmbedIndexPassResult> {
+export async function embedNotesForIndex(
+  notes: ReadonlyArray<EmbeddableNote>,
+): Promise<EmbedIndexPassResult> {
   if (notes.length === 0) return NOOP_RESULT;
 
   const log = getLogger();

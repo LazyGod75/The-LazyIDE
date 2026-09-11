@@ -345,7 +345,6 @@ describe('/_api/tree — sidebar project tree', () => {
         importance: 0.75,
         created: '2026-05-28T00:00:00Z',
       },
-      // biome-ignore lint/suspicious/noExplicitAny: mock returns partial note shape for test
     ] as unknown as ReturnType<typeof fts.listAllReadonly>);
 
     const { status, body } = await httpGet(`http://127.0.0.1:${port}/_api/tree`);

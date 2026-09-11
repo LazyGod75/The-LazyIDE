@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SnapshotCache } from '../indexer/corpus-cache.js';
-import { getDb, type IndexedNote, listAllWithText } from '../indexer/fts.js';
+import { type IndexedNote, getDb, listAllWithText } from '../indexer/fts.js';
 import { readAllNotes } from '../store/reader.js';
 import { getConfig } from '../util/config.js';
 import { loadBacklinks } from './backlinks.js';

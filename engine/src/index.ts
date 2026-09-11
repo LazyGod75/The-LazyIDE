@@ -6,5 +6,11 @@
  * recompose functions and types without reaching into internal module paths.
  */
 
-export { recomposeFileNeuronEnrichment, type AuthoredItem } from './annotator/blocks/composers/recompose.js';
-export { type EnrichmentItem, type FileNeuronEnrichment } from './annotator/blocks/composers/file-neuron.js';
+export {
+  recomposeFileNeuronEnrichment,
+  type AuthoredItem,
+} from './annotator/blocks/composers/recompose.js';
+export type {
+  EnrichmentItem,
+  FileNeuronEnrichment,
+} from './annotator/blocks/composers/file-neuron.js';

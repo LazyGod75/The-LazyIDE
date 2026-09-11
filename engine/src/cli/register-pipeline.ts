@@ -50,11 +50,22 @@ export function registerPipeline(program: Command): void {
       'Diff-based reconciliation between note files on disk and the SQLite index ' +
         '(see commands/reindex-missing.ts). Dry-run by default.',
     )
-    .option('--missing', 'index disk files with no index row, backfill missing embeddings, report ghost rows')
+    .option(
+      '--missing',
+      'index disk files with no index row, backfill missing embeddings, report ghost rows',
+    )
     .option('--dry-run', 'preview counts without writing (default: true)', true)
     .option('--no-dry-run', 'actually apply the reconciliation')
-    .option('--delete-ghosts', 'also delete index rows whose file no longer exists on disk (requires --no-dry-run)')
-    .option('--batch-size <n>', 'notes indexed/embedded per batch', (v) => Number.parseInt(v, 10), 200)
+    .option(
+      '--delete-ghosts',
+      'also delete index rows whose file no longer exists on disk (requires --no-dry-run)',
+    )
+    .option(
+      '--batch-size <n>',
+      'notes indexed/embedded per batch',
+      (v) => Number.parseInt(v, 10),
+      200,
+    )
     .option('--pretty', 'human-readable output')
     .action(async (opts) => {
       try {

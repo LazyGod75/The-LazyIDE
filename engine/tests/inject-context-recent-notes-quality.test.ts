@@ -66,8 +66,8 @@ vi.mock('../src/util/telemetry.js', () => ({
   nowIso: vi.fn(() => '2026-08-16T00:00:00Z'),
 }));
 
-import { listAll } from '../src/indexer/fts.js';
 import { runMarkerInject } from '../src/commands/inject-context/sections.js';
+import { listAll } from '../src/indexer/fts.js';
 
 const mockListAll = vi.mocked(listAll);
 

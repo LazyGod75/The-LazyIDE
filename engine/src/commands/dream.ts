@@ -34,7 +34,6 @@ import { brainRoot } from '../store/paths.js';
 import { readNote } from '../store/reader.js';
 import { writeNote } from '../store/writer.js';
 import { callClaudeCliJsonArray, isClaudeCliAvailable } from '../util/claude-cli.js';
-import { healNoiseExemptNotes } from './repair.js';
 import {
   type FingerprintStore,
   hasChanged,
@@ -44,6 +43,7 @@ import {
 } from '../util/fingerprints.js';
 import { getLogger } from '../util/logger.js';
 import { logTelemetry, nowIso } from '../util/telemetry.js';
+import { healNoiseExemptNotes } from './repair.js';
 import { runSynthesize } from './synthesize.js';
 
 export { isAgentMetaText, isPlaceholderNoise } from '../sources/noise.js';
@@ -417,10 +417,7 @@ function checkpointFingerprints(store: FingerprintStore, log: ReturnType<typeof 
   try {
     saveFingerprints(store);
   } catch (err) {
-    log.warn(
-      { err: (err as Error).message },
-      'dream: incremental fingerprint checkpoint failed',
-    );
+    log.warn({ err: (err as Error).message }, 'dream: incremental fingerprint checkpoint failed');
   }
 }
 
@@ -1057,7 +1054,9 @@ function printPrettyReport(report: DreamReport, allNotes: NoteEntry[], opts: Dre
   w('  ════════════════════════════════════════════\n');
   w(`  Conversations read:    ${report.conversationsProcessed}\n`);
   w(`  Conversations skipped: ${report.conversationsSkipped} (unchanged, fingerprint match)\n`);
-  w(`  Notes healed:          ${report.healedNotes} (wrongly invalidated by a past noise-cleanup bug)\n`);
+  w(
+    `  Notes healed:          ${report.healedNotes} (wrongly invalidated by a past noise-cleanup bug)\n`,
+  );
   w(`  Noise cleaned:         ${report.noiseCleanedUp}\n`);
   w(`  Notes enriched:        ${report.tldrsGenerated}\n`);
   w(`  Stubs expanded:        ${report.stubsExpanded}\n`);

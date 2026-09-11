@@ -324,10 +324,7 @@ export async function runGraph(opts: GraphCliOptions): Promise<string> {
  * @param explicitCwd Optional --cwd value: scans this folder even when there
  *                    are no pre-existing notes to derive a cwd from.
  */
-async function runCodeScan(
-  notePaths: string[],
-  explicitCwd?: string,
-): Promise<CodeScanResult[]> {
+async function runCodeScan(notePaths: string[], explicitCwd?: string): Promise<CodeScanResult[]> {
   // Raw candidates before normalization — an explicit --cwd plus whatever
   // note-derived discovery below finds. Normalization/dedup happens once,
   // below, so both sources funnel through the same safety checks.

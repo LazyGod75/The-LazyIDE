@@ -28,16 +28,16 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { annotateSession } from '../annotator/heuristic.js';
-import { annotateWithLlm, resolveExtractorBackend } from '../annotator/llm.js';
 import type { AnnotateOutput } from '../annotator/heuristic.js';
-import { ClaudeExportAdapter } from '../importers/adapter-claude-export.js';
+import { annotateWithLlm, resolveExtractorBackend } from '../annotator/llm.js';
 import { ChatGptExportAdapter } from '../importers/adapter-chatgpt-export.js';
 import { ClaudeCodeImportAdapter } from '../importers/adapter-claude-code.js';
+import { ClaudeExportAdapter } from '../importers/adapter-claude-export.js';
 import { CursorImportAdapter } from '../importers/adapter-cursor.js';
-import type { ImportAdapter, ImportedConversation, ImportResult } from '../importers/types.js';
+import type { ImportAdapter, ImportResult, ImportedConversation } from '../importers/types.js';
 import { writeNote } from '../store/writer.js';
-import { getConfig } from '../util/config.js';
 import { mapLimit, resolveConcurrencyEnv } from '../util/concurrency.js';
+import { getConfig } from '../util/config.js';
 import { estimateTokenCount } from '../util/tokenize.js';
 
 export interface ImportOptions {
@@ -220,8 +220,7 @@ function esc(s: string): string {
 export async function runImport(opts: ImportOptions): Promise<ImportResult> {
   const { source, input, dryRun = false, useLlm = false, since, limit } = opts;
 
-  const adapters =
-    source === 'auto' ? buildAutoAdapters(input) : [buildAdapter(source, input)];
+  const adapters = source === 'auto' ? buildAutoAdapters(input) : [buildAdapter(source, input)];
 
   const dedupHashes = loadDedupHashes();
   const newHashes = new Set<string>(dedupHashes);

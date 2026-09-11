@@ -16,10 +16,10 @@ import { runLink } from '../commands/link.js';
 import { runNeighbours } from '../commands/neighbours.js';
 import { runProfileUpdate } from '../commands/profile-update.js';
 import { runPrune } from '../commands/prune.js';
-import { runRepairUnInvalidateNoise } from '../commands/repair.js';
 import { runQuery } from '../commands/query.js';
-import { runRecompose } from '../commands/recompose.js';
 import { runRecomposeAll } from '../commands/recompose-all.js';
+import { runRecompose } from '../commands/recompose.js';
+import { runRepairUnInvalidateNoise } from '../commands/repair.js';
 import { runSearch } from '../commands/search.js';
 import { runStats } from '../commands/stats.js';
 import { runStore } from '../commands/store.js';
@@ -108,7 +108,9 @@ export function registerCore(program: Command): void {
 
   program
     .command('recompose <noteId>')
-    .description('Patch enrichment sections of a file-neuron from a JSON items list (no code rescan).')
+    .description(
+      'Patch enrichment sections of a file-neuron from a JSON items list (no code rescan).',
+    )
     .option('--items-file <path>', 'read items JSON from file (default: stdin)')
     .option('--items-stdin', 'read items JSON from stdin')
     .action(async (noteId, opts) => {
@@ -323,24 +325,34 @@ export function registerCore(program: Command): void {
     )
     .option('--dry-run', 'preview candidates without modifying anything')
     .option('--pretty', 'human-readable output')
-    .action((opts: { unInvalidateNoise?: boolean; tags?: string; dryRun?: boolean; pretty?: boolean }) => {
-      try {
-        if (!opts.unInvalidateNoise) {
-          throw new Error('repair: specify an action, e.g. --un-invalidate-noise');
+    .action(
+      (opts: {
+        unInvalidateNoise?: boolean;
+        tags?: string;
+        dryRun?: boolean;
+        pretty?: boolean;
+      }) => {
+        try {
+          if (!opts.unInvalidateNoise) {
+            throw new Error('repair: specify an action, e.g. --un-invalidate-noise');
+          }
+          const tags = opts.tags
+            ? opts.tags
+                .split(',')
+                .map((t) => t.trim())
+                .filter(Boolean)
+            : undefined;
+          const report = runRepairUnInvalidateNoise({ tags, dryRun: Boolean(opts.dryRun) });
+          if (opts.pretty) {
+            printRepairReport(report);
+          } else {
+            process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+          }
+        } catch (err) {
+          handle(err);
         }
-        const tags = opts.tags
-          ? opts.tags.split(',').map((t) => t.trim()).filter(Boolean)
-          : undefined;
-        const report = runRepairUnInvalidateNoise({ tags, dryRun: Boolean(opts.dryRun) });
-        if (opts.pretty) {
-          printRepairReport(report);
-        } else {
-          process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
-        }
-      } catch (err) {
-        handle(err);
-      }
-    });
+      },
+    );
 }
 
 function printRepairReport(report: ReturnType<typeof runRepairUnInvalidateNoise>): void {

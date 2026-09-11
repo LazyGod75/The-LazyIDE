@@ -10,7 +10,7 @@
  */
 
 import { parseHTML } from 'linkedom';
-import { normalizeItemText, type EnrichmentItem } from './file-neuron.js';
+import { type EnrichmentItem, normalizeItemText } from './file-neuron.js';
 
 export interface AuthoredItem extends EnrichmentItem {
   kind: string;
@@ -76,7 +76,11 @@ function buildLi(document: Document, item: AuthoredItem): HTMLElement {
   return li;
 }
 
-function buildSection(document: Document, meta: { sectionId: string; heading: string }, items: AuthoredItem[]): HTMLElement {
+function buildSection(
+  document: Document,
+  meta: { sectionId: string; heading: string },
+  items: AuthoredItem[],
+): HTMLElement {
   const section = document.createElement('section');
   section.setAttribute('data-section', meta.sectionId);
   const h3 = document.createElement('h3');

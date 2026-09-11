@@ -42,8 +42,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { indexNote, listAll } from '../indexer/fts.js';
-import { readNote } from '../store/reader.js';
 import { brainRoot } from '../store/paths.js';
+import { readNote } from '../store/reader.js';
 import { getLogger } from '../util/logger.js';
 import { collectHtmlFiles } from './prune.js';
 
@@ -205,7 +205,10 @@ export interface HealReport {
  * it drops out of the candidate set on the very next call — 0 candidates
  * forever after, for that note, on every subsequent maintenance pass.
  */
-export function healNoiseExemptNotes(tags: string[] = DEFAULT_REPAIR_TAGS, dryRun = false): HealReport {
+export function healNoiseExemptNotes(
+  tags: string[] = DEFAULT_REPAIR_TAGS,
+  dryRun = false,
+): HealReport {
   const log = getLogger();
   const invalidated = listAll({ includeExpired: true }).filter((n) => !!n.valid_until);
 

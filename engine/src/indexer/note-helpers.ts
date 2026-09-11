@@ -354,7 +354,7 @@ export function noteVocabularyCensus(topicSlug?: string, tagLimit = 12): NoteVoc
   const where = [`(valid_until IS NULL OR valid_until = '')`];
   const params: string[] = [];
   if (topicSlug) {
-    where.push(`(LOWER(topic) = ? OR LOWER(topic) LIKE ?)`);
+    where.push('(LOWER(topic) = ? OR LOWER(topic) LIKE ?)');
     params.push(topicSlug.toLowerCase(), `${topicSlug.toLowerCase()}/%`);
   }
   const rows = db

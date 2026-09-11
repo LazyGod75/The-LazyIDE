@@ -81,7 +81,12 @@ vi.mock('../src/util/telemetry.js', () => ({
   nowIso: vi.fn(() => '2026-08-14T00:00:00.000Z'),
 }));
 
-import { getReranker, isRerankerCached, rerank, resetRerankerForTests } from '../src/indexer/reranker.js';
+import {
+  getReranker,
+  isRerankerCached,
+  rerank,
+  resetRerankerForTests,
+} from '../src/indexer/reranker.js';
 
 const FLAT_DIR = 'Xenova--ms-marco-MiniLM-L-6-v2';
 const NESTED_DIR = join('Xenova', 'ms-marco-MiniLM-L-6-v2');

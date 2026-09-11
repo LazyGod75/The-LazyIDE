@@ -51,7 +51,9 @@ function matchesTopLevelTopic(html: string, topic: string): boolean {
 export function handleSynthesisTopic(_req: unknown, res: ServerResponse, topic: string): void {
   const log = getLogger();
   try {
-    const overviews = readAllNotes().filter((n) => /data-cerveau-type="topic-overview"/.test(n.html));
+    const overviews = readAllNotes().filter((n) =>
+      /data-cerveau-type="topic-overview"/.test(n.html),
+    );
     // Exact path first so a specific sub-topic page (e.g. "cerveau/auth")
     // always wins over an unrelated same-prefix page; first-segment/tag
     // match is the fallback that keeps existing top-level slugs resolving.

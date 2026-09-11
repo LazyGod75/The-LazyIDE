@@ -949,7 +949,10 @@ export async function runSynthesize(opts: SynthesizeOptions): Promise<Synthesize
         try {
           indexNote(readNote(written.path));
         } catch (err) {
-          log.warn({ path: written.path, err: (err as Error).message }, 'synthesize: topic overview reindex');
+          log.warn(
+            { path: written.path, err: (err as Error).message },
+            'synthesize: topic overview reindex',
+          );
         }
       }
 
@@ -1117,7 +1120,10 @@ export async function runSynthesize(opts: SynthesizeOptions): Promise<Synthesize
           try {
             indexNote(readNote(written.path));
           } catch (err) {
-            log.warn({ path: written.path, err: (err as Error).message }, 'synthesize: brain index reindex');
+            log.warn(
+              { path: written.path, err: (err as Error).message },
+              'synthesize: brain index reindex',
+            );
           }
         }
 

@@ -185,11 +185,14 @@ function buildFallback(title: string, subtitle: string): string {
 }
 
 function sanitizeTitle(raw: string): string {
-  return raw
-    // eslint-disable-next-line no-control-regex -- strip raw control chars (0x00-0x1f) from untrusted title text
-    .replace(/[\x00-\x1f]/g, ' ')
-    .trim()
-    .slice(0, 80) || 'Cursor conversation';
+  return (
+    raw
+      // eslint-disable-next-line no-control-regex -- strip raw control chars (0x00-0x1f) from untrusted title text
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: same — raw control chars are stripped from untrusted input on purpose
+      .replace(/[\x00-\x1f]/g, ' ')
+      .trim()
+      .slice(0, 80) || 'Cursor conversation'
+  );
 }
 
 function extractTextsFromConversationMap(convMap: Record<string, unknown>): string[] {

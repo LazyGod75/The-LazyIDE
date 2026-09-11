@@ -6,13 +6,13 @@
  * Falls back to L2 when the ONNX model fails to load.
  */
 
-import { isEmbedderUnavailable, topKCosine } from '../../indexer/embeddings.js';
 // resolveCorpusVectors moved to indexer/embed-index.ts so index-time callers
 // (index-rebuild, incremental update, graph code-scan) can share the exact
 // same batched/cache-aware embedding path used here at query time, without
 // an indexer -> retrieval -> indexer import cycle. Re-exported below so
 // existing importers (hybrid.ts) are unaffected.
 import { resolveCorpusVectors } from '../../indexer/embed-index.js';
+import { isEmbedderUnavailable, topKCosine } from '../../indexer/embeddings.js';
 import { listAllWithText } from '../../indexer/fts.js';
 import { getLogger } from '../../util/logger.js';
 import { embedQueryForRetrieval } from '../hyde.js';

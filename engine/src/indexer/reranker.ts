@@ -1,9 +1,9 @@
 import {
   AutoModelForSequenceClassification,
   AutoTokenizer,
-  env,
   type PreTrainedModel,
   type PreTrainedTokenizer,
+  env,
 } from '@huggingface/transformers';
 import { getConfig } from '../util/config.js';
 import { getLogger } from '../util/logger.js';
@@ -282,7 +282,11 @@ export async function rerank(
 
   let scores: number[];
   try {
-    scores = await scorePairs(ce, safeQuery, filtered.map((c) => c.text));
+    scores = await scorePairs(
+      ce,
+      safeQuery,
+      filtered.map((c) => c.text),
+    );
   } catch (err) {
     return rerankFallback(filtered, topK, getErrorMessage(err));
   }

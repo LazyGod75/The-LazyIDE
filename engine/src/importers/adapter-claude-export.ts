@@ -80,8 +80,7 @@ export class ClaudeExportAdapter implements ImportAdapter {
 
       const scrubbed = scrubText(text);
       const contentHash = createHash('sha256').update(scrubbed).digest('hex');
-      const timestamp =
-        conv.updated_at ?? conv.created_at ?? new Date().toISOString();
+      const timestamp = conv.updated_at ?? conv.created_at ?? new Date().toISOString();
       const title = (conv.name ?? 'Claude conversation').slice(0, 80);
 
       results.push({

@@ -67,7 +67,12 @@ describe('runRepairUnInvalidateNoise', () => {
     expect(ids).toEqual(['mission-noise', 'skill-noise']);
 
     // Nothing on disk changed
-    for (const file of ['mission-noise.html', 'skill-noise.html', 'untagged-noise.html', 'mission-superseded.html']) {
+    for (const file of [
+      'mission-noise.html',
+      'skill-noise.html',
+      'untagged-noise.html',
+      'mission-superseded.html',
+    ]) {
       const html = readFileSync(join(notesDir, file), 'utf-8');
       expect(html).toContain('data-cerveau-invalidated-by');
     }
@@ -105,7 +110,11 @@ describe('runRepairUnInvalidateNoise', () => {
   });
 
   it('respects a custom --tags scope', () => {
-    const report = runRepairUnInvalidateNoise({ brainPath: brainDir, tags: ['skill'], dryRun: true });
+    const report = runRepairUnInvalidateNoise({
+      brainPath: brainDir,
+      tags: ['skill'],
+      dryRun: true,
+    });
     expect(report.candidates.map((c) => c.id)).toEqual(['skill-noise']);
   });
 });

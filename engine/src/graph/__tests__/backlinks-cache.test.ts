@@ -46,8 +46,12 @@ function makeIndex(totalEdges: number): BacklinksIndex {
       confidenceScore: 0.5,
       surface: `link text number ${i} with some padding to bulk up the payload`,
     };
-    (outgoing[from] ??= []).push(entry);
-    (incoming[to] ??= []).push(entry);
+    const outList = outgoing[from] ?? [];
+    outList.push(entry);
+    outgoing[from] = outList;
+    const inList = incoming[to] ?? [];
+    inList.push(entry);
+    incoming[to] = inList;
   }
   return { outgoing, incoming, generated: new Date().toISOString(), total_edges: totalEdges };
 }

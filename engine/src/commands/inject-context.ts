@@ -48,7 +48,12 @@ import {
 
 // Re-export the shared helpers that tests and other callers depend on.
 export { shortId as shortIdForTest, warningPassesGate } from './inject-context/markers.js';
-export { noteMatchesActiveFile, hitsPassingMinScore, isTrivialPrompt, queryLooksLikeCodeSymbol } from './inject-context/scoring.js';
+export {
+  noteMatchesActiveFile,
+  hitsPassingMinScore,
+  isTrivialPrompt,
+  queryLooksLikeCodeSymbol,
+} from './inject-context/scoring.js';
 export type { NudgeStyle } from './inject-context/markers.js';
 
 // ---------------------------------------------------------------------------

@@ -282,7 +282,13 @@ function isKnowledgeNote(n: NoteEntry): boolean {
 }
 
 function noteLeaf(note: NoteEntry): TreeChild {
-  return { id: note.id, label: note.title || note.id, noteId: note.id, type: note.type, children: [] };
+  return {
+    id: note.id,
+    label: note.title || note.id,
+    noteId: note.id,
+    type: note.type,
+    children: [],
+  };
 }
 
 /**
@@ -318,10 +324,18 @@ function nestKnowledgeNotes(notes: NoteEntry[], depth: number): TreeChild[] {
         .filter(Boolean)
         .slice(0, depth + 1)
         .join('/');
-      return { id: path, label: seg, noteId: null, type: 'topic', children: nestKnowledgeNotes(group, depth + 1) };
+      return {
+        id: path,
+        label: seg,
+        noteId: null,
+        type: 'topic',
+        children: nestKnowledgeNotes(group, depth + 1),
+      };
     });
 
-  const leaves = direct.sort((a, b) => (a.title || a.id).localeCompare(b.title || b.id)).map(noteLeaf);
+  const leaves = direct
+    .sort((a, b) => (a.title || a.id).localeCompare(b.title || b.id))
+    .map(noteLeaf);
 
   return [...branches, ...leaves];
 }
@@ -384,7 +398,13 @@ function buildProjectNode(
   );
   const rootAgg = codeEntry?.rootAgg ?? null;
 
-  return { id: rootAgg?.id ?? label, label, noteId: rootAgg?.id ?? null, type: 'project', children };
+  return {
+    id: rootAgg?.id ?? label,
+    label,
+    noteId: rootAgg?.id ?? null,
+    type: 'project',
+    children,
+  };
 }
 
 // ---------------------------------------------------------------------------

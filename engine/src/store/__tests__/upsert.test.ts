@@ -49,7 +49,11 @@ describe('isRicherBody', () => {
 describe('mergeUpsertHtml', () => {
   it('preserves the EXISTING data-cerveau-created and refreshes data-cerveau-updated', () => {
     const existing = note('m1', '2026-01-01T09:00:00Z', 'sparse kickoff');
-    const candidate = note('m1', '2026-01-01T18:00:00Z', 'rich completion body with lots more detail');
+    const candidate = note(
+      'm1',
+      '2026-01-01T18:00:00Z',
+      'rich completion body with lots more detail',
+    );
     const merged = mergeUpsertHtml(existing, candidate, '2026-01-01T18:05:00Z');
 
     expect(merged).toContain('data-cerveau-created="2026-01-01T09:00:00Z"');
@@ -81,7 +85,11 @@ describe('writeNote upsertIfRicher', () => {
   });
 
   it('replaces the body and preserves created when the candidate is richer', () => {
-    const sparse = note('mission-fix-bug', '2026-02-01T00:00:00Z', 'Modele Sonnet Worktree wt slash fix');
+    const sparse = note(
+      'mission-fix-bug',
+      '2026-02-01T00:00:00Z',
+      'Modele Sonnet Worktree wt slash fix',
+    );
     const first = writeNote(sparse);
     expect(first.unchanged).toBeUndefined();
 
@@ -108,7 +116,11 @@ describe('writeNote upsertIfRicher', () => {
     );
     const first = writeNote(rich);
 
-    const sparseRetry = note('mission-fix-bug-2', '2026-02-01T12:00:00Z', 'Modele Sonnet Worktree wt');
+    const sparseRetry = note(
+      'mission-fix-bug-2',
+      '2026-02-01T12:00:00Z',
+      'Modele Sonnet Worktree wt',
+    );
     const second = writeNote(sparseRetry, { upsertIfRicher: true });
 
     expect(second.unchanged).toBe(true);
@@ -118,7 +130,11 @@ describe('writeNote upsertIfRicher', () => {
   });
 
   it('still throws ConflictError on a plain duplicate write with no upsertIfRicher/overwrite', () => {
-    const html = note('mission-fix-bug-3', '2026-02-01T00:00:00Z', 'Modele Sonnet Worktree wt fix bug');
+    const html = note(
+      'mission-fix-bug-3',
+      '2026-02-01T00:00:00Z',
+      'Modele Sonnet Worktree wt fix bug',
+    );
     writeNote(html);
     expect(() => writeNote(html)).toThrow(/already exists/i);
   });

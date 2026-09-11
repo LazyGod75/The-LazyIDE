@@ -20,12 +20,7 @@ let notesPath: string;
 let cachePath: string;
 
 function sourceNote(id: string, topic: string): string {
-  return (
-    `<article id="${id}" data-cerveau-type="decision" data-cerveau-topic="${topic}" ` +
-    `data-cerveau-tags="${topic}" data-cerveau-importance="0.8" ` +
-    `data-cerveau-created="2026-01-01T00:00:00Z" data-cerveau-version="0.2.0" data-cerveau-source="test">` +
-    `<h1>${id}</h1><p data-cerveau-fact data-cerveau-confidence="1.0" data-cerveau-extracted-by="human">Decision body for ${id}.</p></article>`
-  );
+  return `<article id="${id}" data-cerveau-type="decision" data-cerveau-topic="${topic}" data-cerveau-tags="${topic}" data-cerveau-importance="0.8" data-cerveau-created="2026-01-01T00:00:00Z" data-cerveau-version="0.2.0" data-cerveau-source="test"><h1>${id}</h1><p data-cerveau-fact data-cerveau-confidence="1.0" data-cerveau-extracted-by="human">Decision body for ${id}.</p></article>`;
 }
 
 beforeEach(() => {

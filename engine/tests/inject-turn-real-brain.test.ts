@@ -41,8 +41,8 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { composeFileNeuron } from '../src/annotator/blocks/composers/file-neuron.js';
-import { runInjectContext, runTurnInjectDetailed } from '../src/commands/inject-context.js';
 import { runInit } from '../src/commands/init.js';
+import { runInjectContext, runTurnInjectDetailed } from '../src/commands/inject-context.js';
 import type { CodeNode } from '../src/graph/code-scanner.js';
 import { closeDb, indexNote } from '../src/indexer/fts.js';
 import { readNote } from '../src/store/reader.js';
@@ -58,7 +58,13 @@ const AUTH_NODE: CodeNode = {
   language: 'typescript',
   lineCount: 43,
   imports: [],
-  exports: ['AuthTokenPair', 'rotateRefreshToken', 'signAccessToken', 'signRefreshToken', 'validateSession'],
+  exports: [
+    'AuthTokenPair',
+    'rotateRefreshToken',
+    'signAccessToken',
+    'signRefreshToken',
+    'validateSession',
+  ],
 };
 
 const BILLING_NODE: CodeNode = {

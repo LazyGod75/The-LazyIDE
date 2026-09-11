@@ -422,13 +422,17 @@ describe('stripNoteToPrompt — file-neuron enrichment survives the 240-char bud
     ],
     exports: ['parseAst', 'AstParser', 'AstNode', 'resetParserCache', 'disposeParser'],
     astFunctions: [
-      { name: 'parseAst', startLine: 10, endLine: 60, params: ['source', 'language'], isExported: true },
+      {
+        name: 'parseAst',
+        startLine: 10,
+        endLine: 60,
+        params: ['source', 'language'],
+        isExported: true,
+      },
       { name: 'resetParserCache', startLine: 62, endLine: 70, params: [], isExported: true },
       { name: 'disposeParser', startLine: 72, endLine: 80, params: ['handle'], isExported: true },
     ],
-    astClasses: [
-      { name: 'AstParser', methods: ['parse', 'dispose', 'reset'], isExported: true },
-    ],
+    astClasses: [{ name: 'AstParser', methods: ['parse', 'dispose', 'reset'], isExported: true }],
   };
 
   function buildBusyNeuronWithDecision(decisionText: string): string {

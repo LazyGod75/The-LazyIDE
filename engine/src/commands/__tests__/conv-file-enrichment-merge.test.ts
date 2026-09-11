@@ -27,7 +27,7 @@ describe('mergeWithExisting — incremental mode must not lose old enrichment', 
     expect(mergeWithExisting([], fresh)).toEqual(fresh);
   });
 
-  it('preserves an old item untouched by this run\'s delta (the core incremental guarantee)', () => {
+  it("preserves an old item untouched by this run's delta (the core incremental guarantee)", () => {
     const existing = [existingItem('Old decision about auth')];
     const fresh: TimestampedItem[] = []; // this run's delta added nothing new for this kind
     const merged = mergeWithExisting(existing, fresh);

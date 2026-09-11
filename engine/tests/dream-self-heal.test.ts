@@ -68,9 +68,21 @@ describe('dream maintenance pass — self-heals wrongly-invalidated tagged notes
     notesDir = join(brain, 'notes', '2026-01');
     mkdirSync(notesDir, { recursive: true });
 
-    writeFileSync(join(notesDir, files.healed), invalidatedNote('mission-noise-heal', 'agent mission', 'dream-noise-cleanup'), 'utf-8');
-    writeFileSync(join(notesDir, files.untagged), invalidatedNote('untagged-noise-heal', 'edit code', 'dream-noise-cleanup'), 'utf-8');
-    writeFileSync(join(notesDir, files.superseded), invalidatedNote('mission-superseded-heal', 'agent mission', '#some-other-note'), 'utf-8');
+    writeFileSync(
+      join(notesDir, files.healed),
+      invalidatedNote('mission-noise-heal', 'agent mission', 'dream-noise-cleanup'),
+      'utf-8',
+    );
+    writeFileSync(
+      join(notesDir, files.untagged),
+      invalidatedNote('untagged-noise-heal', 'edit code', 'dream-noise-cleanup'),
+      'utf-8',
+    );
+    writeFileSync(
+      join(notesDir, files.superseded),
+      invalidatedNote('mission-superseded-heal', 'agent mission', '#some-other-note'),
+      'utf-8',
+    );
     writeFileSync(join(notesDir, files.fresh), freshLowSignalNote('fresh-noise-heal'), 'utf-8');
 
     process.env.LAZYBRAIN_BRAIN_PATH = brain;

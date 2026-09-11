@@ -187,7 +187,11 @@ export function deleteNote(id: string): void {
  * every note is "just indexed" in this pass, so every note flows through
  * embedNotesForIndex().
  */
-export async function rebuildAll(): Promise<{ indexed: number; failed: number; failures: string[] }> {
+export async function rebuildAll(): Promise<{
+  indexed: number;
+  failed: number;
+  failures: string[];
+}> {
   const db = getDb();
   db.exec('DELETE FROM notes; DELETE FROM notes_fts;');
   bumpLocalWriteVersion(); // corpus is now empty even before any re-index below

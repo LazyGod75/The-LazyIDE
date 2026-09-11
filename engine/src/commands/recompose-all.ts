@@ -12,7 +12,10 @@
  * that set, so two consecutive runs produce identical output.
  */
 
-import { type AuthoredItem, recomposeFileNeuronEnrichment } from '../annotator/blocks/composers/recompose.js';
+import {
+  type AuthoredItem,
+  recomposeFileNeuronEnrichment,
+} from '../annotator/blocks/composers/recompose.js';
 import { indexNote } from '../indexer/fts.js';
 import { type NoteFile, readAllNotes, readNote } from '../store/reader.js';
 import { writeNote } from '../store/writer.js';

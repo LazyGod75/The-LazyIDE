@@ -114,7 +114,10 @@ export async function runStore(opts: StoreCliOptions): Promise<string> {
         log.debug({ note: result.id, conflicts: hits.length }, 'store: contradiction(s) flagged');
       }
     } catch (err) {
-      log.warn({ err: (err as Error).message }, 'store: contradiction detection failed (non-fatal)');
+      log.warn(
+        { err: (err as Error).message },
+        'store: contradiction detection failed (non-fatal)',
+      );
     }
 
     await runIncrementalEnrich();

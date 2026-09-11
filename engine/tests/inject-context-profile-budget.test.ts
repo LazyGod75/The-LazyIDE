@@ -98,9 +98,9 @@ vi.mock('../src/util/telemetry.js', () => ({
   nowIso: vi.fn(() => '2026-08-16T00:00:00Z'),
 }));
 
+import { buildProfileBlock, runMarkerInject } from '../src/commands/inject-context/sections.js';
 import { listAll, noteVocabularyCensus, notesForCwdCount } from '../src/indexer/fts.js';
 import { profileTextForInjection } from '../src/store/profile.js';
-import { buildProfileBlock, runMarkerInject } from '../src/commands/inject-context/sections.js';
 import { estimateTokenCount } from '../src/util/tokenize.js';
 
 const mockListAll = vi.mocked(listAll);

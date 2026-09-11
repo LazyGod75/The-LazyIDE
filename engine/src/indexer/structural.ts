@@ -1,9 +1,6 @@
 import { parseHTML } from 'linkedom';
 import { stripTags } from '../retrieval/strip.js';
 import { slug } from '../store/paths.js';
-import { getLogger } from '../util/logger.js';
-import { logTelemetry, nowIso } from '../util/telemetry.js';
-import { countAllNotes, listAllNoteIds, notesByTagOrType } from './note-read.js';
 import {
   type NoteFile,
   diskPathsForSlugs,
@@ -11,6 +8,9 @@ import {
   readAllNotes,
   readNote,
 } from '../store/reader.js';
+import { getLogger } from '../util/logger.js';
+import { logTelemetry, nowIso } from '../util/telemetry.js';
+import { countAllNotes, listAllNoteIds, notesByTagOrType } from './note-read.js';
 
 export interface StructuralHit {
   noteId: string;
@@ -52,7 +52,9 @@ export interface StructuralQueryOptions {
 // ---------------------------------------------------------------------------
 
 const ROOT_TAG = '(?:article|section|memory-batch)';
-const TYPE_PUSHDOWN_RE = new RegExp(`^${ROOT_TAG}?\\[data-cerveau-type\\s*=\\s*(["'])([^"']*)\\1\\]`);
+const TYPE_PUSHDOWN_RE = new RegExp(
+  `^${ROOT_TAG}?\\[data-cerveau-type\\s*=\\s*(["'])([^"']*)\\1\\]`,
+);
 // Tolerates an optional trailing case-insensitivity flag ( i / I ) — see
 // withTagCaseInsensitivity() below, which is what actually puts that flag
 // there. data-cerveau-type is deliberately NOT given the same treatment: the
@@ -278,7 +280,7 @@ function checkIndexTrust(): IndexTrustResult {
         { indexed: indexedCount, onDisk: diskSlugs.size, missing: missingSlugs.size },
         'lazybrain: SQLite note index does not match notes on disk — structural queries are ' +
           'falling back to a full scan (slower, but complete) instead of the indexed fast path. ' +
-          "Run `lazybrain reindex --missing` to repair.",
+          'Run `lazybrain reindex --missing` to repair.',
       );
       untrustworthyWarned = true;
     }
@@ -326,9 +328,7 @@ function* lazyReadNotes(paths: readonly string[]): Generator<NoteFile> {
   for (const path of paths) {
     try {
       yield readNote(path);
-    } catch {
-      continue; // stale index entry: file was deleted/moved after last index
-    }
+    } catch {}
   }
 }
 

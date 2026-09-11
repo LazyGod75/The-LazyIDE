@@ -81,8 +81,16 @@ describe('notesForCwdCount', () => {
     const { notesForCwdCount } = await import('../note-helpers.js');
     const db = getDb();
     seedNotes(db, [
-      { id: 'a', source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy', type: 'file-neuron' },
-      { id: 'b', source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy', type: 'file-neuron' },
+      {
+        id: 'a',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy',
+        type: 'file-neuron',
+      },
+      {
+        id: 'b',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy',
+        type: 'file-neuron',
+      },
     ]);
 
     const result = notesForCwdCount('C:/Users/user/Documents/cerveau/Lazy');
@@ -95,7 +103,11 @@ describe('notesForCwdCount', () => {
     const { notesForCwdCount } = await import('../note-helpers.js');
     const db = getDb();
     seedNotes(db, [
-      { id: 'a', source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy', type: 'file-neuron' },
+      {
+        id: 'a',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy',
+        type: 'file-neuron',
+      },
       {
         id: 'b',
         source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy\\engine',
@@ -113,7 +125,11 @@ describe('notesForCwdCount', () => {
     const { notesForCwdCount } = await import('../note-helpers.js');
     const db = getDb();
     seedNotes(db, [
-      { id: 'a', source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy', type: 'file-neuron' },
+      {
+        id: 'a',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy',
+        type: 'file-neuron',
+      },
       {
         id: 'sibling-1',
         source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\LazyBrain',
@@ -156,7 +172,11 @@ describe('notesForCwdCount', () => {
     const { notesForCwdCount } = await import('../note-helpers.js');
     const db = getDb();
     seedNotes(db, [
-      { id: 'a', source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Trading', type: 'file-neuron' },
+      {
+        id: 'a',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Trading',
+        type: 'file-neuron',
+      },
     ]);
 
     const result = notesForCwdCount('C:/Users/user/Documents/cerveau/UnknownProject');

@@ -26,8 +26,8 @@ import { slugifyCwd } from '../../util/cwd-normalizer.js';
 import { logTelemetry, nowIso } from '../../util/telemetry.js';
 import { estimateTokenCount } from '../../util/tokenize.js';
 import {
-  type NudgeStyle,
   DEFAULT_NUDGE_STYLE,
+  type NudgeStyle,
   highlightsRecallNudge,
   markerNudge,
   shortId,
@@ -222,12 +222,8 @@ export function buildMainPage(_notes: IndexedNote[], cwd?: string): string {
   }
 
   const slug = cwd ? deriveProjectSlug(cwd) : '';
-  const matchedKey = slug
-    ? [...projects.keys()].find((k) => k.toLowerCase() === slug)
-    : undefined;
-  const scopedProjects = matchedKey
-    ? new Map([[matchedKey, projects.get(matchedKey)!]])
-    : projects;
+  const matchedKey = slug ? [...projects.keys()].find((k) => k.toLowerCase() === slug) : undefined;
+  const scopedProjects = matchedKey ? new Map([[matchedKey, projects.get(matchedKey)!]]) : projects;
 
   buildProjectSummaries(scopedProjects, parts);
   if (matchedKey && projects.size > 1) {
@@ -360,7 +356,9 @@ function buildStubsBlock(parts: string[]): void {
     const stubIds = allNotes.filter((n) => n.quality === 'stub').map((n) => n.id);
     const ids = uniqueShortIds(stubIds, 5);
     if (ids.length > 0) {
-      parts.push(`[STUBS] ${ids.length} notes need expansion: ${ids.map((id) => `#${id}`).join(', ')}`);
+      parts.push(
+        `[STUBS] ${ids.length} notes need expansion: ${ids.map((id) => `#${id}`).join(', ')}`,
+      );
     }
   } catch {
     // best-effort
@@ -486,9 +484,7 @@ function buildGraphLines(cwd?: string): string {
       // topic tree otherwise lists EVERY project (measured: 29 top-level
       // buckets against a real ~7000-note brain), most irrelevant here.
       const slug = cwd ? deriveProjectSlug(cwd) : '';
-      const scopedTree = slug
-        ? graph.topicTree.filter((n) => n.name.toLowerCase() === slug)
-        : [];
+      const scopedTree = slug ? graph.topicTree.filter((n) => n.name.toLowerCase() === slug) : [];
       const treeNodes = scopedTree.length > 0 ? scopedTree : graph.topicTree;
       const treeText = renderTopicTree(treeNodes);
       if (treeText) graphLines += `\n${treeText}`;

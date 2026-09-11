@@ -86,9 +86,7 @@ function request(
         res.on('data', (chunk) => {
           body += chunk;
         });
-        res.on('end', () =>
-          resolve({ status: res.statusCode ?? 0, headers: res.headers, body }),
-        );
+        res.on('end', () => resolve({ status: res.statusCode ?? 0, headers: res.headers, body }));
       },
     );
     req.on('error', reject);

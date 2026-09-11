@@ -17,9 +17,8 @@ const logTelemetryMock = vi.fn();
 const warnMock = vi.fn();
 
 vi.mock('../../util/telemetry.js', async () => {
-  const actual = await vi.importActual<typeof import('../../util/telemetry.js')>(
-    '../../util/telemetry.js',
-  );
+  const actual =
+    await vi.importActual<typeof import('../../util/telemetry.js')>('../../util/telemetry.js');
   return { ...actual, logTelemetry: logTelemetryMock };
 });
 

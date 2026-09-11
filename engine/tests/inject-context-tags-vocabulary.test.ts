@@ -57,9 +57,12 @@ vi.mock('../src/util/telemetry.js', () => ({
   nowIso: vi.fn(() => '2026-08-16T00:00:00Z'),
 }));
 
-import { noteVocabularyCensus, listAll } from '../src/indexer/fts.js';
-import { buildTagVocabularyBlock, runMarkerInject } from '../src/commands/inject-context/sections.js';
 import { highlightsRecallNudge } from '../src/commands/inject-context/markers.js';
+import {
+  buildTagVocabularyBlock,
+  runMarkerInject,
+} from '../src/commands/inject-context/sections.js';
+import { listAll, noteVocabularyCensus } from '../src/indexer/fts.js';
 
 const mockCensus = vi.mocked(noteVocabularyCensus);
 const mockListAll = vi.mocked(listAll);
@@ -208,7 +211,12 @@ describe('appendHighlights budget ordering — [TAGS] outranks a 3rd RECENT NOTE
     const footerCost = estimateTokenCount(highlightsRecallNudge('skill'));
     const budget = estimateTokenCount(throughTags) + footerCost;
 
-    const result = runMarkerInject(true, 'C:\\Users\\user\\Documents\\cerveau\\lazy', 'skill', budget);
+    const result = runMarkerInject(
+      true,
+      'C:\\Users\\user\\Documents\\cerveau\\lazy',
+      'skill',
+      budget,
+    );
 
     expect(result).toContain('[TAGS]');
     expect(result).not.toContain('[RECENT NOTES]');

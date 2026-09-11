@@ -286,7 +286,9 @@ describe('turn-inject quality contract', () => {
       levelUsed: 'L2',
       totalMs: 30,
     });
-    mockStripNoteToPrompt.mockReturnValue('GameOn_/app/details/muscle-map.jsx — MuscleMapPage component');
+    mockStripNoteToPrompt.mockReturnValue(
+      'GameOn_/app/details/muscle-map.jsx — MuscleMapPage component',
+    );
 
     const result = await runInjectContext({
       mode: 'turn',
@@ -317,7 +319,9 @@ describe('turn-inject quality contract', () => {
       levelUsed: 'L2',
       totalMs: 30,
     });
-    mockStripNoteToPrompt.mockReturnValue('GameOn_/app/details/muscle-map.jsx — MuscleMapPage component');
+    mockStripNoteToPrompt.mockReturnValue(
+      'GameOn_/app/details/muscle-map.jsx — MuscleMapPage component',
+    );
 
     const result = await runInjectContext({
       mode: 'turn',

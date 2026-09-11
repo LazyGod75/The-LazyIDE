@@ -147,7 +147,9 @@ describe('P0-2 — parseFileNeuronHtml round-trips enrichment', () => {
 
   it('still recovers imports/exports/astFunctions alongside enrichment (no regression)', () => {
     const node = makeNode({
-      astFunctions: [{ name: 'renderHero', startLine: 10, endLine: 20, params: ['ctx'], isExported: true }],
+      astFunctions: [
+        { name: 'renderHero', startLine: 10, endLine: 20, params: ['ctx'], isExported: true },
+      ],
     });
     const html = composeFileNeuron(node, 2, { decisions: [DECISION] });
     const parsed = parseFileNeuronHtml(html);

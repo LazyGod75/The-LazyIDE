@@ -49,7 +49,7 @@ describe('scrubText', () => {
   });
 
   it('replaces GitHub PATs', () => {
-    const result = scrubText('export GITHUB_TOKEN=ghp_' + 'A'.repeat(32));
+    const result = scrubText(`export GITHUB_TOKEN=ghp_${'A'.repeat(32)}`);
     expect(result).toContain('[GITHUB_TOKEN]');
   });
 
@@ -182,13 +182,37 @@ describe('ChatGptExportAdapter', () => {
         id: 'old',
         title: 'Old',
         update_time: 1600000000,
-        mapping: { r: { id: 'r', parent: null, children: ['m'], message: undefined }, m: { id: 'm', parent: 'r', children: [], message: { id: 'm', author: { role: 'user' }, content: { parts: ['Old content that is long enough to be included'] } } } },
+        mapping: {
+          r: { id: 'r', parent: null, children: ['m'], message: undefined },
+          m: {
+            id: 'm',
+            parent: 'r',
+            children: [],
+            message: {
+              id: 'm',
+              author: { role: 'user' },
+              content: { parts: ['Old content that is long enough to be included'] },
+            },
+          },
+        },
       },
       {
         id: 'new',
         title: 'New',
         update_time: 1800000000,
-        mapping: { r: { id: 'r', parent: null, children: ['m'], message: undefined }, m: { id: 'm', parent: 'r', children: [], message: { id: 'm', author: { role: 'user' }, content: { parts: ['New content that is long enough to be included in results'] } } } },
+        mapping: {
+          r: { id: 'r', parent: null, children: ['m'], message: undefined },
+          m: {
+            id: 'm',
+            parent: 'r',
+            children: [],
+            message: {
+              id: 'm',
+              author: { role: 'user' },
+              content: { parts: ['New content that is long enough to be included in results'] },
+            },
+          },
+        },
       },
     ];
 
@@ -297,7 +321,10 @@ describe('ClaudeExportAdapter', () => {
             uuid: 'msg-4',
             sender: 'assistant',
             content: [
-              { type: 'text', text: 'The repository pattern abstracts data access behind an interface.' },
+              {
+                type: 'text',
+                text: 'The repository pattern abstracts data access behind an interface.',
+              },
             ],
           },
         ],
@@ -473,7 +500,7 @@ describe('ClaudeCodeImportAdapter', () => {
           content: [
             {
               type: 'text',
-              text: 'Voici le plan complet pour la fonctionnalité de brainstorming demandée par l\'équipe.',
+              text: "Voici le plan complet pour la fonctionnalité de brainstorming demandée par l'équipe.",
             },
           ],
         },
@@ -488,7 +515,7 @@ describe('ClaudeCodeImportAdapter', () => {
     const results = adapter.list();
 
     expect(results.length).toBeGreaterThan(0);
-    const combined = results.map((r) => r.text + ' ' + r.title).join(' ');
+    const combined = results.map((r) => `${r.text} ${r.title}`).join(' ');
     expect(combined).not.toContain('<command-name>');
     expect(combined).not.toContain('command-message');
     expect(combined).not.toContain('command-args');

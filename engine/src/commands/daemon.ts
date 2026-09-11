@@ -531,7 +531,9 @@ function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown>> {
       }
     });
     req.on('end', () => {
-      const raw = Buffer.concat(chunks).toString('utf8').replace(/^\uFEFF/, '');
+      const raw = Buffer.concat(chunks)
+        .toString('utf8')
+        .replace(/^\uFEFF/, '');
       if (!raw) return resolve({});
       try {
         resolve(JSON.parse(raw) as Record<string, unknown>);

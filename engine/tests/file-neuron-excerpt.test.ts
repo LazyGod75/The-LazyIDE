@@ -37,7 +37,8 @@ describe('composeFileNeuron — CSS-selectable symbol excerpts', () => {
           params: ['filePath'],
           isExported: true,
           jsdoc: '/** Pair parse() with tree.delete() in a finally block. */',
-          excerpt: 'export async function parseFile(filePath: string) {\n  try {\n    return tree;\n  } finally {\n    tree.delete();\n  }\n}',
+          excerpt:
+            'export async function parseFile(filePath: string) {\n  try {\n    return tree;\n  } finally {\n    tree.delete();\n  }\n}',
         },
       ],
     });

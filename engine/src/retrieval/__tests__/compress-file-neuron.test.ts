@@ -107,7 +107,9 @@ describe('compressFileNeuron — surfaces decisions/bugs alongside code structur
 
   it('does not regress the existing code-structure output (imports/exports/functions)', () => {
     const node = makeNode({
-      astFunctions: [{ name: 'renderHero', startLine: 10, endLine: 20, params: ['ctx'], isExported: true }],
+      astFunctions: [
+        { name: 'renderHero', startLine: 10, endLine: 20, params: ['ctx'], isExported: true },
+      ],
     });
     const out = compressFileNeuron(node);
     expect(out).toContain('imports: ./scene.js');

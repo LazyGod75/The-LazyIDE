@@ -65,7 +65,11 @@ describe('buildEntityIndex — document-frequency guard on tag aliases (P1-1)', 
     const notes = [
       fileNeuronNote('file-a-ts'),
       fileNeuronNote('file-b-ts'),
-      { id: 'file-payment-gateway-ts', title: 'payment-gateway', tags: 'code typescript acme file-neuron stripewebhook' },
+      {
+        id: 'file-payment-gateway-ts',
+        title: 'payment-gateway',
+        tags: 'code typescript acme file-neuron stripewebhook',
+      },
     ];
     const index = buildEntityIndex(notes);
     // "stripewebhook" (rare, DF=1) should still be usable as an alias.

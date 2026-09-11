@@ -65,9 +65,9 @@ vi.mock('../src/util/telemetry.js', () => ({
   nowIso: vi.fn(() => '2026-08-16T00:00:00Z'),
 }));
 
+import { buildMainPage, runMarkerInject } from '../src/commands/inject-context/sections.js';
 import { loadKnowledgeGraph } from '../src/graph/knowledge-graph.js';
 import { listAll } from '../src/indexer/fts.js';
-import { buildMainPage, runMarkerInject } from '../src/commands/inject-context/sections.js';
 
 const mockListAll = vi.mocked(listAll);
 const mockLoadKnowledgeGraph = vi.mocked(loadKnowledgeGraph);
@@ -88,9 +88,24 @@ function note(overrides: Partial<IndexedNote>): IndexedNote {
 
 describe('buildMainPage — project scoping', () => {
   const notes: IndexedNote[] = [
-    note({ id: 'a', topic: 'lazy/code/typescript', title: 'Lazy feature A', created: '2026-08-01T00:00:00Z' }),
-    note({ id: 'b', topic: 'lazybrain/code/typescript', title: 'LazyBrain feature B', created: '2026-08-02T00:00:00Z' }),
-    note({ id: 'c', topic: 'trading/code/python', title: 'Trading feature C', created: '2026-08-03T00:00:00Z' }),
+    note({
+      id: 'a',
+      topic: 'lazy/code/typescript',
+      title: 'Lazy feature A',
+      created: '2026-08-01T00:00:00Z',
+    }),
+    note({
+      id: 'b',
+      topic: 'lazybrain/code/typescript',
+      title: 'LazyBrain feature B',
+      created: '2026-08-02T00:00:00Z',
+    }),
+    note({
+      id: 'c',
+      topic: 'trading/code/python',
+      title: 'Trading feature C',
+      created: '2026-08-03T00:00:00Z',
+    }),
   ];
 
   it('scopes to the matching project bucket and reports how many others exist', () => {

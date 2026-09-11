@@ -77,8 +77,14 @@ describe('store path — contradiction detection', () => {
   it('cross-links a new decision that contradicts an existing one', async () => {
     const { runStore } = await import('../store.js');
 
-    const first = JSON.parse(await runStore({ html: NOTE_POSTGRES })) as { id: string; path: string };
-    const second = JSON.parse(await runStore({ html: NOTE_SQLITE })) as { id: string; path: string };
+    const first = JSON.parse(await runStore({ html: NOTE_POSTGRES })) as {
+      id: string;
+      path: string;
+    };
+    const second = JSON.parse(await runStore({ html: NOTE_SQLITE })) as {
+      id: string;
+      path: string;
+    };
 
     // New note (SQLite) points at the note it contradicts (Postgres) and is
     // stamped with the contradiction saliency marker.
@@ -103,7 +109,10 @@ describe('store path — contradiction detection', () => {
   it('does not flag a note that contradicts nothing', async () => {
     const { runStore } = await import('../store.js');
 
-    const only = JSON.parse(await runStore({ html: NOTE_POSTGRES })) as { id: string; path: string };
+    const only = JSON.parse(await runStore({ html: NOTE_POSTGRES })) as {
+      id: string;
+      path: string;
+    };
     const html = readFileSync(only.path, 'utf8');
     expect(html).not.toContain('data-cerveau-conflict-with');
 

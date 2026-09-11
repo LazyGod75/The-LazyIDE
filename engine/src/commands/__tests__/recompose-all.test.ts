@@ -79,7 +79,13 @@ function realisticCaptureNote(opts: {
   tags?: string;
   fact?: string;
 }): string {
-  const { authorId = 'user-1', about = 'file:src/payments/stripe.ts', type = 'decision', tags = 'stripe', fact = 'Some authored fact.' } = opts;
+  const {
+    authorId = 'user-1',
+    about = 'file:src/payments/stripe.ts',
+    type = 'decision',
+    tags = 'stripe',
+    fact = 'Some authored fact.',
+  } = opts;
   const authorIdAttr = authorId ? ` data-cerveau-author-id="${authorId}"` : '';
   const aboutAttr = about ? ` data-cerveau-about="${about}"` : '';
   const factP = fact ? `<p data-cerveau-fact>${fact}</p>` : '';
@@ -88,7 +94,11 @@ function realisticCaptureNote(opts: {
 
 describe('extractAuthoredItem', () => {
   it('returns a non-null item for a realistic capture note with no explicit kind attribute', () => {
-    const html = realisticCaptureNote({ type: 'decision', tags: 'stripe payments', fact: 'Use idempotency keys.' });
+    const html = realisticCaptureNote({
+      type: 'decision',
+      tags: 'stripe payments',
+      fact: 'Use idempotency keys.',
+    });
     const item = extractAuthoredItem(html, 'note-1');
     expect(item).not.toBeNull();
     expect(item?.kind).toBe('decision');
@@ -97,7 +107,11 @@ describe('extractAuthoredItem', () => {
   });
 
   it('returns a non-null bug item derived from tags, with type left as episodic', () => {
-    const html = realisticCaptureNote({ type: 'episodic', tags: 'stripe bug webhook', fact: 'Webhook secret missing crashes silently.' });
+    const html = realisticCaptureNote({
+      type: 'episodic',
+      tags: 'stripe bug webhook',
+      fact: 'Webhook secret missing crashes silently.',
+    });
     const item = extractAuthoredItem(html, 'note-2');
     expect(item?.kind).toBe('bug');
   });
@@ -151,7 +165,10 @@ function structuralFileNeuronHtml(): string {
 </article>`;
 }
 
-function captureNoteHtml(id: string, opts: { type: string; tags: string; fact: string; about?: string }): string {
+function captureNoteHtml(
+  id: string,
+  opts: { type: string; tags: string; fact: string; about?: string },
+): string {
   const about = opts.about ?? `file:${FILE_PATH}`;
   return `<article id="${id}" data-cerveau-type="${opts.type}" data-cerveau-tags="${opts.tags}" data-cerveau-author-id="user-1" data-cerveau-about="${about}">
   <p data-cerveau-fact>${opts.fact}</p>
@@ -184,11 +201,19 @@ describe('runRecomposeAll — fixture brain', () => {
     writeNoteFile(FILE_NEURON_ID, structuralFileNeuronHtml());
     writeNoteFile(
       'decision-1',
-      captureNoteHtml('decision-1', { type: 'decision', tags: 'stripe payments', fact: 'Use idempotency keys derived from customer+amount+day.' }),
+      captureNoteHtml('decision-1', {
+        type: 'decision',
+        tags: 'stripe payments',
+        fact: 'Use idempotency keys derived from customer+amount+day.',
+      }),
     );
     writeNoteFile(
       'bug-1',
-      captureNoteHtml('bug-1', { type: 'episodic', tags: 'stripe bug webhook', fact: 'Missing webhook secret throws an unhelpful error.' }),
+      captureNoteHtml('bug-1', {
+        type: 'episodic',
+        tags: 'stripe bug webhook',
+        fact: 'Missing webhook secret throws an unhelpful error.',
+      }),
     );
 
     const { runRecomposeAll } = await import('../recompose-all.js');
@@ -225,8 +250,14 @@ describe('runRecomposeAll — fixture brain', () => {
 
   it('is idempotent: a second run produces byte-identical output and touches no other file-neuron', async () => {
     writeNoteFile(FILE_NEURON_ID, structuralFileNeuronHtml());
-    writeNoteFile('other-file-neuron', `<article id="other-file-neuron" data-cerveau-version="0.2.0" data-cerveau-created="2026-08-14T00:00:00Z" data-cerveau-source="code-scanner:fixture" data-cerveau-type="file-neuron" data-code-file="src/unrelated.ts"><section data-section="tldr"><p>unrelated</p></section></article>`);
-    writeNoteFile('decision-1', captureNoteHtml('decision-1', { type: 'decision', tags: 'stripe', fact: 'Decision fact.' }));
+    writeNoteFile(
+      'other-file-neuron',
+      `<article id="other-file-neuron" data-cerveau-version="0.2.0" data-cerveau-created="2026-08-14T00:00:00Z" data-cerveau-source="code-scanner:fixture" data-cerveau-type="file-neuron" data-code-file="src/unrelated.ts"><section data-section="tldr"><p>unrelated</p></section></article>`,
+    );
+    writeNoteFile(
+      'decision-1',
+      captureNoteHtml('decision-1', { type: 'decision', tags: 'stripe', fact: 'Decision fact.' }),
+    );
 
     const { runRecomposeAll } = await import('../recompose-all.js');
     const first = await runRecomposeAll();

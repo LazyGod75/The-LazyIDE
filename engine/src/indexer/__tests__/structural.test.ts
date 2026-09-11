@@ -121,7 +121,9 @@ describe('extractPushdownFilter — recognized vs. fallback selector shapes', ()
     // a necessary AND condition, so pushing down on it is safe even though
     // :not(...) narrows the result further at the DOM-verification stage.
     expect(
-      extractPushdownFilter('article[data-cerveau-type="decision"]:not([data-cerveau-valid-until])'),
+      extractPushdownFilter(
+        'article[data-cerveau-type="decision"]:not([data-cerveau-valid-until])',
+      ),
     ).toEqual({ kind: 'type', value: 'decision' });
   });
 
@@ -452,8 +454,9 @@ describe('structuralQuery — stale duplicate note files never break the trust c
       noteHtml('regen-1', 'bug', 'urgent', '<meta name="regenerated" content="2026-07">'),
     );
     const { indexNote } = await import('../fts.js');
-    const { readNote, getReadNoteCallCountForTests, resetReadNoteCallCountForTests } =
-      await import('../../store/reader.js');
+    const { readNote, getReadNoteCallCountForTests, resetReadNoteCallCountForTests } = await import(
+      '../../store/reader.js'
+    );
     indexNote(readNote(newPath));
 
     // A second, fully-clean note (no stale duplicate) to prove the pushdown
@@ -495,8 +498,9 @@ describe('structuralQuery — trust check survives the slug() truncation edge ca
     const fp = writeNoteFile(onDiskStem, noteHtml(rawId, 'bug', 'urgent'));
 
     const { indexNote } = await import('../fts.js');
-    const { readNote, getReadNoteCallCountForTests, resetReadNoteCallCountForTests } =
-      await import('../../store/reader.js');
+    const { readNote, getReadNoteCallCountForTests, resetReadNoteCallCountForTests } = await import(
+      '../../store/reader.js'
+    );
     indexNote(readNote(fp));
 
     resetReadNoteCallCountForTests();
@@ -530,56 +534,44 @@ describe('structuralQuery — the SQL-pushdown path does not read the whole corp
     }
   }, 20000);
 
-  it(
-    'rare-type query reads only the matching notes, not the full 300-note corpus',
-    async () => {
-      const { structuralQuery } = await import('../structural.js');
-      const { getReadNoteCallCountForTests, resetReadNoteCallCountForTests } = await import(
-        '../../store/reader.js'
-      );
-      resetReadNoteCallCountForTests();
-      const hits = structuralQuery('[data-cerveau-type="bug"]', { limit: 200 });
-      expect(hits).toHaveLength(RARE_COUNT);
-      const reads = getReadNoteCallCountForTests();
-      expect(reads).toBe(RARE_COUNT);
-      expect(reads).toBeLessThan(TOTAL);
-    },
-    20000,
-  );
+  it('rare-type query reads only the matching notes, not the full 300-note corpus', async () => {
+    const { structuralQuery } = await import('../structural.js');
+    const { getReadNoteCallCountForTests, resetReadNoteCallCountForTests } = await import(
+      '../../store/reader.js'
+    );
+    resetReadNoteCallCountForTests();
+    const hits = structuralQuery('[data-cerveau-type="bug"]', { limit: 200 });
+    expect(hits).toHaveLength(RARE_COUNT);
+    const reads = getReadNoteCallCountForTests();
+    expect(reads).toBe(RARE_COUNT);
+    expect(reads).toBeLessThan(TOTAL);
+  }, 20000);
 
-  it(
-    'common-type query with a tight limit stops reading once the limit is satisfied',
-    async () => {
-      const { structuralQuery } = await import('../structural.js');
-      const { getReadNoteCallCountForTests, resetReadNoteCallCountForTests } = await import(
-        '../../store/reader.js'
-      );
-      resetReadNoteCallCountForTests();
-      const hits = structuralQuery('[data-cerveau-type="note"]', { limit: 5 });
-      expect(hits).toHaveLength(5);
-      const reads = getReadNoteCallCountForTests();
-      // Early-exit against the element-level limit: reads a handful of
-      // candidates, never the ~288 "note"-type notes in the corpus.
-      expect(reads).toBe(5);
-      expect(reads).toBeLessThan(TOTAL);
-    },
-    20000,
-  );
+  it('common-type query with a tight limit stops reading once the limit is satisfied', async () => {
+    const { structuralQuery } = await import('../structural.js');
+    const { getReadNoteCallCountForTests, resetReadNoteCallCountForTests } = await import(
+      '../../store/reader.js'
+    );
+    resetReadNoteCallCountForTests();
+    const hits = structuralQuery('[data-cerveau-type="note"]', { limit: 5 });
+    expect(hits).toHaveLength(5);
+    const reads = getReadNoteCallCountForTests();
+    // Early-exit against the element-level limit: reads a handful of
+    // candidates, never the ~288 "note"-type notes in the corpus.
+    expect(reads).toBe(5);
+    expect(reads).toBeLessThan(TOTAL);
+  }, 20000);
 
-  it(
-    'a non-pushdown-eligible selector still runs the full scan (baseline unaffected)',
-    async () => {
-      const { structuralQuery } = await import('../structural.js');
-      const { getReadNoteCallCountForTests, resetReadNoteCallCountForTests } = await import(
-        '../../store/reader.js'
-      );
-      resetReadNoteCallCountForTests();
-      const hits = structuralQuery('article h1', { limit: 1000 });
-      expect(hits).toHaveLength(TOTAL);
-      expect(getReadNoteCallCountForTests()).toBe(TOTAL);
-    },
-    20000,
-  );
+  it('a non-pushdown-eligible selector still runs the full scan (baseline unaffected)', async () => {
+    const { structuralQuery } = await import('../structural.js');
+    const { getReadNoteCallCountForTests, resetReadNoteCallCountForTests } = await import(
+      '../../store/reader.js'
+    );
+    resetReadNoteCallCountForTests();
+    const hits = structuralQuery('article h1', { limit: 1000 });
+    expect(hits).toHaveLength(TOTAL);
+    expect(getReadNoteCallCountForTests()).toBe(TOTAL);
+  }, 20000);
 });
 
 // ---------------------------------------------------------------------------
@@ -611,53 +603,45 @@ describe('structuralQuery — a stale index reads only the drift, not the whole 
     }
   }, 20000);
 
-  it(
-    'finds every match (indexed + orphaned) while reading far fewer notes than the full corpus',
-    async () => {
-      const { structuralQuery } = await import('../structural.js');
-      const { getReadNoteCallCountForTests, resetReadNoteCallCountForTests } = await import(
-        '../../store/reader.js'
-      );
-      resetReadNoteCallCountForTests();
-      const hits = structuralQuery('[data-cerveau-type="bug"]', { limit: 200 });
-      const ids = hits.map((h) => h.noteId).sort();
-      const expected = [
-        ...Array.from({ length: RARE_COUNT }, (_, i) => `n-${i}`),
-        ...Array.from({ length: ORPHAN_COUNT }, (_, i) => `orphan-${i}`),
-      ].sort();
-      expect(ids).toEqual(expected);
+  it('finds every match (indexed + orphaned) while reading far fewer notes than the full corpus', async () => {
+    const { structuralQuery } = await import('../structural.js');
+    const { getReadNoteCallCountForTests, resetReadNoteCallCountForTests } = await import(
+      '../../store/reader.js'
+    );
+    resetReadNoteCallCountForTests();
+    const hits = structuralQuery('[data-cerveau-type="bug"]', { limit: 200 });
+    const ids = hits.map((h) => h.noteId).sort();
+    const expected = [
+      ...Array.from({ length: RARE_COUNT }, (_, i) => `n-${i}`),
+      ...Array.from({ length: ORPHAN_COUNT }, (_, i) => `orphan-${i}`),
+    ].sort();
+    expect(ids).toEqual(expected);
 
-      const reads = getReadNoteCallCountForTests();
-      // Hybrid cost: the RARE_COUNT indexed "bug" candidates + the
-      // ORPHAN_COUNT un-indexed files — never the "note"-type notes, and
-      // never the (TOTAL - RARE_COUNT) common-type corpus a full scan would
-      // have paid for.
-      expect(reads).toBe(RARE_COUNT + ORPHAN_COUNT);
-      expect(reads).toBeLessThan(TOTAL);
-    },
-    20000,
-  );
+    const reads = getReadNoteCallCountForTests();
+    // Hybrid cost: the RARE_COUNT indexed "bug" candidates + the
+    // ORPHAN_COUNT un-indexed files — never the "note"-type notes, and
+    // never the (TOTAL - RARE_COUNT) common-type corpus a full scan would
+    // have paid for.
+    expect(reads).toBe(RARE_COUNT + ORPHAN_COUNT);
+    expect(reads).toBeLessThan(TOTAL);
+  }, 20000);
 
-  it(
-    'a common-type query under a stale index also stays proportional to candidates + drift',
-    async () => {
-      const { structuralQuery } = await import('../structural.js');
-      const { getReadNoteCallCountForTests, resetReadNoteCallCountForTests } = await import(
-        '../../store/reader.js'
-      );
-      resetReadNoteCallCountForTests();
-      // "note" is the common type (TOTAL - RARE_COUNT of them); the 3 orphans
-      // are "bug"-typed so they never match this selector, but they are still
-      // MISSING from the index, so the trust check still reports stale and
-      // the hybrid path still has to read them directly to rule them out.
-      const hits = structuralQuery('[data-cerveau-type="note"]', { limit: 1000 });
-      expect(hits).toHaveLength(TOTAL - RARE_COUNT);
-      const reads = getReadNoteCallCountForTests();
-      // (TOTAL - RARE_COUNT) "note" candidates from SQL + ORPHAN_COUNT direct
-      // reads to check the un-indexed files — still short of a full corpus
-      // walk plus duplicated reads, and strictly bounded (no double-reading).
-      expect(reads).toBe(TOTAL - RARE_COUNT + ORPHAN_COUNT);
-    },
-    20000,
-  );
+  it('a common-type query under a stale index also stays proportional to candidates + drift', async () => {
+    const { structuralQuery } = await import('../structural.js');
+    const { getReadNoteCallCountForTests, resetReadNoteCallCountForTests } = await import(
+      '../../store/reader.js'
+    );
+    resetReadNoteCallCountForTests();
+    // "note" is the common type (TOTAL - RARE_COUNT of them); the 3 orphans
+    // are "bug"-typed so they never match this selector, but they are still
+    // MISSING from the index, so the trust check still reports stale and
+    // the hybrid path still has to read them directly to rule them out.
+    const hits = structuralQuery('[data-cerveau-type="note"]', { limit: 1000 });
+    expect(hits).toHaveLength(TOTAL - RARE_COUNT);
+    const reads = getReadNoteCallCountForTests();
+    // (TOTAL - RARE_COUNT) "note" candidates from SQL + ORPHAN_COUNT direct
+    // reads to check the un-indexed files — still short of a full corpus
+    // walk plus duplicated reads, and strictly bounded (no double-reading).
+    expect(reads).toBe(TOTAL - RARE_COUNT + ORPHAN_COUNT);
+  }, 20000);
 });

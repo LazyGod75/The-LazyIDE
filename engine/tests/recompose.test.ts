@@ -9,10 +9,15 @@
  *   5. Existing structure (breadcrumb, infobox) preserved.
  */
 
-import { describe, it, expect } from 'vitest';
-import { recomposeFileNeuronEnrichment, type AuthoredItem } from '../src/annotator/blocks/composers/recompose.js';
+import { describe, expect, it } from 'vitest';
+import {
+  type AuthoredItem,
+  recomposeFileNeuronEnrichment,
+} from '../src/annotator/blocks/composers/recompose.js';
 
-function makeItem(overrides: Partial<AuthoredItem> & { kind: string; text: string; date: string }): AuthoredItem {
+function makeItem(
+  overrides: Partial<AuthoredItem> & { kind: string; text: string; date: string },
+): AuthoredItem {
   return {
     confidence: 0.8,
     sourceConvLink: '#conv-test',
@@ -48,8 +53,22 @@ describe('recomposeFileNeuronEnrichment', () => {
 
   it('two authors, same file → two <li> with different author-id', () => {
     const items = [
-      makeItem({ kind: 'bug', text: 'Alice bug', date: '2026-03-01', authorId: 'user-a', author: 'alice', itemId: 'bug-a' }),
-      makeItem({ kind: 'bug', text: 'Bob bug', date: '2026-03-02', authorId: 'user-b', author: 'bob', itemId: 'bug-b' }),
+      makeItem({
+        kind: 'bug',
+        text: 'Alice bug',
+        date: '2026-03-01',
+        authorId: 'user-a',
+        author: 'alice',
+        itemId: 'bug-a',
+      }),
+      makeItem({
+        kind: 'bug',
+        text: 'Bob bug',
+        date: '2026-03-02',
+        authorId: 'user-b',
+        author: 'bob',
+        itemId: 'bug-b',
+      }),
     ];
 
     const result = recomposeFileNeuronEnrichment(FIXTURE_HTML, items);
@@ -62,8 +81,20 @@ describe('recomposeFileNeuronEnrichment', () => {
 
   it('dedup by itemId — two items with same itemId → only one <li>', () => {
     const items = [
-      makeItem({ kind: 'bug', text: 'First capture', date: '2026-03-01', itemId: 'bug-dup', authorId: 'user-a' }),
-      makeItem({ kind: 'bug', text: 'Duplicate capture', date: '2026-03-02', itemId: 'bug-dup', authorId: 'user-b' }),
+      makeItem({
+        kind: 'bug',
+        text: 'First capture',
+        date: '2026-03-01',
+        itemId: 'bug-dup',
+        authorId: 'user-a',
+      }),
+      makeItem({
+        kind: 'bug',
+        text: 'Duplicate capture',
+        date: '2026-03-02',
+        itemId: 'bug-dup',
+        authorId: 'user-b',
+      }),
     ];
 
     const result = recomposeFileNeuronEnrichment(FIXTURE_HTML, items);
@@ -92,9 +123,7 @@ describe('recomposeFileNeuronEnrichment', () => {
   });
 
   it('existing structure (breadcrumb, infobox) preserved', () => {
-    const items = [
-      makeItem({ kind: 'bug', text: 'A bug', date: '2026-03-01', itemId: 'bug-x' }),
-    ];
+    const items = [makeItem({ kind: 'bug', text: 'A bug', date: '2026-03-01', itemId: 'bug-x' })];
 
     const result = recomposeFileNeuronEnrichment(FIXTURE_HTML, items);
 

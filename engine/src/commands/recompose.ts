@@ -49,10 +49,7 @@ export async function runRecompose(opts: RecomposeCliOptions): Promise<string> {
   try {
     indexNote(readNote(written.path));
   } catch (err) {
-    log.warn(
-      { path: written.path, err: (err as Error).message },
-      'recompose: reindex failed',
-    );
+    log.warn({ path: written.path, err: (err as Error).message }, 'recompose: reindex failed');
   }
 
   return JSON.stringify({ noteId: written.id, itemsApplied: items.length, path: written.path });

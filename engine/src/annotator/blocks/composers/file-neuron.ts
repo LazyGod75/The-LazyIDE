@@ -212,7 +212,9 @@ function renderArchitectureSection(node: CodeNode): string {
 function renderJsdocAndExcerpt(jsdoc?: string, excerpt?: string): string {
   const parts: string[] = [];
   if (jsdoc?.trim()) {
-    parts.push(`  <aside data-section="jsdoc"><pre><code>${esc(jsdoc.trim())}</code></pre></aside>`);
+    parts.push(
+      `  <aside data-section="jsdoc"><pre><code>${esc(jsdoc.trim())}</code></pre></aside>`,
+    );
   }
   if (excerpt?.trim()) {
     parts.push(`  <pre data-section="excerpt"><code>${esc(excerpt.trim())}</code></pre>`);
@@ -624,7 +626,8 @@ export function composeFileNeuron(
   // degrades gracefully to "no jump-list on a short page", not to broken
   // navigation.
   const tocEntries = buildTocEntries(node, enrichment, seeAlsoLinks.length > 0);
-  const toc = tocEntries.length > TOC_MIN_ENTRIES_TO_RENDER ? renderToc({ entries: tocEntries }) : '';
+  const toc =
+    tocEntries.length > TOC_MIN_ENTRIES_TO_RENDER ? renderToc({ entries: tocEntries }) : '';
 
   // Callers linked by inbound edges — if inbound > 0 but no caller list is
   // available on the node itself, render a minimal "used by N files" note.
