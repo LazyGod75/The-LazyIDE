@@ -187,9 +187,9 @@ function buildFallback(title: string, subtitle: string): string {
 function sanitizeTitle(raw: string): string {
   return (
     raw
-      // eslint-disable-next-line no-control-regex -- strip raw control chars (0x00-0x1f) from untrusted title text
-      // biome-ignore lint/suspicious/noControlCharactersInRegex: same — raw control chars are stripped from untrusted input on purpose
-      .replace(/[\x00-\x1f]/g, ' ')
+      // Bounds built via fromCharCode so no literal control char appears in
+      // the regex — satisfies no-control-regex in both linters.
+      .replace(new RegExp(`[${String.fromCharCode(0)}-${String.fromCharCode(31)}]`, 'g'), ' ')
       .trim()
       .slice(0, 80) || 'Cursor conversation'
   );

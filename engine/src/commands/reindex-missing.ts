@@ -70,6 +70,8 @@
  */
 
 import { existsSync } from 'node:fs';
+import { buildEmbedText } from '../indexer/embed-index.js';
+import { MODEL_ID, hashKey } from '../indexer/embeddings.js';
 import {
   deleteNote,
   embedNotesForIndex,
@@ -78,8 +80,6 @@ import {
   listAllWithText,
   loadAllStoredEmbeddings,
 } from '../indexer/fts.js';
-import { buildEmbedText } from '../indexer/embed-index.js';
-import { MODEL_ID, hashKey } from '../indexer/embeddings.js';
 import type { IndexedNote } from '../indexer/note-types.js';
 import { type NoteFile, listAllNotePaths, readNote } from '../store/reader.js';
 import { getLogger } from '../util/logger.js';
@@ -331,7 +331,10 @@ export async function reconcileIndex(
       await embedNotesForIndex(batch);
       embeddingsBackfilled += batch.length;
       log.info(
-        { done: Math.min(i + batchSize, embeddingCandidates.length), total: embeddingCandidates.length },
+        {
+          done: Math.min(i + batchSize, embeddingCandidates.length),
+          total: embeddingCandidates.length,
+        },
         'reindex --missing: embedding backfill progress',
       );
     }

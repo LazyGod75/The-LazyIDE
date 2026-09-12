@@ -17,6 +17,11 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetConfigForTests } from '../../util/config.js';
 
+// These tests run reconcileIndex -> embedNotesForIndex -> ONNX model init,
+// which costs seconds even idle and far more under parallel-file contention.
+// The 5s vitest default is structurally wrong for this suite.
+vi.setConfig({ testTimeout: 30_000, hookTimeout: 30_000 });
+
 let tmpDir: string;
 let brainDir: string;
 let notesPath: string;
@@ -113,21 +118,25 @@ describe('reconcileIndex — missing-on-disk notes', () => {
     expect(second.indexed).toBe(0);
   });
 
-  it('never deletes an index row as a side effect of indexing missing notes', { timeout: 20000 }, async () => {
-    const { indexNote } = await import('../../indexer/fts.js');
-    const { readNote } = await import('../../store/reader.js');
-    const p1 = writeNoteFile('kept');
-    indexNote(readNote(p1));
-    writeNoteFile('new-one');
+  it(
+    'never deletes an index row as a side effect of indexing missing notes',
+    { timeout: 20000 },
+    async () => {
+      const { indexNote } = await import('../../indexer/fts.js');
+      const { readNote } = await import('../../store/reader.js');
+      const p1 = writeNoteFile('kept');
+      indexNote(readNote(p1));
+      writeNoteFile('new-one');
 
-    const { reconcileIndex } = await import('../reindex-missing.js');
-    await reconcileIndex({ dryRun: false });
+      const { reconcileIndex } = await import('../reindex-missing.js');
+      await reconcileIndex({ dryRun: false });
 
-    const { listAll } = await import('../../indexer/fts.js');
-    const ids = listAll({ includeExpired: true }).map((n) => n.id);
-    expect(ids).toContain('kept');
-    expect(ids).toContain('new-one');
-  });
+      const { listAll } = await import('../../indexer/fts.js');
+      const ids = listAll({ includeExpired: true }).map((n) => n.id);
+      expect(ids).toContain('kept');
+      expect(ids).toContain('new-one');
+    },
+  );
 });
 
 describe('reconcileIndex — superseded (stale-duplicate) notes', () => {
@@ -188,24 +197,28 @@ describe('reconcileIndex — superseded (stale-duplicate) notes', () => {
     expect(report.indexed).toBe(0); // dry-run never writes
   });
 
-  it('reconciles rows_before + indexed against rows_after and re-diffs disk vs index post-run', { timeout: 20000 }, async () => {
-    writeNoteFileInMonth('2026-06', 'regen-3');
-    const { indexNote } = await import('../../indexer/fts.js');
-    const { readNote } = await import('../../store/reader.js');
-    const newPath = writeNoteFileInMonth('2026-07', 'regen-3');
-    indexNote(readNote(newPath));
-    writeNoteFileInMonth('2026-07', 'brand-new-2');
+  it(
+    'reconciles rows_before + indexed against rows_after and re-diffs disk vs index post-run',
+    { timeout: 20000 },
+    async () => {
+      writeNoteFileInMonth('2026-06', 'regen-3');
+      const { indexNote } = await import('../../indexer/fts.js');
+      const { readNote } = await import('../../store/reader.js');
+      const newPath = writeNoteFileInMonth('2026-07', 'regen-3');
+      indexNote(readNote(newPath));
+      writeNoteFileInMonth('2026-07', 'brand-new-2');
 
-    const { reconcileIndex } = await import('../reindex-missing.js');
-    const report = await reconcileIndex({ dryRun: false });
+      const { reconcileIndex } = await import('../reindex-missing.js');
+      const report = await reconcileIndex({ dryRun: false });
 
-    expect(report.reconciled).toBe(true);
-    expect(report.reconciliation_note).toBeNull();
-    // Everything that should end up indexed does: the fresh regen-3 row
-    // (already there) + the newly-inserted brand-new-2. The stale regen-3
-    // orphan is superseded, so it correctly stays out of this count.
-    expect(report.remaining_unindexed_after).toBe(0);
-  });
+      expect(report.reconciled).toBe(true);
+      expect(report.reconciliation_note).toBeNull();
+      // Everything that should end up indexed does: the fresh regen-3 row
+      // (already there) + the newly-inserted brand-new-2. The stale regen-3
+      // orphan is superseded, so it correctly stays out of this count.
+      expect(report.remaining_unindexed_after).toBe(0);
+    },
+  );
 });
 
 describe('reconcileIndex — ghost rows', () => {

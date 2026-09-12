@@ -59,9 +59,7 @@ export function indexNote(note: NoteFile): IndexedNote {
   // concept and surfaces other Repository instances even without a direct
   // surface match. The augmented column is for FTS only; the structured
   // attributes (concepts, entities) remain canonical.
-  const text = augmentTextForIndex(
-    distilledText ? `${rawText}\n${distilledText}` : rawText,
-  );
+  const text = augmentTextForIndex(distilledText ? `${rawText}\n${distilledText}` : rawText);
   const conceptList = extractConcepts(rawText);
   const concepts = conceptList.length > 0 ? conceptList.join(',') : null;
 

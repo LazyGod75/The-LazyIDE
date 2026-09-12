@@ -111,9 +111,7 @@ export async function runIncrementalUpdate(): Promise<IndexUpdateResult> {
   }
 
   // Determine which files need (re-)indexing
-  const changedPaths = new Set(
-    textVersionStale ? allPaths : getChangedFiles(allPaths, store),
-  );
+  const changedPaths = new Set(textVersionStale ? allPaths : getChangedFiles(allPaths, store));
 
   // Determine which tracked paths no longer exist on disk
   const orphanedPaths = getOrphanedFingerprints(store).filter((p) => !existsSync(p));

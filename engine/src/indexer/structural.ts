@@ -328,7 +328,9 @@ function* lazyReadNotes(paths: readonly string[]): Generator<NoteFile> {
   for (const path of paths) {
     try {
       yield readNote(path);
-    } catch {}
+    } catch {
+      // file vanished between index listing and read — skip
+    }
   }
 }
 

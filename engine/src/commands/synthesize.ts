@@ -78,8 +78,7 @@ function metaFromHtml(html: string): NoteMeta {
     type: article?.getAttribute('data-cerveau-type') ?? '',
     topic: article?.getAttribute('data-cerveau-topic') ?? '',
     created: article?.getAttribute('data-cerveau-created') ?? '',
-    importance:
-      Number.parseFloat(article?.getAttribute('data-cerveau-importance') ?? '0.5') || 0.5,
+    importance: Number.parseFloat(article?.getAttribute('data-cerveau-importance') ?? '0.5') || 0.5,
   };
 }
 

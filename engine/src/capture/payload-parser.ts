@@ -106,9 +106,10 @@ function clipProse(s: string): string {
   if (trimmed.length === 0) return '';
   // Strip ANSI, collapse repeated chars, cap at 400 chars
   const stripped = trimmed
-    // eslint-disable-next-line no-control-regex -- ESC char (0x1b) is required to strip ANSI escape sequences
-    // biome-ignore lint/suspicious/noControlCharactersInRegex: ESC char (0x1b) is required for ANSI stripping
-    .replace(/\u001b\[[0-9;]*m/g, '')
+    // ESC built via fromCharCode so no literal control char appears in the
+    // regex — no-control-regex (eslint AND biome) stays quiet without a
+    // suppression pair fighting over which line attaches.
+    .replace(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g'), '')
     .replace(/(.)\1{6,}/g, '$1$1$1') // collapse runs ≥ 7 to 3
     .replace(/\s+/g, ' ')
     .trim();
