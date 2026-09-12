@@ -34,6 +34,7 @@ import { brainRoot } from '../store/paths.js';
 import { readNote } from '../store/reader.js';
 import { writeNote } from '../store/writer.js';
 import { callClaudeCliJsonArray, isClaudeCliAvailable } from '../util/claude-cli.js';
+import { getConfig } from '../util/config.js';
 import {
   type FingerprintStore,
   hasChanged,
@@ -700,17 +701,83 @@ export function hasNoiseExemptTag(tags: string | null | undefined): boolean {
 }
 
 /**
+ * Phase 0.5 incremental checkpoint — bump when detectNoise / the meta-text /
+ * placeholder rules change, so a rules update re-scans the full corpus once
+ * instead of letting notes screened under old rules stay noise forever.
+ */
+const NOISE_RULES_VERSION = 1;
+
+export interface NoiseCleanupState {
+  lastRunMs: number;
+  rulesVersion: number;
+}
+
+function noiseStatePath(): string {
+  return join(getConfig().cachePath, 'dream-noise-state.json');
+}
+
+/**
+ * Which notes Phase 0.5 must inspect this pass. A rules-version mismatch
+ * (or missing checkpoint) scans the whole corpus; otherwise only notes
+ * written since the last completed pass. Notes with no recorded mtime are
+ * always included — a note we cannot date is a note we cannot skip.
+ */
+export function selectNoiseCleanupCandidates(
+  notes: NoteEntry[],
+  state: NoiseCleanupState,
+): NoteEntry[] {
+  if (state.rulesVersion !== NOISE_RULES_VERSION) return notes;
+  return notes.filter((n) => !n.mtime_ms || n.mtime_ms > state.lastRunMs);
+}
+
+export function loadNoiseState(): NoiseCleanupState {
+  try {
+    const parsed = JSON.parse(readFileSync(noiseStatePath(), 'utf8')) as Partial<NoiseCleanupState>;
+    return {
+      lastRunMs: typeof parsed.lastRunMs === 'number' ? parsed.lastRunMs : 0,
+      rulesVersion: typeof parsed.rulesVersion === 'number' ? parsed.rulesVersion : 0,
+    };
+  } catch {
+    return { lastRunMs: 0, rulesVersion: 0 };
+  }
+}
+
+export function saveNoiseState(state: NoiseCleanupState): void {
+  try {
+    writeFileSync(noiseStatePath(), JSON.stringify(state), 'utf8');
+  } catch {
+    // best-effort — worst case the next run's delta is wider than necessary
+  }
+}
+
+/**
  * Phase 0.5: Invalidate low-quality (noise) notes. Returns number cleaned.
+ *
+ * Incremental by default: notes are scanned only when their file mtime is
+ * newer than the last completed pass — a full-corpus readNote()+stripNote()
+ * per dream run measured ~19s for 5k files even before the per-note work,
+ * one of the passes that push dream past its 600s maintenance ceiling on a
+ * mature brain. A rules-version bump or a missing state file falls back to
+ * a full scan so rule changes still reach old notes. Notes with no recorded
+ * mtime are always scanned (never silently skipped).
  */
 async function runNoiseCleanup(opts: DreamOptions): Promise<number> {
   const log = getLogger();
+  const runStartedMs = Date.now();
   const refreshedNotes = listAll({ includeExpired: false });
+  const state = loadNoiseState();
+  const candidates = selectNoiseCleanupCandidates(refreshedNotes, state);
+  if (candidates.length < refreshedNotes.length) {
+    log.debug(
+      { scanned: candidates.length, total: refreshedNotes.length },
+      'dream: noise cleanup scanning only notes changed since last pass',
+    );
+  }
   let noiseCount = 0;
 
-  for (let i = 0; i < refreshedNotes.length; i++) {
-    const n = refreshedNotes[i];
-    if (opts.pretty && i % 50 === 0)
-      showProgress(i, refreshedNotes.length, 'Checking note quality');
+  for (let i = 0; i < candidates.length; i++) {
+    const n = candidates[i];
+    if (opts.pretty && i % 50 === 0) showProgress(i, candidates.length, 'Checking note quality');
 
     try {
       const note = readNote(n.path);
@@ -730,6 +797,14 @@ async function runNoiseCleanup(opts: DreamOptions): Promise<number> {
     } catch {
       log.debug('dream: skipping unreadable note during noise cleanup');
     }
+  }
+
+  // Checkpoint uses the run's START time so notes written mid-pass (by a
+  // concurrent capture, or by this loop's own invalidation write before its
+  // mtime lands) are still re-scanned on the next pass. Dry-run does not
+  // advance the checkpoint — a preview must not narrow the next real pass.
+  if (!opts.dryRun) {
+    saveNoiseState({ lastRunMs: runStartedMs, rulesVersion: NOISE_RULES_VERSION });
   }
 
   if (noiseCount > 0) {
