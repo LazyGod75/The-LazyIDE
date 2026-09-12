@@ -19,7 +19,7 @@ delegates to agents, bots, and models. A **frontier model** does the thinking;
 
 <br/>
 
-<img src="public/readme/cockpit.png" width="100%" alt="Lazy — the whole fleet at a glance" />
+<img src="public/readme/brain.gif" width="100%" alt="Lazy — the Brain: a 3D vault of everything your fleet knows" />
 
 </div>
 
@@ -79,7 +79,7 @@ a free account — or skip it and use your own keys.
 
 ### LazyManager
 
-<img src="public/readme/manager.png" width="100%" alt="LazyManager" />
+<img src="public/readme/manager.gif" width="100%" alt="LazyManager — brief in chat, the plan lands as a graph" />
 
 Your AI project manager. One chat panel, two modes:
 
@@ -97,7 +97,7 @@ frontier judgment without paying frontier prices on every token.
 
 ### Cockpit / Canvas
 
-<img src="public/readme/canvas.png" width="100%" alt="Canvas" />
+<img src="public/readme/canvas.gif" width="100%" alt="Canvas — every mission is a live node on a DAG" />
 
 If you use AI agents today, you're probably staring at a terminal: output
 scrolling everywhere, no idea who's working on what or what failed. That
@@ -117,13 +117,13 @@ bot is a node:
 Instead of reading terminal soup you see the whole fleet at a glance, drill
 into any node, and approve or reject work right from the canvas.
 
-<img src="public/readme/mission-running.png" width="100%" alt="A real mission running on the canvas — steps, worktree, live status" />
+<img src="public/readme/mission-running.gif" width="100%" alt="A real mission running on the canvas — live line, stage rail, worktree" />
 
-<img src="public/readme/localhost-preview.png" width="100%" alt="Live localhost dev-server preview embedded in the canvas" />
+<img src="public/readme/localhost-preview.gif" width="100%" alt="Live localhost dev-server preview embedded in the canvas" />
 
 ### Brain
 
-<img src="public/readme/brain.png" width="100%" alt="Brain" />
+<img src="public/readme/brain.gif" width="100%" alt="Brain — the 3D vault, a neuron with an owner, the wiki page" />
 
 Persistent memory that survives sessions — a **3D neural graph** where every
 neuron is a piece of knowledge (decisions, patterns, code context, rules).
@@ -142,7 +142,7 @@ where the last one stopped.
 
 ### Code
 
-<img src="public/readme/code.png" width="100%" alt="Code" />
+<img src="public/readme/code.gif" width="100%" alt="Code — the file knows the brain, the brain knows the file" />
 
 A multi-project code workspace: file explorer, CodeMirror editor with tabs,
 and the LazyManager docked on the right.
@@ -152,6 +152,8 @@ and the LazyManager docked on the right.
 - Real diff drawer to review agent changes inline
 
 ### Review
+
+<img src="public/readme/review.gif" width="100%" alt="Review — dual judges read the diff, then merge to main" />
 
 Pending diffs from agent work. Real git diffs — never fake data. See exactly
 what agents changed before you approve, with per-change risk and reviewer
@@ -172,7 +174,7 @@ Autonomous bots that run their own routines, similar to Grok bots.
 
 ### Team
 
-<img src="public/readme/team.png" width="100%" alt="Team" />
+<img src="public/readme/team.gif" width="100%" alt="Team — shared seats, shared brain, same law for everyone" />
 
 A shared workspace for teams. The view adapts to your role — solo, lead,
 member, or multi-team — and the Team Brain shares the same memory across
@@ -197,6 +199,10 @@ The desktop app is a **Tauri 2** shell (Rust) around a React UI. The brain is a
 **Node sidecar** (`lazybrain`): notes are human-readable HTML files on disk,
 indexed in SQLite FTS5 with local ONNX embeddings — your knowledge never
 leaves your machine unless you choose a hosted brain.
+
+<div align="center">
+<img src="public/readme/cockpit.png" width="100%" alt="The cockpit — the whole fleet at a glance" />
+</div>
 
 ## Models
 
