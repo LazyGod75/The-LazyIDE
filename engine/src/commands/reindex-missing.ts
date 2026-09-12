@@ -78,6 +78,8 @@ import {
   listAllWithText,
   loadAllStoredEmbeddings,
 } from '../indexer/fts.js';
+import { buildEmbedText } from '../indexer/embed-index.js';
+import { MODEL_ID, hashKey } from '../indexer/embeddings.js';
 import type { IndexedNote } from '../indexer/note-types.js';
 import { type NoteFile, listAllNotePaths, readNote } from '../store/reader.js';
 import { getLogger } from '../util/logger.js';
@@ -108,6 +110,8 @@ export interface ReindexMissingReport {
   ghost_rows: number;
   ghost_rows_deleted: number;
   embeddings_missing_before: number;
+  /** Embeddings present but stale (embed_text_hash drift after a buildEmbedText upgrade, or wrong model) — counted separately so a preview shows the real backfill work pending. */
+  embeddings_stale_before: number;
   embeddings_backfilled: number;
   /** SQLite `notes` row count after this run (== indexed_notes_before for a dry-run). */
   indexed_notes_after: number;
@@ -300,17 +304,34 @@ export async function reconcileIndex(
   // aren't redundantly counted as still missing here.
   const storedEmbeddingIds = loadAllStoredEmbeddings();
 
+  // Staleness rule identical to resolveCorpusVectors() (embed-index.ts):
+  // an embedding is stale when its stored hash doesn't match the CURRENT
+  // buildEmbedText output, or when it was computed by a different model.
+  // id-presence alone is NOT sufficient — buildEmbedText upgrades (e.g. the
+  // distilled-fields head, 2026-09) change the hash of every note while
+  // keeping its id, and without this check the first L3 query after such an
+  // upgrade would pay the entire corpus re-embed cold. Computed once,
+  // outside the dry-run gate, so the preview reports the real pending work.
+  const embeddingCandidates = listAllWithText({ includeExpired: true }).filter((n) => {
+    const stored = storedEmbeddingIds.get(n.id);
+    if (!stored) return true;
+    if (stored.modelId !== MODEL_ID) return true;
+    return stored.embedTextHash !== hashKey(buildEmbedText(n) || 'untitled');
+  });
+  // Of those candidates, the ones with an existing (stale) row — the rest are
+  // never-embedded and already counted in embeddingsMissingBefore.
+  const embeddingsStaleBefore = embeddingCandidates.filter((n) =>
+    storedEmbeddingIds.has(n.id),
+  ).length;
+
   let embeddingsBackfilled = 0;
   if (!dryRun) {
-    const candidates = listAllWithText({ includeExpired: true }).filter(
-      (n) => !storedEmbeddingIds.has(n.id),
-    );
-    for (let i = 0; i < candidates.length; i += batchSize) {
-      const batch = candidates.slice(i, i + batchSize);
+    for (let i = 0; i < embeddingCandidates.length; i += batchSize) {
+      const batch = embeddingCandidates.slice(i, i + batchSize);
       await embedNotesForIndex(batch);
       embeddingsBackfilled += batch.length;
       log.info(
-        { done: Math.min(i + batchSize, candidates.length), total: candidates.length },
+        { done: Math.min(i + batchSize, embeddingCandidates.length), total: embeddingCandidates.length },
         'reindex --missing: embedding backfill progress',
       );
     }
@@ -375,6 +396,7 @@ export async function reconcileIndex(
     ghost_rows: ghostRows.length,
     ghost_rows_deleted: ghostRowsDeleted,
     embeddings_missing_before: embeddingsMissingBefore,
+    embeddings_stale_before: embeddingsStaleBefore,
     embeddings_backfilled: embeddingsBackfilled,
     indexed_notes_after: indexedNotesAfter,
     remaining_unindexed_after: remainingUnindexedAfter,
@@ -440,6 +462,7 @@ function formatReport(report: ReindexMissingReport): string {
     w.push(`  Failed:                  ${report.failed}`);
   }
   w.push(`  Embeddings missing:      ${report.embeddings_missing_before}`);
+  w.push(`  Embeddings stale:        ${report.embeddings_stale_before}`);
   if (!report.dryRun) {
     w.push(`  Embeddings backfilled:   ${report.embeddings_backfilled}`);
   }

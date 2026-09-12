@@ -113,7 +113,7 @@ describe('reconcileIndex — missing-on-disk notes', () => {
     expect(second.indexed).toBe(0);
   });
 
-  it('never deletes an index row as a side effect of indexing missing notes', async () => {
+  it('never deletes an index row as a side effect of indexing missing notes', { timeout: 20000 }, async () => {
     const { indexNote } = await import('../../indexer/fts.js');
     const { readNote } = await import('../../store/reader.js');
     const p1 = writeNoteFile('kept');
@@ -188,7 +188,7 @@ describe('reconcileIndex — superseded (stale-duplicate) notes', () => {
     expect(report.indexed).toBe(0); // dry-run never writes
   });
 
-  it('reconciles rows_before + indexed against rows_after and re-diffs disk vs index post-run', async () => {
+  it('reconciles rows_before + indexed against rows_after and re-diffs disk vs index post-run', { timeout: 20000 }, async () => {
     writeNoteFileInMonth('2026-06', 'regen-3');
     const { indexNote } = await import('../../indexer/fts.js');
     const { readNote } = await import('../../store/reader.js');
