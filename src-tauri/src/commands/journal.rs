@@ -1024,6 +1024,42 @@ pub(crate) fn journal_retention_run_inner(
         compacted_count
     };
 
+    // Second pass — superseded `mission.updated` snapshots. Every mission's
+    // LATEST snapshot (mission.updated or mission.created) stays full
+    // forever: projectReport.ts and boot-recovery replay read it. All EARLIER
+    // mission.updated rows for the same mission are dead weight once
+    // superseded — on a real journal this was 220MB / 96% of the database
+    // (~20KB per update x ~60 updates per mission), and `mission.updated`
+    // can never join DEFAULT_COMPACTABLE_TYPES outright because the latest
+    // row must never compact. Same semantics: row + aggregate columns
+    // survive, only `payload` shrinks.
+    let superseded = {
+        let tx = conn
+            .transaction()
+            .map_err(|e| format!("journal_retention_run: superseded begin failed: {}", e))?;
+        let superseded_sql = "UPDATE events SET payload = ?1 WHERE seq IN (
+            SELECT e.seq FROM events e
+            WHERE e.type = 'mission.updated' AND e.ts_ms < ?2 AND e.payload != ?1
+              AND e.seq < (
+                SELECT MAX(e2.seq) FROM events e2
+                WHERE e2.mission_id = e.mission_id
+                  AND e2.type IN ('mission.updated', 'mission.created')
+              )
+            ORDER BY e.seq ASC LIMIT ?3
+        )";
+        let count = tx
+            .execute(
+                superseded_sql,
+                (COMPACTED_PAYLOAD, cutoff_ms, batch_size),
+            )
+            .map_err(|e| format!("journal_retention_run: superseded update failed: {}", e))?
+            as i64;
+        tx.commit()
+            .map_err(|e| format!("journal_retention_run: superseded commit failed: {}", e))?;
+        count
+    };
+    let compacted = compacted + superseded;
+
     let vacuumed = match conn.execute_batch("VACUUM") {
         Ok(()) => true,
         Err(e) => {
@@ -1580,6 +1616,55 @@ mod tests {
         assert_eq!(missions[0].status, "done");
 
         eprintln!("mission_events_upsert_missions_current PASSED");
+    }
+
+    #[test]
+    fn retention_compacts_superseded_mission_updated_but_keeps_latest() {
+        let mut conn = fresh_db();
+        // 91-day-old rows: two superseded mission.updated + the latest one,
+        // plus a mission whose only snapshot is mission.created.
+        let old = chrono::Utc::now().timestamp_millis() - 91 * 86_400_000;
+        let ins = |conn: &mut Connection, type_: &str, mid: &str, payload: &str, ts: i64| {
+            conn.execute(
+                "INSERT INTO events (ts_ms, project_id, mission_id, actor, type, payload, tokens_in, tokens_out, cost_usd)
+                 VALUES (?1, 'proj-1', ?2, 'system', ?3, ?4, 0, 0, 0.0)",
+                (ts, mid, type_, payload),
+            )
+            .unwrap();
+        };
+        ins(&mut conn, "mission.created", "m1", r#"{"mission":{"id":"m1","v":0}}"#, old);
+        ins(&mut conn, "mission.updated", "m1", r#"{"mission":{"id":"m1","v":1}}"#, old);
+        ins(&mut conn, "mission.updated", "m1", r#"{"mission":{"id":"m1","v":2}}"#, old);
+        ins(&mut conn, "mission.updated", "m1", r#"{"mission":{"id":"m1","v":3}}"#, old); // latest snapshot
+        ins(&mut conn, "mission.updated", "m2", r#"{"mission":{"id":"m2","v":9}}"#, old); // latest (only)
+        ins(&mut conn, "mission.updated", "m1", r#"{"mission":{"id":"m1","v":4}}"#, chrono::Utc::now().timestamp_millis()); // too young
+
+        let types: Vec<String> = vec![]; // exercise ONLY the superseded pass
+        let summary = journal_retention_run_inner(&mut conn, 90, &types, 500).expect("retention");
+        assert_eq!(summary.compacted, 2, "two superseded m1 snapshots must compact");
+
+        let rows: Vec<(String, String)> = {
+            let mut stmt = conn
+                .prepare("SELECT mission_id, payload FROM events ORDER BY seq")
+                .unwrap();
+            stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
+                .unwrap()
+                .collect::<Result<_, _>>()
+                .unwrap()
+        };
+        let _ = payloads;
+        let is_compacted = |p: &str| p.contains("compacted");
+        assert!(!is_compacted(&rows[0].1), "mission.created snapshot kept");
+        assert!(is_compacted(&rows[1].1), "m1 v1 compacted");
+        assert!(is_compacted(&rows[2].1), "m1 v2 compacted");
+        assert!(!is_compacted(&rows[3].1), "m1 v3 = latest snapshot kept");
+        assert!(!is_compacted(&rows[4].1), "m2 only snapshot kept");
+        assert!(!is_compacted(&rows[5].1), "young snapshot kept");
+
+        // Idempotent: a second pass compacts nothing.
+        let again = journal_retention_run_inner(&mut conn, 90, &types, 500).expect("second run");
+        assert_eq!(again.compacted, 0);
+        eprintln!("retention_compacts_superseded_mission_updated_but_keeps_latest PASSED");
     }
 
     #[test]
