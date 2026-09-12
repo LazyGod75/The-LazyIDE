@@ -1652,7 +1652,6 @@ mod tests {
                 .collect::<Result<_, _>>()
                 .unwrap()
         };
-        let _ = payloads;
         let is_compacted = |p: &str| p.contains("compacted");
         assert!(!is_compacted(&rows[0].1), "mission.created snapshot kept");
         assert!(is_compacted(&rows[1].1), "m1 v1 compacted");

@@ -33,17 +33,53 @@ export interface EmbeddableNote {
   title?: string | null;
   tags?: string | null;
   text?: string | null;
+  /** One-sentence TLDR (the `tldr` column, falling back to section_tldr). */
+  tldr?: string | null;
+  section_tldr?: string | null;
+  /** Pipe-separated recall questions this note answers ("why X|how Y"). */
+  questions?: string | null;
+  /** Comma-separated aliases ("postgres,postgresql,pg"). */
+  aliases?: string | null;
+  /** Comma-separated extracted concepts ("db:postgres-prod,lib:react"). */
+  concepts?: string | null;
 }
 
+/**
+ * Compose the retrieval document that gets embedded.
+ *
+ * SOTA note (2026-09): distilled fields come FIRST and are never truncated —
+ * title/tldr/questions/aliases/concepts carry far more semantic signal per
+ * character than raw body prose (which includes infobox boilerplate, nav
+ * fragments and tool noise that dilute the vector). The body keeps whatever
+ * budget remains under EMBED_CHAR_LIMIT so long notes can't push the
+ * distilled head out of the window. Changing this function invalidates every
+ * cached embedding via embed_text_hash — a deliberate, one-time re-embed
+ * cost that resolveCorpusVectors absorbs incrementally.
+ */
 export function buildEmbedText(n: {
   title?: string | null;
   tags?: string | null;
   text?: string | null;
+  tldr?: string | null;
+  section_tldr?: string | null;
+  questions?: string | null;
+  aliases?: string | null;
+  concepts?: string | null;
 }): string {
-  const title = (n.title ?? '').trim();
-  const tags = (n.tags ?? '').trim();
-  const body = (n.text ?? '').slice(0, EMBED_CHAR_LIMIT).trim();
-  return [title, tags, body].filter(Boolean).join('\n');
+  const tldr = (n.tldr ?? n.section_tldr ?? '').trim();
+  const head = [
+    (n.title ?? '').trim(),
+    tldr,
+    (n.questions ?? '').replace(/\|/g, '; ').trim(),
+    (n.aliases ?? '').trim(),
+    (n.concepts ?? '').replace(/,/g, ' ').trim(),
+    (n.tags ?? '').trim(),
+  ]
+    .filter(Boolean)
+    .join('\n');
+  const bodyBudget = Math.max(EMBED_CHAR_LIMIT - head.length, 256);
+  const body = (n.text ?? '').slice(0, bodyBudget).trim();
+  return [head, body].filter(Boolean).join('\n');
 }
 
 /**
