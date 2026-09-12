@@ -17,6 +17,11 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetConfigForTests } from '../../util/config.js';
 
+// These tests drive runIncrementalUpdate -> embedNotesForIndex -> ONNX model
+// init, which takes several seconds even unloaded — and far longer on a busy
+// box. The default 5s vitest timeout was structurally wrong for this suite.
+vi.setConfig({ testTimeout: 30_000, hookTimeout: 30_000 });
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

@@ -195,6 +195,39 @@ const MIGRATIONS: Migration[] = [
       db.exec('CREATE INDEX IF NOT EXISTS idx_notes_conflict_with ON notes(conflict_with)');
     },
   },
+  {
+    version: 12,
+    description: 'indexer_state key-value table (rules-version markers)',
+    up(db) {
+      // Generic key-value store for indexer-level rollout state — e.g.
+      // `indexer_text_version`, bumped when the FTS text composition changes
+      // (see index-update.ts: a bump forces one full re-index so every note's
+      // notes_fts row is regenerated under the new rules, without touching
+      // the conversation-ingestion fingerprint store, which must NOT be
+      // discarded because it would re-run LLM ingestion on every transcript).
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS indexer_state (
+          key   TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+      `);
+      // Stamp the current indexer_text_version only on EMPTY brains: a
+      // just-created index has nothing to re-index, while an existing brain
+      // (notes present) keeps the marker absent so index-update's version
+      // gate fires one full re-index to regenerate FTS rows under the new
+      // text-composition rules.
+      const noteCount =
+        (db.prepare('SELECT COUNT(*) AS n FROM notes').get() as { n: number } | undefined)?.n ?? 0;
+      if (noteCount === 0) {
+        // Keep this literal in sync with INDEXER_TEXT_VERSION in
+        // commands/index-update.ts — schema.ts can't import the command
+        // module (indexer <- commands direction only).
+        db.prepare(
+          `INSERT OR IGNORE INTO indexer_state (key, value) VALUES ('indexer_text_version', '2026-09-distilled-v1')`,
+        ).run();
+      }
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------

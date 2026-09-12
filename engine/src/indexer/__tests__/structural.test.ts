@@ -532,7 +532,7 @@ describe('structuralQuery — the SQL-pushdown path does not read the whole corp
       const fp = writeNoteFile(`n-${i}`, noteHtml(`n-${i}`, type, 'x'));
       indexNote(readNote(fp));
     }
-  }, 20000);
+  }, 60000);
 
   it('rare-type query reads only the matching notes, not the full 300-note corpus', async () => {
     const { structuralQuery } = await import('../structural.js');

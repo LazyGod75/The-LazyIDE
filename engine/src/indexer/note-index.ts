@@ -32,13 +32,36 @@ export function indexNote(note: NoteFile): IndexedNote {
   }
   const title = root.querySelector('h1, h2, h3')?.textContent?.trim() ?? note.id;
   const rawText = stripTags(root.outerHTML);
+
+  // Distilled-field injection (2026-09): the highest-signal note fields live
+  // in ATTRIBUTE values — <meta name="aliases" content="...">, <details
+  // data-q="...">, data-cerveau-entities — none of which ever reach
+  // textContent, so they were invisible to BM25 entirely (a query for an
+  // alias like "pg" could never hit a note that only carries the alias).
+  // Appending them to the FTS text puts those tokens in the index; the tldr
+  // section text is deliberately duplicated (it IS in rawText already) so
+  // distilled terms get ~2x BM25 weight — a field boost, not an accident.
+  const sectionTldr = extractSectionTextContent(root, 'tldr', 1500);
+  const questionsEarly = extractQuestionsFromHtml(document);
+  const aliasesEarly = extractAliasesFromHtml(document);
+  const distilledText = [
+    sectionTldr,
+    questionsEarly,
+    aliasesEarly,
+    root.getAttribute('data-cerveau-entities') ?? '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
   // Spreading activation: enrich indexed text with sub-tokens so identifiers
   // like UserRepository expose "User" and "Repository" to BM25. Wikipedia
   // pattern — a query about "OrderRepository" now activates the "Repository"
   // concept and surfaces other Repository instances even without a direct
   // surface match. The augmented column is for FTS only; the structured
   // attributes (concepts, entities) remain canonical.
-  const text = augmentTextForIndex(rawText);
+  const text = augmentTextForIndex(
+    distilledText ? `${rawText}\n${distilledText}` : rawText,
+  );
   const conceptList = extractConcepts(rawText);
   const concepts = conceptList.length > 0 ? conceptList.join(',') : null;
 
@@ -70,14 +93,15 @@ export function indexNote(note: NoteFile): IndexedNote {
   const conflictWith = root.getAttribute('data-cerveau-conflict-with') ?? null;
 
   // Haiku #8: Extract multi-axis indexing data from HTML balises
-  const questions = extractQuestionsFromHtml(document);
+  // (questions/aliases/sectionTldr already extracted above for the FTS
+  // distilled-field injection — reuse, don't re-walk the DOM)
+  const questions = questionsEarly;
   const errorPatterns = extractErrorPatternsFromHtml(document);
-  const aliases = extractAliasesFromHtml(document);
+  const aliases = aliasesEarly;
   const sectionSummary = extractSectionTextContent(root, 'summary', 1500);
   const sectionReasoning = extractSectionTextContent(root, 'reasoning', 1500);
   const sectionQa = extractSectionTextContent(root, 'qa', 1500);
   const sectionToolTrace = extractSectionTextContent(root, 'tool_trace', 1500);
-  const sectionTldr = extractSectionTextContent(root, 'tldr', 1500);
   const warnings = extractWarningsFromHtml(root);
   // Extract topic and tldr from data attributes
   const topic = root.getAttribute('data-cerveau-topic');

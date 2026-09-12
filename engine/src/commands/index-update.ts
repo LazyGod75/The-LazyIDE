@@ -12,7 +12,7 @@
  */
 
 import { existsSync } from 'node:fs';
-import { deleteNote, embedNotesForIndex, indexNote } from '../indexer/fts.js';
+import { deleteNote, embedNotesForIndex, getDb, indexNote } from '../indexer/fts.js';
 import type { IndexedNote } from '../indexer/note-types.js';
 import { readAllNotes } from '../store/reader.js';
 import {
@@ -35,6 +35,39 @@ export interface IndexUpdateResult {
 
 export interface IndexUpdateCliOptions {
   pretty?: boolean;
+}
+
+/**
+ * Rules version for the FTS text composition produced by indexNote().
+ * Bump this when the indexed `text` column's composition changes (e.g.
+ * 2026-09: distilled-field injection — tldr/questions/aliases/entities
+ * appended to the FTS text in note-index.ts). A mismatch forces ONE full
+ * re-index of every note file — file fingerprints are deliberately NOT
+ * touched, because the same store also tracks conversation ingestion and
+ * discarding it would re-run LLM extraction on every transcript. The
+ * re-indexed notes then get re-fingerprinted normally as their rows are
+ * rewritten.
+ */
+const INDEXER_TEXT_VERSION = '2026-09-distilled-v1';
+
+function readIndexerTextVersion(): string | null {
+  try {
+    const row = getDb()
+      .prepare(`SELECT value FROM indexer_state WHERE key = 'indexer_text_version'`)
+      .get() as { value: string } | undefined;
+    return row?.value ?? null;
+  } catch {
+    return null; // table may not exist yet on a pre-v12 brain
+  }
+}
+
+function writeIndexerTextVersion(version: string): void {
+  getDb()
+    .prepare(
+      `INSERT INTO indexer_state (key, value) VALUES ('indexer_text_version', ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    )
+    .run(version);
 }
 
 /** Error codes / substrings that indicate SQLite file-lock contention. */
@@ -66,8 +99,21 @@ export async function runIncrementalUpdate(): Promise<IndexUpdateResult> {
   const allNotes = readAllNotes();
   const allPaths = allNotes.map((n) => n.path);
 
+  // Rules-version gate: when the FTS text composition changed since the
+  // last update (see INDEXER_TEXT_VERSION), every note file counts as
+  // changed — one forced re-index pass, then the marker is rewritten.
+  const textVersionStale = readIndexerTextVersion() !== INDEXER_TEXT_VERSION;
+  if (textVersionStale) {
+    log.info(
+      { stored: readIndexerTextVersion(), current: INDEXER_TEXT_VERSION },
+      'index-update: indexer_text_version changed — forcing one full re-index',
+    );
+  }
+
   // Determine which files need (re-)indexing
-  const changedPaths = new Set(getChangedFiles(allPaths, store));
+  const changedPaths = new Set(
+    textVersionStale ? allPaths : getChangedFiles(allPaths, store),
+  );
 
   // Determine which tracked paths no longer exist on disk
   const orphanedPaths = getOrphanedFingerprints(store).filter((p) => !existsSync(p));
@@ -124,6 +170,7 @@ export async function runIncrementalUpdate(): Promise<IndexUpdateResult> {
   }
 
   saveFingerprints(store);
+  if (textVersionStale) writeIndexerTextVersion(INDEXER_TEXT_VERSION);
   log.info({ indexed, deleted, skipped, failed }, 'incremental index update complete');
 
   // Batch-embed only the notes actually (re)indexed this run — cache-aware
