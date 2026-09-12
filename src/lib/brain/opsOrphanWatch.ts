@@ -79,9 +79,20 @@ export async function pollBrainOpsOrphan(opts: {
 }): Promise<BrainOpsStatus | null> {
   const read = opts.readStatus ?? readBrainOpsStatus;
   const status = await read();
-  if (!status || !isOpsOrphan(status, opts.nowMs ?? Date.now())) {
-    // Re-arm: a healthy/absent status means the previous orphan condition
-    // resolved — the NEXT orphan must report fresh, not stay deduped away.
+  if (!status) {
+    // A null read (missing/partially-written ops-status.json) is NOT proof
+    // the orphan resolved — treat it as no-information and keep the dedupe:
+    // the timed_out record stays in the file until a maintenance step
+    // overwrites it, so a single flaky read otherwise re-arms and the same
+    // orphan re-emits on the very next poll (real incident 2026-09-11: the
+    // same "dream killed after 600s" pid=24920 was journaled 5× in 17min
+    // between read failures).
+    return null;
+  }
+  if (!isOpsOrphan(status, opts.nowMs ?? Date.now())) {
+    // Re-arm: a positively-healthy status means the previous orphan
+    // condition resolved — the NEXT orphan must report fresh, not stay
+    // deduped away.
     if (lastEmittedFingerprint !== null) {
       lastEmittedFingerprint = null;
       persistFingerprint(null);

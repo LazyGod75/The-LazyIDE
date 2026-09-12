@@ -108,10 +108,23 @@ function isObserverNote(html: string): boolean {
     if (pattern.test(html)) return true;
   }
 
-  // Extract article text and run isAgentMetaText on leading content
+  // Extract article text and run isAgentMetaText on leading content.
+  // The standard <aside class="infobox"> is removed FIRST: its dl terms
+  // ("Source session:dream-…", "Type reference Status active") are the
+  // note's own provenance — present in every well-formed stored note — but
+  // once tag-stripped they look exactly like the leaked-metadata signatures
+  // isAgentMetaText was written for (its patterns target CONVERSATION text,
+  // where such lines are scaffolding). Measured on a real 3.5k-note brain:
+  // this check flagged 3,246/3,508 notes as "observer residue" purely via
+  // the infobox's "Source session:<id>" line — a prune --apply would have
+  // destroyed 92% of a healthy brain.
   const articleMatch = html.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
   if (articleMatch) {
-    const textContent = articleMatch[1]
+    const bodyOnly = articleMatch[1].replace(
+      /<aside[^>]*class\s*=\s*["'][^"']*\binfobox\b[^"']*["'][^>]*>[\s\S]*?<\/aside>/gi,
+      ' ',
+    );
+    const textContent = bodyOnly
       .replace(/<[^>]+>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()

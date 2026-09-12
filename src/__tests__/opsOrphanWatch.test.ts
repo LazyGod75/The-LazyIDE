@@ -90,6 +90,25 @@ describe('pollBrainOpsOrphan', () => {
     expect(vi.mocked(emitEvent)).toHaveBeenCalledTimes(1);
   });
 
+  it('does NOT re-arm on a null read — a flaky status read must not re-emit the same orphan', async () => {
+    // Real incident 2026-09-11: the same "dream killed after 600s" (pid 24920)
+    // was journaled 5× in 17 minutes — every transient read failure
+    // (missing/partial ops-status.json mid-rewrite) reset the dedupe.
+    const { emitEvent } = await import('../lib/journal/journal');
+    const orphan = status({ phase: 'timed_out', step: 'dream', pid: 24920 });
+    const readStatus = vi
+      .fn()
+      .mockResolvedValueOnce(orphan)
+      .mockResolvedValueOnce(null) // transient read failure — NOT a recovery
+      .mockResolvedValueOnce(orphan)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(orphan);
+    for (let i = 0; i < 5; i++) {
+      await pollBrainOpsOrphan({ projectId: 'proj', readStatus });
+    }
+    expect(vi.mocked(emitEvent)).toHaveBeenCalledTimes(1);
+  });
+
   it('re-arms the dedupe after a healthy status read (a recovered-then-orphaned dream IS a new signal)', async () => {
     const { emitEvent } = await import('../lib/journal/journal');
     const orphan = status({ phase: 'timed_out', step: 'dream', pid: 42 });
