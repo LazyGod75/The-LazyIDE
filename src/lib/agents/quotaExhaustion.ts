@@ -34,6 +34,22 @@ const QUOTA_EXHAUSTION_PATTERN =
   /you(?:'ve|’ve| have) hit your (?:session|usage|weekly|five[- ]hour|5[- ]hour) limit/i;
 
 /**
+ * The Devin CLI's equivalent phrasing (observed live 2026-09-12):
+ *   "session/prompt failed: Your weekly usage quota has been exhausted.
+ *    Visit https://app.devin.ai/settings/usage to purchase on-demand usage
+ *    or turn on auto-reload. (trace ID: ...)"
+ * Same first-person-addressed semantics ("your ... has been exhausted" is
+ * the CLI reporting the user's own quota state), same classification need —
+ * without it, a Devin quota wall classifies as an ordinary failure and
+ * missions retry against it exactly like the Claude incident above. The
+ * "has been exhausted" past-tense construction keeps the same no-false-
+ * positive property: task text discussing quotas ("handle when the usage
+ * quota is exhausted") does not carry this exact phrasing.
+ */
+const DEVIN_QUOTA_PATTERN =
+  /your\s+(?:(?:weekly|monthly|daily|hourly|session)\s+)?usage\s+quota\s+has\s+been\s+exhausted/i;
+
+/**
  * Captures "resets <time>[am|pm] (<timezone>)" immediately after the
  * exhaustion phrase — the CLI's own format, e.g.
  * "resets 12:30am (Europe/Paris)". The timezone group is optional (some
@@ -147,7 +163,7 @@ function parseResetTimeLabel(timeLabel: string): { hour: number; minute: number 
  * defaults to the real clock.
  */
 export function detectQuotaExhaustion(text: string, nowMs: number = Date.now()): QuotaExhaustionInfo | null {
-  if (!QUOTA_EXHAUSTION_PATTERN.test(text)) return null;
+  if (!QUOTA_EXHAUSTION_PATTERN.test(text) && !DEVIN_QUOTA_PATTERN.test(text)) return null;
 
   const resetMatch = RESET_TIME_PATTERN.exec(text);
   if (!resetMatch) return {};

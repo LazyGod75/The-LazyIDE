@@ -75,6 +75,23 @@ describe('detectQuotaExhaustion', () => {
   it('does NOT false-positive on an unrelated mention of "usage limit" without the CLI construction', () => {
     expect(detectQuotaExhaustion('Our current usage limit is 1000 requests/day')).toBeNull();
   });
+
+  it('detects the Devin CLI quota phrasing (verbatim from a live 2026-09-12 failure)', () => {
+    const info = detectQuotaExhaustion(
+      'session/prompt failed: Your weekly usage quota has been exhausted. Visit https://app.devin.ai/settings/usage to purchase on-demand usage or turn on auto-reload. (trace ID: c102dbbeca400a2e68bf2d9e9f53b6a0)',
+    );
+    expect(info).not.toBeNull();
+    // Devin's message carries no reset time — both fields stay absent.
+    expect(info?.resetLabel).toBeUndefined();
+    expect(info?.resetAtMs).toBeUndefined();
+  });
+
+  it('does NOT false-positive on task text that discusses quota exhaustion', () => {
+    expect(
+      detectQuotaExhaustion('Show a banner when the user\'s usage quota is exhausted'),
+    ).toBeNull();
+    expect(detectQuotaExhaustion('The plan for your weekly usage quota tracking feature')).toBeNull();
+  });
 });
 
 describe('formatQuotaExhaustionReason', () => {
