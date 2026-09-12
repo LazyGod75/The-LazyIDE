@@ -111,9 +111,15 @@ bot is a node:
 - **Loop nodes** — recurring tasks on a schedule
 - **Router nodes** — dispatch work to the right agent automatically
 - **LazyBot nodes** — bots running their own routines
+- **Preview nodes** — your `localhost` dev server rendered live inside the
+  canvas, next to the mission that's editing it
 
 Instead of reading terminal soup you see the whole fleet at a glance, drill
 into any node, and approve or reject work right from the canvas.
+
+<img src="public/readme/mission-running.png" width="100%" alt="A real mission running on the canvas — steps, worktree, live status" />
+
+<img src="public/readme/localhost-preview.png" width="100%" alt="Live localhost dev-server preview embedded in the canvas" />
 
 ### Brain
 

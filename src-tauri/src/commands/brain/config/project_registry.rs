@@ -549,7 +549,10 @@ fn parent_is_inside_git_repo(parent: &std::path::Path) -> bool {
 /// `finish_new_project_git_repo`'s doc comment for the outage that ordering
 /// bug caused. Mirrors `git_init_if_needed`'s (brain/publish.rs) `-b main` /
 /// plain-`init` fallback for older git.
-fn git_init_only(dir: &std::path::Path) -> Result<(), String> {
+/// Also called from `agent_create_worktree_inner` (git/worktree/mod.rs) —
+/// a mission launched on a project registered from an EXISTING non-git
+/// folder initializes the repo on the spot instead of hard-failing.
+pub(crate) fn git_init_only(dir: &std::path::Path) -> Result<(), String> {
     let init = quiet_command(git_binary())
         .args(["init", "-b", "main"])
         .current_dir(dir)
@@ -604,7 +607,7 @@ fn git_init_only(dir: &std::path::Path) -> Result<(), String> {
 /// "Lazy Agent <agent@lazy.dev>" mirrors the same neutral bot identity this
 /// codebase already uses for other agent-authored commits (worktree_sweep.rs,
 /// worktree_cleanup.rs, git/branches.rs test fixtures).
-fn git_add_all_and_commit(dir: &std::path::Path) -> Result<(), String> {
+pub(crate) fn git_add_all_and_commit(dir: &std::path::Path) -> Result<(), String> {
     let add = quiet_command(git_binary())
         .args(["add", "-A"])
         .current_dir(dir)

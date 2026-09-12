@@ -45,16 +45,35 @@ pub(crate) fn agent_cli_available(tool: String) -> bool {
         "devin"  => resolve_devin_program(),
         _        => return false,
     };
-    match quiet_command(program)
+    match quiet_command(program.clone())
         .arg("--version")
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()
     {
-        Ok(s) => s.success(),
-        Err(_) => false,
+        Ok(s) => {
+            if !s.success() {
+                return false;
+            }
+        }
+        Err(_) => return false,
     }
+    // Devin-only second gate: `devin --version` succeeding says nothing about
+    // auth — a logged-out CLI still prints a version, so the picker used to
+    // offer swe-* models that then failed mid-stream with an auth error.
+    // `read_devin_api_key()` is the SAME credential the ACP backend feeds to
+    // `authenticate` — key present means the rail can actually serve; key
+    // absent means it cannot. NOT `devin auth status`: that subcommand
+    // reports its own bookkeeping and returns non-zero even when the stored
+    // windsurf_api_key authenticates fine (real repro: the weekly-quota error
+    // arrived post-authentication on a machine where `auth status` failed).
+    // Quota exhaustion is NOT gated here — it is a per-request server answer
+    // the stream surfaces honestly.
+    if tool.as_str() == "devin" {
+        return read_devin_api_key().is_some();
+    }
+    true
 }
 
 /// Generic streaming chat command that dispatches to the correct CLI backend.

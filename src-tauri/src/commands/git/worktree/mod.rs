@@ -93,10 +93,20 @@ fn agent_create_worktree_inner(
         .output()
         .map_err(|e| format!("agent_create_worktree: git check failed: {}", e))?;
     if !check.status.success() {
-        return Err(format!(
-            "agent_create_worktree: '{}' is not a git repository",
-            repo_path
-        ));
+        // A project registered from an EXISTING folder is never git-init'd
+        // (project_create only inits directories it creates itself, so an
+        // imported non-git folder reaches missions as "not a git repository"
+        // — real repro: mission M1 on lazy-demo failed with
+        // worktree_creation_failed). A mission needs a real HEAD both to
+        // create the worktree AND to merge back (see git_add_all_and_commit's
+        // doc comment for the unborn-HEAD merge failure), so initialize the
+        // repo here under the same neutral bot identity project_create uses
+        // rather than fail the mission.
+        crate::commands::brain::config::project_registry::git_init_only(repo_dir)
+            .map_err(|e| format!("agent_create_worktree: '{}' is not a git repository, and auto-init failed: {}", repo_path, e))?;
+        crate::commands::brain::config::project_registry::git_add_all_and_commit(repo_dir)
+            .map_err(|e| format!("agent_create_worktree: git init succeeded in '{}' but the initial commit failed (unborn HEAD — merge-back would break): {}", repo_path, e))?;
+        log::info!("agent_create_worktree: auto-initialized git repository at {}", repo_path);
     }
 
     // Honest base-branch validation: a caller-declared start point that does

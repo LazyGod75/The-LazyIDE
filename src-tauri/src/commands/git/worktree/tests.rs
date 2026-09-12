@@ -1192,3 +1192,33 @@ fn revert_merge_conflict_aborts_cleanly() {
 
     eprintln!("revert_merge_conflict_aborts_cleanly PASSED");
 }
+
+
+/// Regression: a project registered from an existing NON-git folder used to
+/// hard-fail every mission with worktree_creation_failed (real repro: lazy-demo
+/// mission M1). agent_create_worktree_inner now auto-initializes the repo -
+/// same git init + bot-identity commit project_create uses - so missions work
+/// on any registered folder without user intervention.
+#[test]
+fn agent_create_worktree_auto_inits_a_non_git_repo() {
+    use super::agent_create_worktree_inner;
+
+    let dir = TempDir::new().expect("TempDir");
+    let root = dir.path().to_str().unwrap().to_string();
+    std::fs::write(dir.path().join("index.html"), "<p>hello</p>").expect("write file");
+
+    let wt = agent_create_worktree_inner(&root, "agent/auto-init", None, None)
+        .expect("worktree on a non-git dir must auto-init, not fail");
+    assert!(std::path::Path::new(&wt).is_dir(), "worktree dir must exist: {}", wt);
+
+    // The repo now has a real HEAD (not just an unborn init) - the bot
+    // identity commit git_add_all_and_commit produces.
+    let head = quiet_command(git_binary())
+        .args(["rev-parse", "--verify", "HEAD"])
+        .current_dir(&root)
+        .output()
+        .expect("git rev-parse HEAD");
+    assert!(head.status.success(), "repo must have a resolvable HEAD after auto-init");
+
+    eprintln!("agent_create_worktree_auto_inits_a_non_git_repo PASSED");
+}
