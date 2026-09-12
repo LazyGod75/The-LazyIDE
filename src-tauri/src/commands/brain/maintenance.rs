@@ -150,7 +150,13 @@ const DREAM_STEP_TIMEOUT_SECS: u64 = 600;
 const MAINTENANCE_STEP_TIMEOUT_SECS: u64 = 180;
 
 fn maintenance_step_timeout_secs(name: &str) -> u64 {
-    if name == "dream" {
+    // `index-rebuild` joins the dream-class ceiling: when the
+    // indexer_text_version marker is stale (rules bump — e.g. the
+    // distilled-field FTS injection), it performs ONE full re-index of every
+    // note file (DOM parse per note), which needs more than 180s on a large
+    // brain. On the common incremental path it's seconds — the ceiling only
+    // matters on rollout nights.
+    if name == "dream" || name == "index-rebuild" {
         DREAM_STEP_TIMEOUT_SECS
     } else {
         MAINTENANCE_STEP_TIMEOUT_SECS
@@ -463,10 +469,20 @@ const PRUNE_APPLY_ARGS: &[&str] = &["prune", "--apply", "--policy", SAFE_PRUNE_P
 /// (which depend on a trustworthy index). `--delete-ghosts` is deliberately
 /// NOT passed: a transient FS-unreadable window would make every indexed
 /// row look like a ghost — index-row deletion stays operator-only.
-const MAINTENANCE_STEPS: [(&str, &[&str]); 6] = [
+/// The 7-step sequence, in order: (step name, CLI args).
+const MAINTENANCE_STEPS: [(&str, &[&str]); 7] = [
     ("dream", &["dream"]),
     ("prune", PRUNE_APPLY_ARGS),
     ("reindex", &["reindex", "--missing", "--no-dry-run"]),
+    // Fingerprint-level incremental reconcile (mtime/SHA skip, orphan
+    // delete, embed batch) — and the carrier of the indexer_text_version
+    // gate: when the FTS text composition rules change, this step forces one
+    // full re-index under the new rules so the rollout happens unattended
+    // instead of waiting for a manual `index-rebuild --full`. Complements
+    // `reindex --missing` (index-vs-disk) with fingerprint-vs-disk coverage.
+    // (`index-rebuild` without --full delegates to runIncrementalUpdate —
+    // engine/src/commands/index-rebuild.ts.)
+    ("index-rebuild", &["index-rebuild"]),
     ("compress", &["compress"]),
     ("interlink", &["interlink"]),
     ("profile-update", &["profile-update"]),
@@ -835,11 +851,19 @@ mod tests {
 
         let outcomes = run_full_maintenance_sequence(&lb, &brain_path, None, None);
 
-        assert_eq!(outcomes.len(), 6, "sequence must run exactly 6 steps");
+        assert_eq!(outcomes.len(), 7, "sequence must run exactly 7 steps");
         let names: Vec<&str> = outcomes.iter().map(|o| o.name).collect();
         assert_eq!(
             names,
-            vec!["dream", "prune", "reindex", "compress", "interlink", "profile-update"],
+            vec![
+                "dream",
+                "prune",
+                "reindex",
+                "index-rebuild",
+                "compress",
+                "interlink",
+                "profile-update"
+            ],
             "steps must run in this exact order"
         );
         for o in &outcomes {
