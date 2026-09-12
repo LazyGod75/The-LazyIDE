@@ -14,7 +14,7 @@
 //! Both sites now call [`run_full_maintenance_sequence`], which spawns five
 //! REAL CLI subcommands in order, non-fatal per step (mirrors
 //! `brain_rebuild_graph`'s existing log-and-continue pattern in
-//! `capture.rs`): `dream`, `prune`, `compress`, `interlink`,
+//! `capture.rs`): `dream`, `prune`, `reindex --missing`, `compress`, `interlink`,
 //! `profile-update`.
 //!
 //! # `dream` (not `dream --synthesize`)
@@ -448,10 +448,25 @@ fn run_maintenance_step(
 const SAFE_PRUNE_POLICY: &str = "claude-mem-observer,placeholder-noise,session-dream,backup-dirs";
 const PRUNE_APPLY_ARGS: &[&str] = &["prune", "--apply", "--policy", SAFE_PRUNE_POLICY];
 
-/// The 5-step sequence, in order: (step name, CLI args).
-const MAINTENANCE_STEPS: [(&str, &[&str]); 5] = [
+/// The 6-step sequence, in order: (step name, CLI args).
+///
+/// `reindex --missing` (engine/src/commands/reindex-missing.ts) reconciles
+/// disk vs. SQLite index: several write paths persist note HTML without
+/// indexing it (warn-only failures in dream/graph/conv-enrich), and nothing
+/// else ever repaired the drift — the resulting disk/index mismatch flips
+/// `indexIsTrustworthy()` to false, silently downgrading EVERY structural
+/// query to a full O(corpus) scan. The command is idempotent + resumable
+/// (re-derives its candidate set from live disk+index state each run), so
+/// the 180s step timeout is safe: a large backlog simply converges over
+/// successive nightly passes. Runs after `dream` (the heaviest writer) and
+/// `prune` (whose deletions it must see), before `compress`/`interlink`
+/// (which depend on a trustworthy index). `--delete-ghosts` is deliberately
+/// NOT passed: a transient FS-unreadable window would make every indexed
+/// row look like a ghost — index-row deletion stays operator-only.
+const MAINTENANCE_STEPS: [(&str, &[&str]); 6] = [
     ("dream", &["dream"]),
     ("prune", PRUNE_APPLY_ARGS),
+    ("reindex", &["reindex", "--missing", "--no-dry-run"]),
     ("compress", &["compress"]),
     ("interlink", &["interlink"]),
     ("profile-update", &["profile-update"]),
@@ -787,7 +802,7 @@ mod tests {
     }
 
     /// End-to-end proof that the real fix works: init a brain, store one
-    /// neuron, then run the full 5-step sequence and assert every step
+    /// neuron, then run the full 6-step sequence and assert every step
     /// completed (none aborted the sequence) and that `profile-update`
     /// actually created `_user-profile.html` — the concrete artifact this
     /// whole feature exists to produce.
@@ -820,11 +835,11 @@ mod tests {
 
         let outcomes = run_full_maintenance_sequence(&lb, &brain_path, None, None);
 
-        assert_eq!(outcomes.len(), 5, "sequence must run exactly 5 steps");
+        assert_eq!(outcomes.len(), 6, "sequence must run exactly 6 steps");
         let names: Vec<&str> = outcomes.iter().map(|o| o.name).collect();
         assert_eq!(
             names,
-            vec!["dream", "prune", "compress", "interlink", "profile-update"],
+            vec!["dream", "prune", "reindex", "compress", "interlink", "profile-update"],
             "steps must run in this exact order"
         );
         for o in &outcomes {
@@ -896,7 +911,7 @@ mod tests {
         eprintln!("should_stop_before_step_allows_continuation_when_pressure_stays_normal PASSED");
     }
 
-    /// End-to-end proof on the real 5-step sequence: with pressure already
+    /// End-to-end proof on the real 6-step sequence: with pressure already
     /// non-Normal, `run_full_maintenance_sequence` must run ONLY the first
     /// step (`dream`) and stop — never reaching `prune`/`compress`/
     /// `interlink`/`profile-update`. Uses a real brain + real binary (like
