@@ -21,7 +21,8 @@ import {
   extractSubGraph,
   loadKnowledgeGraph,
 } from '../graph/knowledge-graph.js';
-import { indexNote } from '../indexer/fts.js';
+import { indexNote, listAll } from '../indexer/fts.js';
+import type { IndexedNote } from '../indexer/note-types.js';
 import { type NoteFile, readAllNotes, readNote } from '../store/reader.js';
 import { writeNote } from '../store/writer.js';
 import { getLogger } from '../util/logger.js';
@@ -44,6 +45,60 @@ export interface SynthesizeReport {
 const SYNTHESIS_TYPES = new Set(['topic-overview', 'project-summary', 'brain-index']);
 
 /**
+ * Pre-extracted per-note attributes — the fields synthesize reads off every
+ * note's <article>. runSynthesize builds this ONCE from the SQLite index
+ * (type/topic/created/importance are all indexed columns) instead of paying
+ * a linkedom parseHTML() per note per lookup site — measured on a 5k-note
+ * brain: the per-topic findExistingSynthesis + phase-1.5 allNotes.find()
+ * pattern cost O(topics × notes) full DOM parses, the dominant share of
+ * dream's multi-minute synthesize tail (full core + >2GB at >10min).
+ * Notes without an index row (freshly written this run, or index drift)
+ * get exactly one lazy parse — same behavior as before for them.
+ */
+export interface NoteMeta {
+  type: string;
+  topic: string;
+  created: string;
+  importance: number;
+}
+
+function metaFromIndexed(n: IndexedNote): NoteMeta {
+  return {
+    type: n.type ?? '',
+    topic: n.topic ?? '',
+    created: n.created ?? '',
+    importance: n.importance ?? 0.5,
+  };
+}
+
+function metaFromHtml(html: string): NoteMeta {
+  const { document } = parseHTML(html);
+  const article = document.querySelector('article');
+  return {
+    type: article?.getAttribute('data-cerveau-type') ?? '',
+    topic: article?.getAttribute('data-cerveau-topic') ?? '',
+    created: article?.getAttribute('data-cerveau-created') ?? '',
+    importance:
+      Number.parseFloat(article?.getAttribute('data-cerveau-importance') ?? '0.5') || 0.5,
+  };
+}
+
+/** Build the path → meta map for a corpus: index rows when present, one
+ *  lazy parse per unindexed note otherwise. */
+export function buildNoteMeta(
+  notes: readonly NoteFile[],
+  indexed: readonly IndexedNote[],
+): Map<string, NoteMeta> {
+  const byPath = new Map(indexed.map((n) => [n.path, n]));
+  const meta = new Map<string, NoteMeta>();
+  for (const note of notes) {
+    const row = byPath.get(note.path);
+    meta.set(note.path, row ? metaFromIndexed(row) : metaFromHtml(note.html));
+  }
+  return meta;
+}
+
+/**
  * Group notes by ALL ancestor paths of their data-cerveau-topic hierarchy,
  * excluding synthesis pages.
  *
@@ -52,18 +107,17 @@ const SYNTHESIS_TYPES = new Set(['topic-overview', 'project-summary', 'brain-ind
  *
  * Returns a Map<topicPath, NoteFile[]>.
  */
-export function groupNotesByFullTopic(notes: NoteFile[]): Map<string, NoteFile[]> {
+export function groupNotesByFullTopic(
+  notes: NoteFile[],
+  meta?: Map<string, NoteMeta>,
+): Map<string, NoteFile[]> {
   const groups = new Map<string, NoteFile[]>();
 
   for (const note of notes) {
-    const { document } = parseHTML(note.html);
-    const article = document.querySelector('article');
-    if (!article) continue;
+    const m = meta?.get(note.path) ?? metaFromHtml(note.html);
+    if (SYNTHESIS_TYPES.has(m.type)) continue;
 
-    const type = article.getAttribute('data-cerveau-type') ?? '';
-    if (SYNTHESIS_TYPES.has(type)) continue;
-
-    const topicAttr = article.getAttribute('data-cerveau-topic') ?? '';
+    const topicAttr = m.topic;
     if (!topicAttr.trim()) continue;
 
     const segments = topicAttr.split('/').filter(Boolean);
@@ -142,19 +196,17 @@ function buildChildTopicsSection(topicPath: string, fullGroups: Map<string, Note
  *
  * Returns a Map<topicKey, NoteFile[]>.
  */
-export function groupNotesByTopic(notes: NoteFile[]): Map<string, NoteFile[]> {
+export function groupNotesByTopic(
+  notes: NoteFile[],
+  meta?: Map<string, NoteMeta>,
+): Map<string, NoteFile[]> {
   const groups = new Map<string, NoteFile[]>();
 
   for (const note of notes) {
-    const { document } = parseHTML(note.html);
-    const article = document.querySelector('article');
-    if (!article) continue;
+    const m = meta?.get(note.path) ?? metaFromHtml(note.html);
+    if (SYNTHESIS_TYPES.has(m.type)) continue;
 
-    const type = article.getAttribute('data-cerveau-type') ?? '';
-    if (SYNTHESIS_TYPES.has(type)) continue;
-
-    const topicAttr = article.getAttribute('data-cerveau-topic') ?? '';
-    const topicTag = topicAttr.split('/')[0]?.trim();
+    const topicTag = m.topic.split('/')[0]?.trim();
     if (!topicTag) continue;
 
     const existing = groups.get(topicTag) ?? [];
@@ -168,7 +220,10 @@ export function groupNotesByTopic(notes: NoteFile[]): Map<string, NoteFile[]> {
 /**
  * Aggregate statistics for a set of notes belonging to a topic.
  */
-export function aggregateTopicStats(notes: NoteFile[]): {
+export function aggregateTopicStats(
+  notes: NoteFile[],
+  meta?: Map<string, NoteMeta>,
+): {
   noteCount: number;
   typeBreakdown: Record<string, number>;
   dateRange: [string, string];
@@ -180,17 +235,14 @@ export function aggregateTopicStats(notes: NoteFile[]): {
   let latest = '';
 
   for (const note of notes) {
-    const { document } = parseHTML(note.html);
-    const article = document.querySelector('article');
-    if (!article) continue;
+    const m = meta?.get(note.path) ?? metaFromHtml(note.html);
 
-    const type = article.getAttribute('data-cerveau-type') ?? 'unknown';
+    const type = m.type || 'unknown';
     typeBreakdown[type] = (typeBreakdown[type] ?? 0) + 1;
 
-    const importanceRaw = article.getAttribute('data-cerveau-importance') ?? '0.5';
-    totalImportance += Number.parseFloat(importanceRaw);
+    totalImportance += m.importance;
 
-    const created = article.getAttribute('data-cerveau-created') ?? '';
+    const created = m.created;
     if (created) {
       if (!earliest || created < earliest) earliest = created;
       if (!latest || created > latest) latest = created;
@@ -768,17 +820,15 @@ function findRelatedTopics(
  * Matches on the first segment of data-cerveau-topic (e.g., "acme").
  * Returns null if none exists.
  */
-function findExistingSynthesis(topic: string, allNotes: NoteFile[]): NoteFile | null {
+function findExistingSynthesis(
+  topic: string,
+  allNotes: NoteFile[],
+  meta?: Map<string, NoteMeta>,
+): NoteFile | null {
   for (const note of allNotes) {
-    const { document } = parseHTML(note.html);
-    const article = document.querySelector('article');
-    if (!article) continue;
-
-    const type = article.getAttribute('data-cerveau-type');
-    if (type !== 'topic-overview') continue;
-
-    const topicAttr = article.getAttribute('data-cerveau-topic') ?? '';
-    const firstSegment = topicAttr.split('/')[0]?.trim();
+    const m = meta?.get(note.path) ?? metaFromHtml(note.html);
+    if (m.type !== 'topic-overview') continue;
+    const firstSegment = m.topic.split('/')[0]?.trim();
     if (firstSegment === topic) return note;
   }
   return null;
@@ -787,12 +837,13 @@ function findExistingSynthesis(topic: string, allNotes: NoteFile[]): NoteFile | 
 /**
  * Find the existing brain-index page among all notes.
  */
-function findExistingBrainIndex(allNotes: NoteFile[]): NoteFile | null {
+function findExistingBrainIndex(
+  allNotes: NoteFile[],
+  meta?: Map<string, NoteMeta>,
+): NoteFile | null {
   for (const note of allNotes) {
-    const { document } = parseHTML(note.html);
-    const article = document.querySelector('article');
-    const type = article?.getAttribute('data-cerveau-type');
-    if (type === 'brain-index') return note;
+    const m = meta?.get(note.path) ?? metaFromHtml(note.html);
+    if (m.type === 'brain-index') return note;
   }
   return null;
 }
@@ -885,8 +936,18 @@ export async function runSynthesize(opts: SynthesizeOptions): Promise<Synthesize
   const report: SynthesizeReport = { synthesized: [], skipped: [], errors: [] };
 
   const allNotes = readAllNotes();
-  const groups = groupNotesByTopic(allNotes);
-  const fullGroups = groupNotesByFullTopic(allNotes);
+  // One meta map for the whole run: type/topic/created/importance come from
+  // the SQLite index (zero file reads), with a single lazy parse per
+  // unindexed note. Replaces the per-note parseHTML() that every grouping,
+  // every per-topic synthesis lookup and the date-range pass used to pay.
+  const metaByPath = buildNoteMeta(allNotes, listAll({ includeExpired: true }));
+  // article-id → note lookup for the sub-topic freshness check below —
+  // NoteFile.id is already the article id (reader.ts's idFromHtml), so this
+  // map replaces what used to be an allNotes.find(parseHTML-per-note) scan
+  // per sub-topic — O(subtopics × notes) DOM parses on a mature brain.
+  const notesById = new Map(allNotes.map((n) => [n.id, n]));
+  const groups = groupNotesByTopic(allNotes, metaByPath);
+  const fullGroups = groupNotesByFullTopic(allNotes, metaByPath);
   const backlinks = loadBacklinks();
   const knowledgeGraph = loadKnowledgeGraph();
   const now = nowIso();
@@ -907,7 +968,7 @@ export async function runSynthesize(opts: SynthesizeOptions): Promise<Synthesize
     const topicNotes = groups.get(topic) ?? [];
     if (topicNotes.length === 0) continue;
 
-    const existingSynth = findExistingSynthesis(topic, allNotes);
+    const existingSynth = findExistingSynthesis(topic, allNotes, metaByPath);
     const latestMtime = Math.max(...topicNotes.map((n) => n.mtimeMs));
 
     if (!isStale(existingSynth?.html ?? null, latestMtime)) {
@@ -916,7 +977,7 @@ export async function runSynthesize(opts: SynthesizeOptions): Promise<Synthesize
     }
 
     try {
-      const stats = aggregateTopicStats(topicNotes);
+      const stats = aggregateTopicStats(topicNotes, metaByPath);
       const relatedTopics = findRelatedTopics(topic, backlinks, groups);
       const topicTitle = topic.charAt(0).toUpperCase() + topic.slice(1);
       const { leadText, sections } = buildArticleSections(topicTitle, topicNotes);
@@ -975,11 +1036,7 @@ export async function runSynthesize(opts: SynthesizeOptions): Promise<Synthesize
     const pageId = `topic-overview-${topicPath.replace(/\//g, '-')}`;
 
     // Check freshness against an existing page with this id
-    const existingPage = allNotes.find((n) => {
-      const { document } = parseHTML(n.html);
-      const article = document.querySelector('article');
-      return article?.getAttribute('id') === pageId;
-    });
+    const existingPage = notesById.get(pageId);
     const latestMtime = Math.max(...topicNotes.map((n) => n.mtimeMs));
     if (!isStale(existingPage?.html ?? null, latestMtime)) {
       report.skipped.push(topicPath);
@@ -1053,7 +1110,7 @@ export async function runSynthesize(opts: SynthesizeOptions): Promise<Synthesize
 
   // --- Phase 2: Brain index (only when not filtering by topic) ---
   if (!opts.topic) {
-    const existingIndex = findExistingBrainIndex(allNotes);
+    const existingIndex = findExistingBrainIndex(allNotes, metaByPath);
     const latestNoteOverall = allNotes.length > 0 ? Math.max(...allNotes.map((n) => n.mtimeMs)) : 0;
 
     if (isStale(existingIndex?.html ?? null, latestNoteOverall)) {
@@ -1069,11 +1126,10 @@ export async function runSynthesize(opts: SynthesizeOptions): Promise<Synthesize
           const lastMtime = Math.max(...mtimes);
           const lastActivity = new Date(lastMtime).toISOString().slice(0, 10);
 
-          // Track global date range
+          // Track global date range — `created` comes from the meta map
+          // (index column), not a per-note DOM parse.
           for (const n of topicNotes) {
-            const { document } = parseHTML(n.html);
-            const created =
-              document.querySelector('article')?.getAttribute('data-cerveau-created') ?? '';
+            const created = metaByPath.get(n.path)?.created ?? '';
             if (created) {
               if (!globalEarliest || created < globalEarliest) globalEarliest = created;
               if (!globalLatest || created > globalLatest) globalLatest = created;

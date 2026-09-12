@@ -8,9 +8,14 @@ One **LazyManager**. It understands what you want, plans the work, and
 delegates to agents, bots, and models. A **frontier model** does the thinking;
 **cheaper models** (like DeepSeek) do the grunt work. You stay lazy.
 
+[![CI](https://github.com/LazyGod75/The-LazyIDE/actions/workflows/ci.yml/badge.svg)](https://github.com/LazyGod75/The-LazyIDE/actions/workflows/ci.yml)
+[![License: FSL-1.1-ALv2](https://img.shields.io/badge/license-FSL--1.1--ALv2-blue)](./LICENSE.md)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-lightgrey)](#build-installers)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](./CONTRIBUTING.md)
+
 [What is Lazy?](#what-is-lazy) · [Quick start](#quick-start) ·
-[Features](#features) · [Models](#models) · [Tech stack](#tech-stack) ·
-[Contributing](#contributing) · [License](#license)
+[Features](#features) · [How it works](#how-it-works) ·
+[Models](#models) · [Contributing](#contributing) · [License](#license)
 
 <br/>
 
@@ -29,6 +34,17 @@ to agents, LLMs, and LazyBots.
 
 No more staring at a terminal wondering what your agent is doing. No more
 re-explaining your project to a new chat. **Lazy remembers everything.**
+
+## Why not just use Claude Code / Cursor / Devin?
+
+| | Claude Code / Cursor / Devin | Lazy |
+|---|---|---|
+| Mental model | You drive the agent | You brief a manager; it drives the fleet |
+| Visibility | Terminal scrollback | Live canvas: every mission is a node with status, cost, output |
+| Memory | Per-session / per-repo docs | Persistent Brain: decisions, patterns and rules captured and reused |
+| Models | One vendor | Frontier for thinking, cheap models for grunt work, BYOK or your existing CLI subscription |
+| Repetitive work | Re-prompt every time | Loops and LazyBots run routines on a schedule |
+| Team context | Shared docs drift | One Team Brain shared by everyone |
 
 ## Quick start
 
@@ -145,6 +161,26 @@ A shared workspace for teams. The view adapts to your role — solo, lead,
 member, or multi-team — and the Team Brain shares the same memory across
 everyone.
 
+## How it works
+
+```mermaid
+flowchart LR
+    You[You] --> Manager[LazyManager]
+    Manager -->|plans & delegates| Agents[Agents]
+    Manager -->|schedules| Loops[Loops]
+    Manager -->|routes| Bots[LazyBots]
+    Agents --> Worktree[Isolated git worktrees]
+    Worktree --> Review[Review & approve]
+    Agents <--> Brain[(LazyBrain)]
+    Manager <--> Brain
+    Brain -.->|SQLite FTS + local ONNX embeddings| Recall[Instant recall]
+```
+
+The desktop app is a **Tauri 2** shell (Rust) around a React UI. The brain is a
+**Node sidecar** (`lazybrain`): notes are human-readable HTML files on disk,
+indexed in SQLite FTS5 with local ONNX embeddings — your knowledge never
+leaves your machine unless you choose a hosted brain.
+
 ## Models
 
 Three ways to run:
@@ -172,7 +208,8 @@ nothing extra.
 ## Tech stack
 
 Tauri 2 (Rust) · React + Vite + TypeScript + Tailwind v4 · CodeMirror 6 ·
-xterm.js · three.js · React Flow · Node sidecar (LazyBrain)
+xterm.js · three.js · React Flow · Node sidecar (LazyBrain) · SQLite FTS5 +
+ONNX embeddings
 
 ## Contributing
 
@@ -187,4 +224,3 @@ Found a vulnerability? Report it privately — see [SECURITY.md](./SECURITY.md).
 
 [FSL-1.1-ALv2](./LICENSE.md) — source-available. Use it at work, fork it, run
 it. Don't sell a competing product. Becomes Apache-2.0 after two years.
-
