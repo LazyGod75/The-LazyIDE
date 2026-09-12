@@ -32,6 +32,17 @@ work for you. Instead of juggling 10 tools, hopping between terminals, and
 losing context at every session, you talk to the LazyManager and it delegates
 to agents, LLMs, and LazyBots.
 
+You brief it like a colleague — *"review my PRs every morning"*, *"keep the
+test suite green"*, *"port this module to Rust"* — and it plans, spawns
+missions in isolated worktrees, reviews the diffs, and reports back on a live
+canvas. Every decision, pattern, and bug it touches lands in a **persistent
+Brain** your whole fleet shares — so tomorrow's session starts where today's
+ended, not from a cold prompt.
+
+<div align="center">
+<img src="public/readme/demo.gif" width="100%" alt="Lazy in action — brief the manager, watch missions spawn on the canvas, explore the Brain" />
+</div>
+
 No more staring at a terminal wondering what your agent is doing. No more
 re-explaining your project to a new chat. **Lazy remembers everything.**
 
