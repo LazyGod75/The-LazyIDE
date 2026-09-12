@@ -8,7 +8,7 @@ Short version: install, run the checks below, follow the code standards, commit 
 npm install
 ```
 
-Requirements: Node 20.12+, Rust (rustup) + MSVC C++ Build Tools on Windows. See [README.md](./README.md#prerequisites) for the full list (LazyBrain engine, `claude` CLI for agent features).
+Requirements: Node 20.12+, Rust (rustup) + MSVC C++ Build Tools on Windows. See [README.md](./README.md#quick-start) for the full list (LazyBrain engine, `claude` CLI for agent features).
 
 ## Running in dev
 
@@ -72,4 +72,4 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`.
 
 ## Where things live
 
-See [README.md](./README.md#architecture) for the stack and the "Cockpit of Spaces" overview, and [SPEC.md](./SPEC.md) for the full product specification.
+See [README.md](./README.md#how-it-works) for the stack and architecture overview.
