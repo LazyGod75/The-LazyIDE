@@ -19,7 +19,7 @@ delegates to agents, bots, and models. A **frontier model** does the thinking;
 
 <br/>
 
-<img src="public/readme/brain.gif" width="100%" alt="Lazy — the Brain: a 3D vault of everything your fleet knows" />
+<img src="public/readme/brain.gif" width="100%" alt="Lazy - the Brain: a 3D vault of everything your fleet knows" />
 
 </div>
 
@@ -32,15 +32,15 @@ work for you. Instead of juggling 10 tools, hopping between terminals, and
 losing context at every session, you talk to the LazyManager and it delegates
 to agents, LLMs, and LazyBots.
 
-You brief it like a colleague — *"review my PRs every morning"*, *"keep the
-test suite green"*, *"port this module to Rust"* — and it plans, spawns
+You brief it like a colleague: *"review my PRs every morning"*, *"keep the
+test suite green"*, *"port this module to Rust"*. It plans, spawns
 missions in isolated worktrees, reviews the diffs, and reports back on a live
 canvas. Every decision, pattern, and bug it touches lands in a **persistent
-Brain** your whole fleet shares — so tomorrow's session starts where today's
+Brain** your whole fleet shares, so tomorrow's session starts where today's
 ended, not from a cold prompt.
 
 <div align="center">
-<img src="public/readme/demo.gif" width="100%" alt="Lazy in action — brief the manager, watch missions spawn on the canvas, explore the Brain" />
+<img src="public/readme/demo.gif" width="100%" alt="Lazy in action: brief the manager, watch missions spawn on the canvas, explore the Brain" />
 </div>
 
 No more staring at a terminal wondering what your agent is doing. No more
@@ -64,7 +64,7 @@ npm start
 ```
 
 One command installs everything and launches the app. On first launch, create
-a free account — or skip it and use your own keys.
+a free account, or skip it and use your own keys.
 
 > **Manual setup** (if `npm start` doesn't work):
 >
@@ -79,106 +79,118 @@ a free account — or skip it and use your own keys.
 
 ### LazyManager
 
-<img src="public/readme/manager.gif" width="100%" alt="LazyManager — brief in chat, the plan lands as a graph" />
+<img src="public/readme/manager-plan.png" width="100%" alt="LazyManager: a proposed plan rendered as a numbered graph with parallel branches and join points" />
 
-Your AI project manager. One chat panel, two modes:
+You don't prompt agents one by one. You brief the LazyManager like a
+colleague: *"rewrite the checkout to be PCI-safe, wallets first"*. It reads
+the Brain, then drafts a plan you can actually see: a numbered graph with
+parallel branches, join points where the work merges back, and each step
+already carrying its agent, its model, and its credit cost. You edit,
+approve, or reject. On validate, the exact same graph materializes on the
+canvas as running missions, and the manager keeps supervising: it reassigns
+stuck work, retries flaky steps, and only escalates to you when a real
+judgment call is needed.
 
-- **Orchestrator** — "Create an agent that reviews PRs", "Launch
-  @security-reviewer on the auth module", "Loop lint check every 15m". It
-  creates agents, launches missions, sets up loops, and delegates the work.
-- **Coder** — direct coding help with the active model.
-
-The manager floats on the right edge, always in reach — you never lose your
-conversation.
-
-**Why it's cheap:** the manager runs on a **frontier model** for the thinking
-and hands the repetitive work to **cheaper models** (e.g. DeepSeek). You get
-frontier judgment without paying frontier prices on every token.
+Two modes: **Orchestrator** delegates ("create an agent that reviews PRs",
+"loop the lint check every 15m"), **Coder** pairs with you directly. The
+manager runs on a **frontier model** for judgment and hands execution to
+**cheaper models** like DeepSeek, so a full fleet costs less than one
+premium chat session.
 
 ### Cockpit / Canvas
 
-<img src="public/readme/canvas.gif" width="100%" alt="Canvas — every mission is a live node on a DAG" />
+If you run AI agents today, you are probably staring at a terminal: output
+scrolling everywhere, no idea who is doing what or what just failed. The
+Cockpit replaces that with a **live graph**: every mission is a node inside
+a project zone, edges flow in the direction work travels, and diamonds mark
+the points where parallel branches merge.
 
-If you use AI agents today, you're probably staring at a terminal: output
-scrolling everywhere, no idea who's working on what or what failed. That
-sucks.
-
-The Cockpit fixes it with a **visual canvas** where every mission, agent, and
-bot is a node:
-
-- **Mission nodes** — live status, cost, agent output, who's on it
-- **Project groups** — organize missions per project
-- **Loop nodes** — recurring tasks on a schedule
-- **Router nodes** — dispatch work to the right agent automatically
-- **LazyBot nodes** — bots running their own routines
-- **Preview nodes** — your `localhost` dev server rendered live inside the
-  canvas, next to the mission that's editing it
-
-Instead of reading terminal soup you see the whole fleet at a glance, drill
-into any node, and approve or reject work right from the canvas.
-
-<img src="public/readme/mission-running.gif" width="100%" alt="A real mission running on the canvas — live line, stage rail, worktree" />
-
-<img src="public/readme/localhost-preview.gif" width="100%" alt="Live localhost dev-server preview embedded in the canvas" />
+Each card shows what matters at a glance: a rotating status ring, the stage
+rail (plan → code → test → review → merge), the agent, the model, and the
+live credit burn. Your dev server is a node too: the canvas pins a real
+**localhost preview** next to the agent currently editing it, so you watch
+the checkout page change instead of reading a log. Drill into any node,
+approve or reject work right from the canvas.
 
 ### Brain
 
-<img src="public/readme/brain.gif" width="100%" alt="Brain — the 3D vault, a neuron with an owner, the wiki page" />
+<img src="public/readme/brain.gif" width="100%" alt="Brain: the 3D vault, a neuron with an owner, the wiki page" />
 
-Persistent memory that survives sessions — a **3D neural graph** where every
-neuron is a piece of knowledge (decisions, patterns, code context, rules).
+Every agent session ends the same way: everything it learned evaporates.
+Brain is the fix. It is a persistent project memory stored on disk as
+**plain HTML files**, one neuron per piece of knowledge: a decision, a rule,
+a file's role, the root cause of a bug. After each conversation, the manager
+extracts what mattered and writes it into neurons enriched with semantic
+markup: facts, insights, topics, linked files, an author, a timestamp.
+Knowledge compounds instead of resetting.
 
-- **3D graph** — navigate your project's memory spatially
-- **Wiki** — read and edit neuron notes in markdown
-- **Timeline** — travel back through your brain's history
-- **Rules & Skills** — coding standards injected into every agent prompt
-- **HTML export** — neurons use standard HTML tags (`<neuron>`, `<relation>`),
-  so the export is a **real navigable site, not a dump**. Host it, share it,
-  back it up.
-- **Team brain** — the same brain is shared across the whole team
+Why HTML? Because a neuron is a document, not a blob. You can open your
+entire brain in a browser and read it as a real navigable site, grep it,
+diff it in git, host it, share it. No proprietary format, no black box: the
+memory of your project stays yours and stays readable by humans, not just
+the model.
 
-The brain builds itself while you work, so the next session starts exactly
-where the last one stopped.
+Recall is **deterministic**. Neurons are indexed locally (SQLite FTS5 plus
+ONNX embeddings) and `lazybrain inject-context` resolves a query to the
+same bounded context every single time. No lottery, and no more stuffing
+ten thousand lines of history into a prompt hoping the model notices the
+one rule on line 6,412. Agents start each session already knowing your
+law, and the injected context is small enough to stay fast and cheap.
+
+The result is a fleet that compounds: a PCI rule learned in March is still
+enforced in September, by every agent, on every session, without you
+repeating it. The 3D view makes the memory tangible: navigate clusters
+spatially, open a neuron to see who wrote it and why, flip to the wiki to
+edit the law directly, or travel the timeline back through your brain's
+history.
 
 ### Code
 
-<img src="public/readme/code.gif" width="100%" alt="Code — the file knows the brain, the brain knows the file" />
+<img src="public/readme/code.gif" width="100%" alt="Code: the file knows the brain, the brain knows the file" />
 
-A multi-project code workspace: file explorer, CodeMirror editor with tabs,
-and the LazyManager docked on the right.
-
-- Multi-project sidebar with worktrees and brain
-- Live worktree view showing what agents are changing right now
-- Real diff drawer to review agent changes inline
+A real multi-project workspace, not a viewer. File explorer, CodeMirror
+editor with tabs, worktrees per agent, and the LazyManager docked on the
+right so context is always one keystroke away. The connection runs both
+ways: open a file and the Brain shows which neurons govern it; open a
+neuron and you can jump to the code it protects. A live worktree view shows
+what agents are changing right now, and a real diff drawer lets you review
+agent edits inline before anything lands.
 
 ### Review
 
-<img src="public/readme/review.gif" width="100%" alt="Review — dual judges read the diff, then merge to main" />
+<img src="public/readme/review.gif" width="100%" alt="Review: dual judges read the diff, then merge to main" />
 
-Pending diffs from agent work. Real git diffs — never fake data. See exactly
-what agents changed before you approve, with per-change risk and reviewer
-verdicts.
+Agent work never merges in the dark. Every mission lands in Review as a
+**real git diff**, never a summary or fake data. Two independent judges read
+the change against the Brain's law and return verdicts with per-change risk
+callouts. You see exactly what the fleet changed, you approve when you are
+convinced, and the merge to main is one click. Supervised mode means nothing
+ships without your eyes; autonomy is a dial you control per project, not a
+leap of faith.
 
 ### LazyBots
 
-Autonomous bots that run their own routines, similar to Grok bots.
-
-- Create bots with custom system prompts and capabilities
-- Schedule routines for recurring tasks
-- Teach by demonstration — show once, they repeat
-- Bot-to-bot handoffs for multi-step workflows
-- Browser automation via **Solari** — bots can navigate sites, fill forms, and
-  interact with web apps (the Solari API key is stored in the OS keychain,
-  never in a file)
-- Share bots via deep-link encoding
+Agents wait for missions. **LazyBots** run their own routines on a schedule:
+morning PR sweeps, nightly regression passes, dependency audits, web checks.
+Create a bot with a custom system prompt and capabilities, teach it by
+demonstration once, and it repeats the routine while you sleep. Bots hand
+off to each other for multi-step workflows, and through **Solari** they get
+real browser automation: navigate sites, fill forms, scrape, operate.
+The Solari key lives in the OS keychain, never in a file, and bots are
+shareable by deep link.
 
 ### Team
 
-<img src="public/readme/team.gif" width="100%" alt="Team — shared seats, shared brain, same law for everyone" />
+<img src="public/readme/team.gif" width="100%" alt="Team: shared seats, shared brain, same law for everyone" />
 
-A shared workspace for teams. The view adapts to your role — solo, lead,
-member, or multi-team — and the Team Brain shares the same memory across
-everyone.
+Team turns the whole setup into shared infrastructure. Seats come with
+credit pools: the lead allocates budgets per member and per project, invites
+land by link, and the view adapts to your role (solo, lead, member, or
+multi-team). The real multiplier is the **Team Brain**: every member's
+fleet reads and writes the same memory, so the rule a senior set in January
+is already inside the intern's agent in July. One law for everyone, no
+tribal knowledge, no "ask Maya why we never store PANs". New teammates
+inherit the project brain on day one instead of absorbing it over months.
 
 ## How it works
 
@@ -197,24 +209,24 @@ flowchart LR
 
 The desktop app is a **Tauri 2** shell (Rust) around a React UI. The brain is a
 **Node sidecar** (`lazybrain`): notes are human-readable HTML files on disk,
-indexed in SQLite FTS5 with local ONNX embeddings — your knowledge never
+indexed in SQLite FTS5 with local ONNX embeddings. Your knowledge never
 leaves your machine unless you choose a hosted brain.
 
 <div align="center">
-<img src="public/readme/cockpit.png" width="100%" alt="The cockpit — the whole fleet at a glance" />
+<img src="public/readme/cockpit.png" width="100%" alt="The cockpit: the whole fleet at a glance" />
 </div>
 
 ## Models
 
 Three ways to run:
 
-1. **Create a Lazy account** — sign up in the app, take a **LazyPro**
+1. **Create a Lazy account**: sign up in the app, take a **LazyPro**
    subscription for managed models (Claude, GPT) with transparent per-token
    pricing.
-2. **BYOK** — bring your own key (Anthropic, OpenAI, OpenRouter, DeepSeek, …).
+2. **BYOK**: bring your own key (Anthropic, OpenAI, OpenRouter, DeepSeek, …).
    No account needed.
-3. **Use your existing subscription** — already paying for Claude, ChatGPT,
-   or Devin? Use the `claude`, `codex`, or `devin` CLI directly — Lazy
+3. **Use your existing subscription**: already paying for Claude, ChatGPT,
+   or Devin? Use the `claude`, `codex`, or `devin` CLI directly; Lazy
    detects whichever is installed and logged in.
 
 No lock-in. No forced plan. Use what works for you.
@@ -225,7 +237,7 @@ No lock-in. No forced plan. Use what works for you.
 npm run tauri build
 ```
 
-Produces NSIS + MSI installers. Bundles Node + LazyBrain — end users install
+Produces NSIS + MSI installers. Bundles Node + LazyBrain, so end users install
 nothing extra.
 
 ## Tech stack
@@ -237,13 +249,13 @@ ONNX embeddings
 ## Contributing
 
 Pull requests are welcome. For bigger changes, open an issue first. Please
-keep tests updated — see [CONTRIBUTING.md](./CONTRIBUTING.md).
+keep tests updated; see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Security
 
-Found a vulnerability? Report it privately — see [SECURITY.md](./SECURITY.md).
+Found a vulnerability? Report it privately; see [SECURITY.md](./SECURITY.md).
 
 ## License
 
-[FSL-1.1-ALv2](./LICENSE.md) — source-available. Use it at work, fork it, run
+[FSL-1.1-ALv2](./LICENSE.md): source-available. Use it at work, fork it, run
 it. Don't sell a competing product. Becomes Apache-2.0 after two years.
