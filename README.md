@@ -1,12 +1,9 @@
-<div align="center">
-
 # Lazy
 
-**The AI coding environment for lazy people.**
+**be lazy, work less, produce more**
 
-One **LazyManager**. It understands what you want, plans the work, and
-delegates to agents, bots, and models. A **frontier model** does the thinking;
-**cheaper models** (like DeepSeek) do the grunt work. You stay lazy.
+One **LazyManager**. It plans and delegates. Agents code. LazyBots run the routines.
+A frontier model does the thinking; cheaper models do the grunt work. You stay the strategist.
 
 [![CI](https://github.com/LazyGod75/The-LazyIDE/actions/workflows/ci.yml/badge.svg)](https://github.com/LazyGod75/The-LazyIDE/actions/workflows/ci.yml)
 [![License: FSL-1.1-ALv2](https://img.shields.io/badge/license-FSL--1.1--ALv2-blue)](./LICENSE.md)
@@ -17,11 +14,18 @@ delegates to agents, bots, and models. A **frontier model** does the thinking;
 [Features](#features) · [How it works](#how-it-works) ·
 [Models](#models) · [Contributing](#contributing) · [License](#license)
 
-<br/>
+<img src="public/readme/hero-poster.png" width="100%" alt="Lazy cockpit: missions on a live canvas (sample project)" />
 
-<img src="public/readme/brain.gif" width="100%" alt="Lazy - the Brain: a 3D vault of everything your fleet knows" />
+<details>
+<summary>Watch a short demo</summary>
 
-</div>
+<video src="public/readme/demo-light.webm" poster="public/readme/hero-poster.png" width="100%" controls playsinline muted>
+  <img src="public/readme/demo-light.gif" width="100%" alt="Lazy demo: brief the manager, missions on the canvas (sample)" />
+</video>
+
+[GIF fallback](public/readme/demo-light.gif) if the video does not play.
+
+</details>
 
 ---
 
@@ -39,10 +43,6 @@ canvas. Every decision, pattern, and bug it touches lands in a **persistent
 Brain** your whole fleet shares, so tomorrow's session starts where today's
 ended, not from a cold prompt.
 
-<div align="center">
-<img src="public/readme/demo.gif" width="100%" alt="Lazy in action: brief the manager, watch missions spawn on the canvas, explore the Brain" />
-</div>
-
 No more staring at a terminal wondering what your agent is doing. No more
 re-explaining your project to a new chat. **Lazy remembers everything.**
 
@@ -59,21 +59,26 @@ re-explaining your project to a new chat. **Lazy remembers everything.**
 
 ## Quick start
 
+### Desktop build
+
+Installers ship via [Releases](https://github.com/LazyGod75/The-LazyIDE/releases) when published (Windows / macOS / Linux). Until then, run from source below.
+
+### From source
+
 ```bash
 npm start
 ```
 
-One command installs everything and launches the app. On first launch, create
-a free account, or skip it and use your own keys.
+One command installs dependencies and launches the app. On first launch, create a free account, or skip and use your own keys (BYOK).
 
 > **Manual setup** (if `npm start` doesn't work):
 >
 > ```bash
-> npm run setup       # Install deps + build engine
-> npm run tauri dev   # Launch the desktop app
+> npm run setup      # Install deps + build engine
+> npm run tauri dev  # Launch the desktop app
 > ```
 >
-> Requirements: **Node 20.12+**, **Rust** (<https://rustup.rs/>)
+> Requirements: **Node 20.12+**, **Rust** ([rustup](https://rustup.rs/)). On Windows you also need MSVC C++ Build Tools.
 
 ## Features
 
