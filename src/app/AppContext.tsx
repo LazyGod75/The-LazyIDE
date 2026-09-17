@@ -117,12 +117,12 @@ function sameProjectEntries(a: ProjectEntry[], b: ProjectEntry[]): boolean {
 }
 
 /** REAL-APP FIX (2026-08-04, UC3 dogfood — canvas rendered the SAME project
- *  node 3-4 times: `project:...cerveau\Lazy` at three positions + a
- *  `project:...cerveau\lazy` twin, 214 edges for 26 nodes, completely
+ *  node 3-4 times: `project:...projects\Lazy` at three positions + a
+ *  `project:...projects\lazy` twin, 214 edges for 26 nodes, completely
  *  unreadable): the Rust ProjectRegistry can end up holding several entries
  *  for the SAME real directory under different spellings — a `\\?\`-prefixed
  *  form vs a plain form, a trailing separator, or a different casing of the
- *  path (`...\cerveau\Lazy` vs `...\cerveau\lazy`; `projectIdFromRoot` only
+ *  path (`...\projects\Lazy` vs `...\projects\lazy`; `projectIdFromRoot` only
  *  folds the drive letter, so those mint two different project ids). Every
  *  such twin renders as a separate, overlapping project zone on the canvas.
  *

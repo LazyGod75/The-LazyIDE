@@ -33,7 +33,7 @@ function makeAggregateNeuronCtx(id: string) {
 
 describe('A2 — file-neuron notes are not linked via substring match', () => {
   it('term "test" does NOT resolve to a file-neuron whose ID contains "test"', () => {
-    const id = 'file-trading-prometheus-research-autoresearch-archive-tests-mega-test-py';
+    const id = 'file-repos-sample-project-autoresearch-archive-tests-mega-test-py';
     const ctx = makeFileNeuronCtx(id);
     const html = '<p>We need to run the test suite before merging.</p>';
     const result = injectWikilinks(html, ctx);

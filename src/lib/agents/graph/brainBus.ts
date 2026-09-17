@@ -246,7 +246,7 @@ function descriptionOf(node: GraphNode): string {
  *  node's task text (see buildTaskForNode in runGraph.ts). Exported so
  *  missionScopeGuard.ts can strip this block before scanning task text for
  *  a path: recalled note snippets are truncated to 200 chars (see below)
- *  and can end mid-path (e.g. "...cerveau\lazy-backo"), which the guard's
+ *  and can end mid-path (e.g. "...projects\lazy-backo"), which the guard's
  *  path regex would otherwise treat as a real, distinct target path and
  *  wrongly refuse a mission whose real task is entirely in-scope. */
 export const BRAIN_RECALL_HEADER = '## Brain recall (automatic)';

@@ -1044,7 +1044,7 @@ mod tests {
     /// is what actually does the work.
     #[test]
     fn validate_project_create_path_rejects_interior_curdir_deep() {
-        let path = r"C:\Users\user\Documents\.\cerveau\Lazy-Docs";
+        let path = r"C:\Users\user\Documents\.\projects\Lazy-Docs";
         let err = validate_project_create_path(path).expect_err("interior '.' component must be rejected");
         assert!(err.contains('.'), "got: {}", err);
         assert!(err.contains(path), "error must name the real offending path, got: {}", err);

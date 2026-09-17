@@ -57,7 +57,7 @@ const MAX_LINKS = 5;
  * code-edge data — never via fuzzy substring matching.
  *
  * file-neuron IDs are long path-derived slugs like
- *   "file-trading-prometheus-research-autoresearch-archive-tests-mega-test-py"
+ *   "file-repos-sample-project-autoresearch-archive-tests-mega-test-py"
  * that contain every common English word as a substring, so substring matching
  * produces enormous fake hub nodes (1000+ inbound edges in production).
  *

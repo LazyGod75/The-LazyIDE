@@ -31,7 +31,7 @@ const DRY = args.includes('--dry-run');
 const destArg = args.find((a) => !a.startsWith('--'));
 const DEST = path.resolve(destArg || path.join(ROOT, '..', 'Lazy-public'));
 
-/** @type {{ prefixes: string[], files: string[] }} */
+/** @type {{ prefixes: string[], files: string[], forbiddenTerms: string[], allowedTerms: string[] }} */
 let manifest = {
   prefixes: ['supabase/', 'cloud/'],
   files: [
@@ -40,6 +40,8 @@ let manifest = {
     '.github/workflows/release.yml',
     '.github/workflows/republish-manifest.yml',
   ],
+  forbiddenTerms: [],
+  allowedTerms: [],
 };
 const manifestPath = path.join(ROOT, 'cloud', 'PRIVATE_MANIFEST.json');
 if (existsSync(manifestPath)) {
@@ -47,6 +49,8 @@ if (existsSync(manifestPath)) {
     const raw = JSON.parse(readFileSync(manifestPath, 'utf8'));
     if (Array.isArray(raw.prefixes)) manifest.prefixes = raw.prefixes;
     if (Array.isArray(raw.files)) manifest.files = raw.files;
+    if (Array.isArray(raw.forbiddenTerms)) manifest.forbiddenTerms = raw.forbiddenTerms;
+    if (Array.isArray(raw.allowedTerms)) manifest.allowedTerms = raw.allowedTerms;
   } catch (e) {
     console.warn('export-public-repo: could not parse PRIVATE_MANIFEST.json, using defaults', e);
   }
@@ -192,7 +196,150 @@ function forceMissing() {
   });
 }
 
+// ── Leak scanners ────────────────────────────────────────────────────
+// A file only ships if it passes EVERY scan: secret patterns, the
+// operator's home dir (in every mangled form), machine identity (OS
+// username, hostname, git name/email), and the manifest's private
+// vocabulary (forbiddenTerms). Any hit refuses the export — the public
+// tree must never carry a byte the operator did not explicitly clear.
+
+const squash = (s) => s.toLowerCase().replace(/[:\\\/_\-. ]/g, '');
+
+// Usernames/hostnames too generic to distinguish from normal vocabulary —
+// scanning them would flag every fixture in the repo.
+const GENERIC_IDENTS = new Set([
+  'user', 'users', 'admin', 'administrator', 'test', 'dev', 'owner', 'ubuntu',
+  'runner', 'node', 'git', 'github', 'default', 'public', 'home', 'pc',
+  'windows', 'vscode', 'system', 'local', 'sandbox', 'docker', 'container',
+]);
+
+// Zero-config identity needles: whoever runs the export gets their own
+// machine identity checked out of the tree.
+function collectIdentityNeedles() {
+  const needles = [];
+  try {
+    const u = os.userInfo().username;
+    if (u && u.length >= 4 && !GENERIC_IDENTS.has(u.toLowerCase())) {
+      needles.push(['os-username', u.toLowerCase()]);
+    }
+  } catch { /* platform without account info */ }
+  const host = os.hostname();
+  if (host && host.length >= 6 && !GENERIC_IDENTS.has(host.toLowerCase())) {
+    needles.push(['hostname', host.toLowerCase()]);
+  }
+  try {
+    const email = execSync('git config user.email', { cwd: ROOT, encoding: 'utf8' }).trim();
+    if (email && email.includes('@') && !/noreply/i.test(email)) {
+      needles.push(['git-email', email.toLowerCase()]);
+      const [local, domain] = email.split('@');
+      if (local && local.length >= 4 && !GENERIC_IDENTS.has(local.toLowerCase())) {
+        needles.push(['git-email-local', local.toLowerCase()]);
+      }
+      if (domain && !/(gmail|outlook|hotmail|yahoo|proton|icloud|users\.noreply\.github)\./i.test(domain)) {
+        needles.push(['git-email-domain', domain.toLowerCase()]);
+      }
+    }
+  } catch { /* no git identity configured */ }
+  try {
+    const name = execSync('git config user.name', { cwd: ROOT, encoding: 'utf8' }).trim();
+    // Handles ("LazyGod75") ship on every commit — only flag names that
+    // look like a real "First Last", which no public file should contain.
+    if (name && name.includes(' ')) needles.push(['git-name', name.toLowerCase()]);
+  } catch { /* no git identity configured */ }
+  return needles;
+}
+
+const homeNeedles = (() => {
+  const home = os.homedir();
+  return [squash(home), squash(home.replace(/^[A-Za-z]:/, ''))].filter((v) => v.length > 4);
+})();
+const identityNeedles = collectIdentityNeedles();
+const forbiddenNeedles = manifest.forbiddenTerms.map((t, i) => [`forbidden-term#${i + 1}`, t.toLowerCase()]);
+const allowedNeedles = manifest.allowedTerms.map((t) => t.toLowerCase());
+
+// Personal-info hits on one text line (or on a file's own path). Secret
+// scanning stays separate — an allowedTerms exemption never clears a
+// real credential. Needle VALUES are never printed: the terms
+// themselves are private.
+function personalHits(line) {
+  const low = line.toLowerCase();
+  if (allowedNeedles.some((a) => low.includes(a))) return [];
+  const hits = [];
+  if (homeNeedles.some((n) => squash(line).includes(n))) hits.push('personal-home-path');
+  for (const [kind, needle] of [...identityNeedles, ...forbiddenNeedles]) {
+    if (low.includes(needle)) hits.push(kind);
+  }
+  return hits;
+}
+
+// Secret-guard scripts are exempt from the SECRET scan only — their
+// regex patterns are code, not credentials. The personal/terms scan
+// still runs on them: a guard script can absolutely embed a real path.
+const SECRET_SCAN_SKIP = new Set([
+  'scripts/guard-secrets.mjs',
+  'scripts/lib/secret-guard.mjs',
+  'scripts/export-public-repo.mjs',
+  'src/lib/security/secretGuard.ts',
+  'src/__tests__/secretGuard.test.ts',
+]);
+
+const scanList = [
+  ...new Set([...tracked.filter((r) => !isPrivate(r)), ...FORCE_INCLUDE].map(norm)),
+];
+
+function publicContent(rel) {
+  // The exact text that would be written to DEST for this file —
+  // redactions and the tauri.conf sanitizer applied — or null for files
+  // copied as-is (binary or non-text).
+  const src = path.join(ROOT, rel);
+  if (!existsSync(src)) return null;
+  if (norm(rel) === 'src-tauri/tauri.conf.json') {
+    return sanitizeTauriConf(readFileSync(src, 'utf8'));
+  }
+  if (TEXT.test(rel) || rel.endsWith('LICENSE') || rel.endsWith('LICENSE.md')) {
+    return redact(readFileSync(src, 'utf8'));
+  }
+  return null;
+}
+
+function scanContent(rel, content) {
+  const violations = [];
+  if (!SECRET_SCAN_SKIP.has(norm(rel))) {
+    for (const hit of scanText(content)) {
+      violations.push(`${rel}:${hit.line} secret:${hit.rule}`);
+    }
+  }
+  const lines = content.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    for (const rule of personalHits(lines[i])) {
+      violations.push(`${rel}:${i + 1} ${rule}`);
+    }
+  }
+  return violations;
+}
+
+function walkDest(dir, prefix = '') {
+  const out = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (rel === '.git' || rel.startsWith('.git/')) continue;
+    if (entry.isDirectory()) out.push(...walkDest(path.join(dir, entry.name), rel));
+    else out.push(rel);
+  }
+  return out;
+}
+
+function reportAndRefuse(violations) {
+  for (const v of violations.slice(0, 60)) console.error(`PUBLIC TREE LEAK: ${v}`);
+  if (violations.length > 60) console.error(`... +${violations.length - 60} more`);
+  console.error('export-public-repo: refusing to emit a tree that still looks like it leaks');
+  process.exit(1);
+}
+
+// Dry-run: full pre-flight over the transformed source (same redactions
+// and scans as a real export) without touching DEST.
 if (DRY) {
+  const violations = [];
   for (const rel of tracked) {
     if (isPrivate(rel)) {
       skipped += 1;
@@ -201,9 +348,15 @@ if (DRY) {
     }
     copied += 1;
   }
+  for (const rel of scanList) {
+    for (const rule of personalHits(rel)) violations.push(`${rel}: filename ${rule}`);
+    const content = publicContent(rel);
+    if (content != null) violations.push(...scanContent(rel, content));
+  }
+  if (violations.length) reportAndRefuse(violations);
   const forced = forceMissing();
   console.log(
-    `export-public-repo DRY-RUN: would copy ${copied} tracked + ${forced.length} force-include, skip ${skipped}, dest=${DEST}`,
+    `export-public-repo DRY-RUN: would copy ${copied} tracked + ${forced.length} force-include, skip ${skipped}, leak scan clean, dest=${DEST}`,
   );
   if (forced.length) console.log(`  force-include: ${forced.join(', ')}`);
   if (skipReasons.length && process.env.EXPORT_VERBOSE) {
@@ -242,70 +395,22 @@ for (const rel of forceMissing()) {
   console.log(`export-public-repo: force-included untracked ${rel}`);
 }
 
-let secretFails = 0;
-// Whitelist the secret-guard scripts themselves — their regex patterns
-// (e.g. "BEGIN PRIVATE KEY") are code, not real secrets.
-const SECRET_SCAN_SKIP = new Set([
-  'scripts/guard-secrets.mjs',
-  'scripts/lib/secret-guard.mjs',
-  'scripts/export-public-repo.mjs',
-  'src/lib/security/secretGuard.ts',
-  'src/__tests__/secretGuard.test.ts',
-]);
-const scanList = [...tracked.filter((r) => !isPrivate(r) && !SECRET_SCAN_SKIP.has(norm(r))), ...FORCE_INCLUDE.filter((r) => !SECRET_SCAN_SKIP.has(norm(r)))];
-for (const rel of new Set(scanList.map(norm))) {
+const violations = [];
+// 1) Dest-side audit: nothing private or leak-shaped may exist in the
+// emitted tree — catches copy-logic bugs the per-file scans would miss.
+for (const rel of walkDest(DEST)) {
+  if (isPrivate(rel) || isBlockedEnv(rel)) {
+    violations.push(`${rel}: private-path-survived-export`);
+  }
+  for (const rule of personalHits(rel)) violations.push(`${rel}: filename ${rule}`);
+}
+// 2) Content scans over everything that was emitted.
+for (const rel of scanList) {
   const to = path.join(DEST, rel);
-  if (!existsSync(to) || !TEXT.test(rel)) continue;
-  const hits = scanText(readFileSync(to, 'utf8'));
-  if (hits.length === 0) continue;
-  secretFails += 1;
-  for (const hit of hits) {
-    console.error(`PUBLIC TREE SECRET: ${rel}:${hit.line} [${hit.rule}]`);
-  }
+  if (!existsSync(to)) continue;
+  const content = publicContent(rel);
+  if (content != null) violations.push(...scanContent(rel, content));
 }
-
-// Scan for the developer's own home directory embedded in the tree. Even after
-// the secret redaction above, a hard-coded absolute path like `C:\Users\Foo\...`
-// (or `/Users/foo/...`) is a personal-info leak that must not ship in a public
-// repo. We compare against the real `os.homedir()` of whoever runs the export.
-function scanPersonalHome(content) {
-  const homeBack = os.homedir(); // e.g. C:\Users\user
-  // Compare in "squashed" form (lowercase, no separators) so every mangled
-  // copy of the home dir trips the scan: C:\Users\x, C:\\Users\\x (escaped),
-  // C--Users-x (claude temp), c-users-x (slug), UsersX (collapsed), /Users/x.
-  const squash = (s) => s.toLowerCase().replace(/[:\\\/_\-. ]/g, '');
-  const homeFull = squash(homeBack); // cusersx
-  const homeTail = squash(homeBack.replace(/^[A-Za-z]:/, '')); // usersx
-  const needles = [homeFull, homeTail].filter((v) => v.length > 4);
-  const lines = content.split(/\r?\n/);
-  const hits = [];
-  for (let i = 0; i < lines.length; i++) {
-    const sq = squash(lines[i]);
-    if (needles.some((n) => sq.includes(n))) hits.push(i + 1);
-  }
-  return hits;
-}
-
-let pathFails = 0;
-for (const rel of new Set(scanList.map(norm))) {
-  const to = path.join(DEST, rel);
-  if (!existsSync(to) || !TEXT.test(rel) || SECRET_SCAN_SKIP.has(norm(rel))) continue;
-  const p = readFileSync(to, 'utf8');
-  // Also check the CURRENT source file (not just the copied dest) so a path in a
-  // binary or a file past the TEXT filter is still caught on the way in.
-  const src = path.join(ROOT, rel);
-  const content = existsSync(src) ? readFileSync(src, 'utf8') : p;
-  const homeHits = scanPersonalHome(content);
-  if (homeHits.length === 0) continue;
-  pathFails += 1;
-  for (const line of homeHits) {
-    console.error(`PUBLIC TREE PERSONAL PATH: ${rel}:${line}`);
-  }
-}
-
-if (secretFails > 0 || pathFails > 0) {
-  console.error('export-public-repo: refusing to emit a tree that still looks like it contains secrets or personal paths');
-  process.exit(1);
-}
+if (violations.length) reportAndRefuse(violations);
 
 console.log(`export-public-repo: copied ${copied} files, skipped ${skipped} private, dest=${DEST}`);

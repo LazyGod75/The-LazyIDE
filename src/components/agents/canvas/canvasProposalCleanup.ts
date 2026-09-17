@@ -192,9 +192,9 @@ function isPathBoundary(char: string | undefined): boolean {
  * bounded on BOTH sides by a real boundary (whitespace/punctuation/`/`/
  * start-or-end of string), never as a prefix or suffix of a LONGER
  * contiguous path/word run. Plain substring matching alone is NOT enough:
- * a project root ending in a short segment (e.g. ".../cerveau/Lazy") is a
+ * a project root ending in a short segment (e.g. ".../projects/Lazy") is a
  * literal string-PREFIX of a DIFFERENT, longer sibling folder
- * (".../cerveau/LazySite-internet") — `"...lazy".includes(...)` would
+ * (".../projects/LazySite-internet") — `"...lazy".includes(...)` would
  * false-positive on that exact pairing, the same class of mistake as the
  * original incident's bare-name match, just one layer down. Boundary-
  * checking closes that gap without reintroducing any name-based matching:

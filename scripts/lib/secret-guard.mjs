@@ -49,6 +49,40 @@ function serviceRole(line) {
   return null;
 }
 
+// Documented fixture values — keyboard runs and canonical example tokens
+// used by scrubber/security tests. A real credential containing one of
+// these runs is astronomically unlikely.
+const FIXTURE_VALUE =
+  /(?:FAKE|EXAMPLE|DUMMY|abcdef|ABCDEF|1234567890|0123456789|abc123|qwerty|xxxxx|SomeSignature|dQw4w9WgXcQ)/i;
+
+function providerKeys(line) {
+  if (PLACEHOLDER.test(line) || FIXTURE_VALUE.test(line) || isGhSecretRef(line)) return null;
+  if (/\bapikey_[A-Za-z0-9]{20,}/.test(line)) return 'typesafe-key';
+  if (/\bsk-ant-[A-Za-z0-9_-]{20,}/.test(line)) return 'anthropic-key';
+  if (/\bsk-proj-[A-Za-z0-9_-]{20,}/.test(line)) return 'openai-key';
+  if (/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}/.test(line)) return 'github-token';
+  if (/\bgithub_pat_[A-Za-z0-9_]{20,}/.test(line)) return 'github-token';
+  if (/\bxox[baprs]-[A-Za-z0-9-]{10,}/.test(line)) return 'slack-token';
+  if (/\bAKIA[0-9A-Z]{16}\b/.test(line)) return 'aws-access-key';
+  return null;
+}
+
+function personalJwt(line) {
+  if (isGhSecretRef(line) || PLACEHOLDER.test(line) || FIXTURE_VALUE.test(line)) return null;
+  const jwtRe = /eyJ[A-Za-z0-9_-]+\.(eyJ[A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+/g;
+  for (const m of line.matchAll(jwtRe)) {
+    const payload = decodeJwtPayload(m[1]);
+    if (!payload) continue;
+    // Supabase anon keys are public by design; any other role, or a JWT
+    // carrying a real user identity, is a credential. Generic fixture
+    // subs (user/test/1234567890) are exempt.
+    if (payload.role && payload.role !== 'anon') return 'jwt-non-anon-role';
+    if (payload.email && !/example\.|@test|@localhost|@invalid/i.test(payload.email)) return 'jwt-personal';
+    if (payload.sub && !/^(user\d*|test|admin|1234567890|0+)$/i.test(String(payload.sub))) return 'jwt-personal';
+  }
+  return null;
+}
+
 const ASSIGN_KEYS =
   /(?:R2_SECRET_ACCESS_KEY|AWS_SECRET_ACCESS_KEY|TAURI_SIGNING_PRIVATE_KEY|TAURI_SIGNING_PRIVATE_KEY_PASSWORD|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET|SUPABASE_SERVICE_ROLE_KEY|LAZY_OPENROUTER_KEY)\s*[:=]\s*(\S+)/i;
 
@@ -62,7 +96,7 @@ function cloudAssignment(line) {
   return 'cloud-secret-assignment';
 }
 
-const RULES = [stripeSecret, stripeWebhook, openrouter, pem, serviceRole, cloudAssignment];
+const RULES = [stripeSecret, stripeWebhook, openrouter, pem, serviceRole, providerKeys, personalJwt, cloudAssignment];
 
 export function scanText(content) {
   const hits = [];

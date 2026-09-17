@@ -75,9 +75,9 @@
  *      AFTER the real task text: an "## Upstream graph inputs" JSON block
  *      and a "## Brain recall (automatic)" block of recalled note snippets
  *      hard-truncated to 200 chars (brainBus.ts's formatRecallBlock). A
- *      recalled note had been truncated to exactly "...cerveau\lazy-backo"
+ *      recalled note had been truncated to exactly "...projects\lazy-backo"
  *      — a strict TEXT prefix of the real active root
- *      "...cerveau\lazy-backoffice" but not a path ancestor (no separator
+ *      "...projects\lazy-backoffice" but not a path ancestor (no separator
  *      boundary), so it read as a genuinely different, out-of-scope path.
  *      stripInjectedContextBlocks() now cuts the scanned text at the first
  *      of either header, so only the real instruction is ever scanned —
@@ -139,8 +139,8 @@ import { BRAIN_RECALL_HEADER } from './graph/brainBus.js';
  *  block expresses the mission's actual target, so scanning them for
  *  "outside the active project" absolute paths is pure noise at best and a
  *  false refusal at worst: a truncated recall snippet like
- *  "...cerveau\lazy-backo" is a strict TEXT prefix of the real active root
- *  "...cerveau\lazy-backoffice" but not a path ancestor (no separator
+ *  "...projects\lazy-backo" is a strict TEXT prefix of the real active root
+ *  "...projects\lazy-backoffice" but not a path ancestor (no separator
  *  boundary), so it used to trip the guard on every mission whose recalled
  *  notes happened to mention the active project's own path (real incident,
  *  missions M4/M5, 2026-08-02: both blocked despite naming the correct
