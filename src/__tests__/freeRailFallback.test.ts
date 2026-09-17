@@ -41,9 +41,11 @@ describe('nextFreeOpenRouterModelId', () => {
 });
 
 describe('free rail catalog health', () => {
-  it('every free entry is still a live-looking :free route (not a retired id)', () => {
+  it('every free entry is a genuine $0 route and never a retired id', () => {
     for (const m of OPENROUTER_MODELS.filter((x) => x.isFree)) {
-      expect(m.id.endsWith(':free')).toBe(true);
+      // `:free`-suffixed route OR a verified $0-priced listing (stealth
+      // previews like union-alpha are free by pricing, not by route name).
+      expect(m.id.endsWith(':free') || (m.priceIn === 0 && m.priceOut === 0)).toBe(true);
       // A retired id must never still be listed as a live catalog entry.
       expect(migrateRetiredOpenRouterId(m.id)).toBe(m.id);
     }
@@ -51,9 +53,13 @@ describe('free rail catalog health', () => {
 
   it('retired free ids migrate to the live default', () => {
     expect(migrateRetiredOpenRouterId('minimax/minimax-m3:free')).toBe(FREE_OPENROUTER_MODEL_ID);
-    expect(migrateRetiredOpenRouterId('z-ai/glm-5.2:free')).toBe(FREE_OPENROUTER_MODEL_ID);
     // 2026-09-11 endpoint-verified: listed but zero free-serving endpoints.
     expect(migrateRetiredOpenRouterId('nvidia/nemotron-3-super-120b-a12b:free')).toBe(FREE_OPENROUTER_MODEL_ID);
     expect(migrateRetiredOpenRouterId('nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free')).toBe(FREE_OPENROUTER_MODEL_ID);
+    // 2026-09-17: dropped from the rail (quality bar) — still live upstream.
+    expect(migrateRetiredOpenRouterId('google/gemma-4-31b-it:free')).toBe(FREE_OPENROUTER_MODEL_ID);
+    expect(migrateRetiredOpenRouterId('nvidia/nemotron-3-ultra-550b-a55b:free')).toBe(FREE_OPENROUTER_MODEL_ID);
+    expect(migrateRetiredOpenRouterId('thinkingmachines/inkling:free')).toBe(FREE_OPENROUTER_MODEL_ID);
+    expect(migrateRetiredOpenRouterId('nvidia/nemotron-3.5-lightning:free')).toBe(FREE_OPENROUTER_MODEL_ID);
   });
 });

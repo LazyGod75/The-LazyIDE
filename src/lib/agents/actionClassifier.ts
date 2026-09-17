@@ -87,6 +87,10 @@ export const SAFE_ACTIONS = new Set<string>([
   'create_lazybot',
   'update_lazybot',
   'list_lazybots',
+  // lazybot_runs reads run history; toggle_bot_vm only shows/hides a canvas
+  // window — both display-tier.
+  'lazybot_runs',
+  'toggle_bot_vm',
 ]);
 
 /** Mutative actions that consume budget or touch real running execution.
@@ -137,9 +141,16 @@ export const SENSITIVE_ACTIONS = new Set<string>([
   'run_browser_recipe',
   // LazyBots (A3) — run_lazybot launches a real managed mission (spends
   // budget, touches real execution) like launch_mission; stop_lazybot halts
-  // running execution like stop_mission.
+  // running execution like stop_mission. sweep_solari kills real cloud
+  // sessions (orphaned ones, but still remote resources); resolving a bot's
+  // intervention gate unblocks a parked run — both touch live execution.
   'run_lazybot',
   'stop_lazybot',
+  'sweep_solari',
+  'resolve_bot_intervention',
+  // teach_lazybot opens a canvas window and, on stop, rewrites the bot's
+  // systemPrompt — a live config mutation, not display-only.
+  'teach_lazybot',
 ]);
 
 /** Irreversible actions — require confirmation even in YOLO mode.
@@ -165,6 +176,10 @@ export const DESTRUCTIVE_ACTIONS = new Set<string>([
   // approval even in YOLO mode because it discards a pending proposal the
   // human may still have wanted to review.
   'reject_plan',
+  // A deleted LazyBot has no archived state — its config, routines and
+  // persona are gone for good (run history survives in .lazy, but the bot
+  // itself is irreversibly removed). Same tier as delete_mission.
+  'delete_lazybot',
 ]);
 
 export type ActionTier = 'safe' | 'sensitive' | 'destructive' | 'unknown';

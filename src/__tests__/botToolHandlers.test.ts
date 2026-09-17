@@ -20,6 +20,7 @@ vi.mock('../lib/bus', async (importOriginal) => {
 
 vi.mock('../lib/solari/solariSessions', () => ({
   missionIdForBrowserSession: vi.fn((sessionId: string) => (sessionId === 'sess_1' ? 'M1' : undefined)),
+  registerRunArtifactStamper: vi.fn(),
 }));
 
 describe('remapBotDeliverablePath', () => {

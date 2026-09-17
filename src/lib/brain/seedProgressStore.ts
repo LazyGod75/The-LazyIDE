@@ -32,7 +32,8 @@
    casts). */
 
 import { getPlatform } from '../platform/index.js';
-import type { SeedProgressEvent } from '../platform/types.js';
+import type { SeedExtractorSpec, SeedProgressEvent } from '../platform/types.js';
+import { listSeedRails, markEnrichedSeed, markHeuristicSeed } from './seedExtractor.js';
 
 // ── Public state shape ──────────────────────────────────────────────
 
@@ -161,6 +162,9 @@ export interface StartSeedOptions {
   useLlm: boolean;
   since?: string;
   projectRoot?: string;
+  /** Caller-picked extractor rail (see seedExtractor.ts) — forwarded to
+      brain_seed's `extractor` arg. */
+  extractor?: SeedExtractorSpec;
 }
 
 /**
@@ -193,6 +197,19 @@ export async function startSeed(opts: StartSeedOptions): Promise<void> {
 
   try {
     const res = await getPlatform().brain.seedBrain(opts);
+    // Record how the brain was built so the deferred-enrichment offer (see
+    // seedExtractor.ts) knows whether a "you now have a real rail" toast is
+    // worth showing. An LLM seed clears the flag; a heuristic one sets it
+    // with the rails available right now (a later offer only fires when a
+    // NEW rail appears). Best-effort — never let bookkeeping mask the seed
+    // result itself.
+    try {
+      if (opts.useLlm && opts.extractor) {
+        markEnrichedSeed();
+      } else {
+        markHeuristicSeed((await listSeedRails()).map((r) => r.id));
+      }
+    } catch { /* bookkeeping only */ }
     if (_state.active) {
       _state = {
         ..._state,

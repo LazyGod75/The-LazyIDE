@@ -28,6 +28,7 @@ import type {
   CaptureResult,
   HistorySource,
   SeedEstimate,
+  SeedExtractorSpec,
   SeedProgressEvent,
   Tests,
   Missions,
@@ -620,13 +621,13 @@ const webBrain: Brain & {
     return [];
   },
 
-  async seedEstimate(_sources: string[]): Promise<SeedEstimate> {
+  async seedEstimate(_sources: string[], _extractor?: SeedExtractorSpec): Promise<SeedEstimate> {
     // Web mock: no CLI access — honest zero estimate, no backend available.
     return { items: 0, estTokens: 0, estMinutes: 0, backend: undefined, llmAvailable: false };
   },
 
   seedBrain(
-    _opts: { sources: string[]; useLlm: boolean; since?: string; projectRoot?: string }
+    _opts: { sources: string[]; useLlm: boolean; since?: string; projectRoot?: string; extractor?: SeedExtractorSpec }
   ): Promise<{ imported: number; skipped: number }> {
     // Web mock: honest rejection — seeding requires the Tauri native sidecar.
     return Promise.reject(new Error('not available in the browser'));

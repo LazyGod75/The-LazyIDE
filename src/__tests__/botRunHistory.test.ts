@@ -59,4 +59,23 @@ describe('bot run history (C53)', () => {
     expect(hist).toHaveLength(MAX_BOT_RUN_HISTORY);
     expect(hist[0]!.missionId).toBe(`M${MAX_BOT_RUN_HISTORY + 4}`);
   });
+
+  // Real incident (M135/M136): finishBotRun's bare bookkeeping append lands
+  // AFTER finalizeBotRunLearning's summary-bearing one — dedupe made
+  // last-write-win, erasing the child report a blocking bot_handoff needed.
+  it('keeps the summary when a bare bookkeeping append lands after the learning write', async () => {
+    await appendBotRunHistory(doneRun({ summary: 'child report body' }));
+    await appendBotRunHistory(doneRun({ summary: undefined }));
+    const hist = await listBotRunHistory('bot_1');
+    expect(hist).toHaveLength(1);
+    expect(hist[0]!.summary).toBe('child report body');
+  });
+
+  it('keeps the summary when the bookkeeping append lands first', async () => {
+    await appendBotRunHistory(doneRun({ summary: undefined, replayUrl: 'https://replay/x' }));
+    await appendBotRunHistory(doneRun({ summary: 'child report body' }));
+    const hist = await listBotRunHistory('bot_1');
+    expect(hist[0]!.summary).toBe('child report body');
+    expect(hist[0]!.replayUrl).toBe('https://replay/x');
+  });
 });

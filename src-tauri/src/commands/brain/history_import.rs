@@ -79,6 +79,130 @@ fn resolve_llm_backend() -> LlmBackend {
     }
 }
 
+/// Caller-picked LLM backend for the seed — the frontend's extractor picker
+/// (seedExtractor.ts) sends this when the user chooses a specific rail
+/// instead of leaving `resolve_llm_backend`'s fixed auto-detection.
+/// Deserialized from the JS `{ kind, baseUrl?, model?, apiKey?, anonKey?,
+/// label? }` object (Tauri converts the camelCase arg name; field-level
+/// rename_all handles the object body).
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SeedExtractorArg {
+    /// 'claude-cli' | 'anthropic' | 'openai' | 'lazy-proxy'
+    pub kind: String,
+    /// OpenAI-compatible base URL (kind 'openai') or the ai-proxy endpoint
+    /// (kind 'lazy-proxy').
+    pub base_url: Option<String>,
+    /// Model id for kinds that take one ('anthropic', 'openai',
+    /// 'lazy-proxy'). Never hardcoded here — the frontend resolves it from
+    /// the live catalog so a dead upstream model id only ever means editing
+    /// the catalog, not this file.
+    pub model: Option<String>,
+    /// Credential: Anthropic/BYOK key ('anthropic'/'openai') or the user's
+    /// Supabase JWT ('lazy-proxy'). Passed straight through to the child's
+    /// environment — never logged, never persisted.
+    pub api_key: Option<String>,
+    /// Supabase anon key for the `apikey` header (kind 'lazy-proxy' only).
+    pub anon_key: Option<String>,
+    /// Alternate managed catalog ids tried when the primary model errors
+    /// (429/404/5xx) — the free rail's routes are individually flaky, so the
+    /// picker sends the OTHER free entries as backups. Order matters.
+    pub fallback_models: Option<Vec<String>>,
+    /// Human-readable label surfaced in the 'backend' progress event /
+    /// estimate response (falls back to a per-kind default).
+    pub label: Option<String>,
+}
+
+/// Build the LlmBackend for a caller-picked extractor spec. Returns None for
+/// an unrecognized kind — the caller then falls back to
+/// `resolve_llm_backend`'s auto-detection (same behavior as no spec at all).
+fn llm_backend_from_spec(spec: &SeedExtractorArg) -> Option<LlmBackend> {
+    let label = |default: &str| spec.label.clone().unwrap_or_else(|| default.to_string());
+    match spec.kind.as_str() {
+        "claude-cli" => {
+            let mut env = vec![("LAZYBRAIN_EXTRACTOR", "claude-cli".to_string())];
+            if let Some(m) = spec.model.as_ref().filter(|m| !m.trim().is_empty()) {
+                env.push(("LAZYBRAIN_CLAUDE_CLI_MODEL", m.clone()));
+            }
+            Some(LlmBackend { env, label: label("Claude Code CLI") })
+        }
+        "anthropic" => {
+            let key = spec.api_key.clone().filter(|k| !k.trim().is_empty())?;
+            let mut env = vec![
+                ("LAZYBRAIN_EXTRACTOR", "anthropic".to_string()),
+                ("ANTHROPIC_API_KEY", key),
+            ];
+            if let Some(m) = spec.model.as_ref().filter(|m| !m.trim().is_empty()) {
+                env.push(("LAZYBRAIN_ANTHROPIC_MODEL", m.clone()));
+            }
+            Some(LlmBackend { env, label: label("Anthropic API") })
+        }
+        // Any OpenAI-compatible endpoint (BYOK DeepSeek, OpenRouter key,
+        // Mistral, local llama.cpp…): lazybrain's `openai` extractor reads
+        // LAZYBRAIN_OPENAI_* — see util/openai-client.ts.
+        "openai" => {
+            let mut env = vec![
+                ("LAZYBRAIN_EXTRACTOR", "devstral".to_string()),
+                ("LAZYBRAIN_OPENAI_API_KEY_ENV", "LAZYBRAIN_SEED_API_KEY".to_string()),
+            ];
+            if let Some(u) = spec.base_url.as_ref().filter(|u| !u.trim().is_empty()) {
+                env.push(("LAZYBRAIN_OPENAI_BASE_URL", u.clone()));
+            }
+            if let Some(m) = spec.model.as_ref().filter(|m| !m.trim().is_empty()) {
+                env.push(("LAZYBRAIN_OPENAI_MODEL", m.clone()));
+            }
+            if let Some(k) = spec.api_key.as_ref().filter(|k| !k.trim().is_empty()) {
+                env.push(("LAZYBRAIN_SEED_API_KEY", k.clone()));
+            }
+            Some(LlmBackend { env, label: label("OpenAI-compatible") })
+        }
+        // Lazy's own ai-proxy (managed catalog incl. the free rail): speaks
+        // the proxy's custom body shape, not chat/completions — handled by
+        // lazybrain's `lazy-proxy` extractor. api_key = the user's session
+        // JWT (short-lived; a mid-seed expiry degrades notes to heuristic,
+        // it does not fail the import).
+        "lazy-proxy" => {
+            let url = spec.base_url.clone().filter(|u| !u.trim().is_empty())?;
+            let mut env = vec![
+                ("LAZYBRAIN_EXTRACTOR", "lazy-proxy".to_string()),
+                ("LAZYBRAIN_PROXY_URL", url),
+            ];
+            // Optional here so seed_estimate can report the rail's label
+            // without the session JWT ever crossing IPC for a dry-run — a
+            // real seed without it degrades per-note to heuristic, matching
+            // the other backends' "missing credential" behavior.
+            if let Some(k) = spec.api_key.as_ref().filter(|k| !k.trim().is_empty()) {
+                env.push(("LAZYBRAIN_PROXY_TOKEN", k.clone()));
+            }
+            if let Some(a) = spec.anon_key.as_ref().filter(|a| !a.trim().is_empty()) {
+                env.push(("LAZYBRAIN_PROXY_ANON", a.clone()));
+            }
+            if let Some(m) = spec.model.as_ref().filter(|m| !m.trim().is_empty()) {
+                env.push(("LAZYBRAIN_PROXY_MODEL", m.clone()));
+            }
+            // Full ordered candidate list (primary + fallbacks) — lazybrain
+            // walks it on upstream errors so one flaky free route does not
+            // silently degrade the whole seed to heuristic notes.
+            let mut models: Vec<String> = Vec::new();
+            if let Some(m) = spec.model.as_ref().filter(|m| !m.trim().is_empty()) {
+                models.push(m.clone());
+            }
+            if let Some(ref alts) = spec.fallback_models {
+                for a in alts {
+                    if !a.trim().is_empty() && !models.iter().any(|m| m == a) {
+                        models.push(a.clone());
+                    }
+                }
+            }
+            if !models.is_empty() {
+                env.push(("LAZYBRAIN_PROXY_MODELS", models.join(",")));
+            }
+            Some(LlmBackend { env, label: label("Lazy managed") })
+        }
+        _ => None,
+    }
+}
+
 /// A detected conversation-history source.
 ///
 /// Mirrors the TypeScript `HistorySource` type from platform/types.ts:
@@ -241,9 +365,10 @@ struct ImportDryRunResult {
 #[tauri::command]
 pub(crate) async fn brain_seed_estimate(
     sources: Vec<String>,
+    extractor: Option<SeedExtractorArg>,
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, String> {
-    match tauri::async_runtime::spawn_blocking(move || brain_seed_estimate_inner(sources, &app)).await {
+    match tauri::async_runtime::spawn_blocking(move || brain_seed_estimate_inner(sources, extractor, &app)).await {
         Ok(result) => result,
         Err(e) => Err(format!("brain_seed_estimate: blocking task join failed: {}", e)),
     }
@@ -254,7 +379,7 @@ pub(crate) async fn brain_seed_estimate(
 /// the `AppHandle` because a `tauri::State<'_, T>` borrow cannot move into
 /// a `'static` `spawn_blocking` closure — see `project_register`'s doc
 /// comment (config.rs) for the full mechanism.
-fn brain_seed_estimate_inner(sources: Vec<String>, app: &tauri::AppHandle) -> Result<serde_json::Value, String> {
+fn brain_seed_estimate_inner(sources: Vec<String>, extractor: Option<SeedExtractorArg>, app: &tauri::AppHandle) -> Result<serde_json::Value, String> {
     let project_state = app.state::<ProjectState>();
 
     let lb = resolve_lazybrain_bin_static()
@@ -326,7 +451,13 @@ fn brain_seed_estimate_inner(sources: Vec<String>, app: &tauri::AppHandle) -> Re
     // `claude --version` probe) so the onboarding/Settings UI can decide the
     // default state of the "use LLM" toggle and its copy ("notes will be
     // heuristic-only") BEFORE the user commits to starting the import.
-    let backend = resolve_llm_backend();
+    // A caller-picked extractor spec (the onboarding rail picker) wins over
+    // auto-detection so the reported label matches what a real seed would
+    // actually use.
+    let backend = extractor
+        .as_ref()
+        .and_then(llm_backend_from_spec)
+        .unwrap_or_else(resolve_llm_backend);
 
     Ok(serde_json::json!({
         "items":       total_items,
@@ -1072,9 +1203,10 @@ pub(crate) async fn brain_seed(
     use_llm: bool,
     since: Option<String>,
     project_root: Option<String>,
+    extractor: Option<SeedExtractorArg>,
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, String> {
-    match tauri::async_runtime::spawn_blocking(move || brain_seed_inner(sources, use_llm, since, project_root, &app)).await {
+    match tauri::async_runtime::spawn_blocking(move || brain_seed_inner(sources, use_llm, since, project_root, extractor, &app)).await {
         Ok(result) => result,
         Err(e) => Err(format!("brain_seed: blocking task join failed: {}", e)),
     }
@@ -1089,6 +1221,7 @@ fn brain_seed_inner(
     use_llm: bool,
     since: Option<String>,
     seed_project_root: Option<String>,
+    extractor: Option<SeedExtractorArg>,
     app: &tauri::AppHandle,
 ) -> Result<serde_json::Value, String> {
     let project_state = app.state::<ProjectState>();
@@ -1149,7 +1282,16 @@ fn brain_seed_inner(
     // was found and notes will be heuristic-only) BEFORE any source starts,
     // as its own progress event so the UI can surface it distinctly from the
     // per-source "Importing from …" messages below.
-    let backend = if use_llm { Some(resolve_llm_backend()) } else { None };
+    let backend = if use_llm {
+        Some(
+            extractor
+                .as_ref()
+                .and_then(llm_backend_from_spec)
+                .unwrap_or_else(resolve_llm_backend),
+        )
+    } else {
+        None
+    };
     if let Some(ref b) = backend {
         let _ = app.emit("brain://seed-progress", serde_json::json!({
             "done":    0,

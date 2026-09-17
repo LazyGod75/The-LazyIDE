@@ -53,6 +53,7 @@ const mocks = vi.hoisted(() => ({
   openBrowserSession: vi.fn(),
   getBrowserSession: vi.fn(),
   releaseBrowser: vi.fn(),
+  peekBrowserArtifacts: vi.fn(),
   openSandbox: vi.fn(),
   getSandbox: vi.fn(),
   releaseSandbox: vi.fn(),
@@ -70,12 +71,14 @@ vi.mock('../lib/solari/solariSessions', () => ({
   openBrowserSession: mocks.openBrowserSession,
   getBrowserSession: mocks.getBrowserSession,
   releaseBrowser: mocks.releaseBrowser,
+  peekBrowserArtifacts: mocks.peekBrowserArtifacts,
   openSandbox: mocks.openSandbox,
   getSandbox: mocks.getSandbox,
   releaseSandbox: mocks.releaseSandbox,
   ensureAgentComputer: mocks.ensureAgentComputer,
   acquireAgentComputer: mocks.acquireAgentComputer,
   releaseAgentComputer: mocks.releaseAgentComputer,
+  registerRunArtifactStamper: vi.fn(),
 }));
 vi.mock('../lib/bots/botEngine', () => ({
   botIdForMission: vi.fn(() => undefined),
@@ -211,6 +214,10 @@ describe('cloud browser handlers', () => {
       profileId: 'prof_1',
       stealth: true,
       proxyCountry: 'gb',
+      proxyTier: undefined,
+      proxySession: undefined,
+      proxySmart: false,
+      webBotAuth: false,
       captcha: true,
       recording: true,
       botId: undefined,
@@ -246,13 +253,70 @@ describe('cloud browser handlers', () => {
     expect(result).toContain('Screenshot captured');
   });
 
-  it('cloud_browser_replay_url returns the replay URL', async () => {
-    mocks.getBrowserSession.mockReturnValue(makeBrowserHandle('ses_replay'));
-    mocks.getSolariClients.mockResolvedValue({
-      browser: { sessions: { getReplayUrl: vi.fn().mockResolvedValue({ url: 'https://replay.example.com' }) } },
+  // The gateway only mints the replay URL at release — a live-session call
+  // returns close-first guidance WITHOUT touching the API (M138: the doomed
+  // call surfaced a generic Solari error the model retried pointlessly).
+  it('cloud_browser_replay_url on a live session returns close-first guidance without an API call', async () => {
+    mocks.getBrowserSession.mockReturnValue(makeBrowserHandle('ses_live'));
+    const getReplayUrl = vi.fn().mockResolvedValue({ url: 'https://replay.example.com' });
+    mocks.getSolariClients.mockResolvedValue({ browser: { sessions: { getReplayUrl } } });
+    const result = await cloudBrowserReplayUrl({}, makeCtx('m1'));
+    expect(result).toContain('only exists after the session is released');
+    expect(result).toContain('cloud_browser_close');
+    expect(getReplayUrl).not.toHaveBeenCalled();
+  });
+
+  it('cloud_browser_replay_url serves the captured artifact after close', async () => {
+    mocks.getBrowserSession.mockReturnValue(undefined);
+    mocks.peekBrowserArtifacts.mockReturnValue({
+      sessionId: 'ses_done',
+      replayUrl: 'https://replay.example.com/done',
+      replayPath: '/repo/.lazy/replays/ses_done.ndjson',
     });
     const result = await cloudBrowserReplayUrl({}, makeCtx('m1'));
-    expect(result).toBe('https://replay.example.com');
+    expect(result).toContain('https://replay.example.com/done');
+    expect(result).toContain('.lazy/replays/ses_done.ndjson');
+    expect(mocks.getSolariClients).not.toHaveBeenCalled();
+  });
+
+  it('cloud_browser_replay_url accepts a released session_id and polls', async () => {
+    mocks.getBrowserSession.mockReturnValue(undefined);
+    mocks.peekBrowserArtifacts.mockReturnValue(undefined);
+    const getReplayUrl = vi.fn()
+      .mockRejectedValueOnce(new Error('not ready'))
+      .mockResolvedValue({ url: 'https://replay.example.com/late' });
+    mocks.getSolariClients.mockResolvedValue({ browser: { sessions: { getReplayUrl } } });
+    const result = await cloudBrowserReplayUrl({ session_id: 'ses_released' }, makeCtx('m1'));
+    expect(result).toBe('https://replay.example.com/late');
+    expect(getReplayUrl).toHaveBeenCalledWith('ses_released');
+    expect(getReplayUrl).toHaveBeenCalledTimes(2);
+  });
+
+  it('cloud_browser_replay_url without session or session_id reports no session', async () => {
+    mocks.getBrowserSession.mockReturnValue(undefined);
+    mocks.peekBrowserArtifacts.mockReturnValue(undefined);
+    const result = await cloudBrowserReplayUrl({}, makeCtx('m1'));
+    expect(result).toContain('no browser session');
+  });
+
+  it('cloud_browser_close embeds the replay URL when recording was on', async () => {
+    mocks.releaseBrowser.mockResolvedValue(undefined);
+    mocks.peekBrowserArtifacts.mockReturnValue({
+      sessionId: 'ses_rec',
+      replayUrl: 'https://replay.example.com/rec',
+      replayPath: '/repo/.lazy/replays/ses_rec.ndjson',
+    });
+    const result = await cloudBrowserClose({}, makeCtx('m1'));
+    expect(result).toContain('Browser session closed.');
+    expect(result).toContain('Replay URL: https://replay.example.com/rec');
+    expect(result).toContain('ses_rec.ndjson');
+  });
+
+  it('cloud_browser_close stays terse when no replay was captured', async () => {
+    mocks.releaseBrowser.mockResolvedValue(undefined);
+    mocks.peekBrowserArtifacts.mockReturnValue(undefined);
+    const result = await cloudBrowserClose({}, makeCtx('m1'));
+    expect(result).toBe('Browser session closed.');
   });
 
   it('cloud_browser_profiles_list lists saved profiles', async () => {

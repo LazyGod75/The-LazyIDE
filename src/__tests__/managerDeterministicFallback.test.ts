@@ -35,6 +35,22 @@ describe('detectDeterministicManagerAction', () => {
     });
   });
 
+  it('reconstructs delete_lazybot only when a bot is named unambiguously', () => {
+    expect(detectDeterministicManagerAction('supprime le bot SolariTest', '', bots)).toEqual({
+      type: 'delete_lazybot',
+      botId: 'bot_1',
+    });
+    expect(detectDeterministicManagerAction('delete bot OtherBot', '', bots)).toEqual({
+      type: 'delete_lazybot',
+      botId: 'bot_2',
+    });
+  });
+
+  it('never reconstructs delete_lazybot from a generic "supprime le bot"', () => {
+    // Destructive — two bots exist, so "le bot" is ambiguous: nothing.
+    expect(detectDeterministicManagerAction('supprime le bot', '', bots)).toBeUndefined();
+  });
+
   it('reconstructs create_lazybot when a name is given', () => {
     expect(detectDeterministicManagerAction('crée un bot nommé NightWatch', '', undefined)).toEqual({
       type: 'create_lazybot',

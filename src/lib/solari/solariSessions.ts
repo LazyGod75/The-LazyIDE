@@ -12,6 +12,9 @@
 import type { CloudCdpBrowser } from './cdpBrowser.js';
 import type { Sandbox } from '@solarisdk/sandbox';
 import { getSolariClients, solariCdpProxyBase, type CloudBrowserLaunchOptions } from './solariClient.js';
+import { getPlatform } from '../platform/index.js';
+import { joinPath } from '../paths.js';
+import { getCachedProjectRoot } from '../agents/projectRootCache.js';
 import {
   readLedger,
   updateLedger,
@@ -26,6 +29,8 @@ import {
   snapshotAgentComputer,
   isAgentComputerHeldBy,
   resetAgentComputerState,
+  destroyQuietly,
+  desktopRecordIsDead,
 } from './agentComputer.js';
 import type { AgentComputerHandle } from './agentComputer.js';
 
@@ -55,6 +60,14 @@ export interface OpenBrowserSessionOptions {
   proxyCountry?: string;
   captcha?: boolean;
   recording?: boolean;
+  /** Solari managed proxy tier (residential/static/mobile). */
+  proxyTier?: string;
+  /** Sticky proxy session id — reuses the same egress IP across opens. */
+  proxySession?: string;
+  /** Escalate to the "smart" proxy pool when the primary fails. */
+  proxySmart?: boolean;
+  /** Enable Solari web-bot auth injection (WBA). */
+  webBotAuth?: boolean;
   /** Owning LazyBot — enables long-lived persona reuse (C49). */
   botId?: string;
   /** Keep CDP + Solari profile session across mission release (C49). */
@@ -86,6 +99,11 @@ interface BrowserEntry {
   botId?: string;
   longLived?: boolean;
   openedAt: number;
+  /** Launch flags, kept so reuse never silently returns a session with a
+   *  different stealth/proxy/captcha configuration than requested. */
+  flags: OpenBrowserSessionOptions;
+  /** Whether recording was on — release captures the replay URL (C-replay). */
+  recording?: boolean;
 }
 
 const browserRegistry = new Map<string, BrowserEntry>();
@@ -147,13 +165,32 @@ function releaseProfileLock(profileId: string, missionId: string): void {
 function buildLaunchOptions(opts: OpenBrowserSessionOptions): CloudBrowserLaunchOptions {
   const launch: CloudBrowserLaunchOptions = {};
   if (opts.profileId) launch.profileId = opts.profileId;
-  // Managed proxy egress requires the stealth shim (SDK contract), so a
-  // proxyCountry without an explicit stealth flag still enables it.
-  if (opts.stealth || opts.proxyCountry) launch.stealth = true;
-  if (opts.proxyCountry) launch.proxy = { country: opts.proxyCountry };
+  // Managed proxy egress requires the stealth shim (SDK contract), so any
+  // proxy option without an explicit stealth flag still enables it.
+  const wantsProxy = Boolean(opts.proxyCountry || opts.proxyTier || opts.proxySession || opts.proxySmart);
+  if (opts.stealth || wantsProxy) launch.stealth = true;
+  if (wantsProxy) {
+    launch.proxy = {
+      ...(opts.proxyCountry ? { country: opts.proxyCountry } : {}),
+      ...(opts.proxyTier ? { tier: opts.proxyTier } : {}),
+      ...(opts.proxySession ? { session: opts.proxySession } : {}),
+    };
+    if (opts.proxySmart) launch.proxy = { ...launch.proxy, tier: 'smart' };
+  }
   if (opts.captcha) launch.captcha = true;
   if (opts.recording) launch.recording = true;
+  if (opts.webBotAuth) launch.webBotAuth = true;
   return launch;
+}
+
+/** Normalise launch-relevant fields so `{stealth: undefined}` equals `{}` —
+ *  reuse must never return a session whose flags differ from the request. */
+function flagsMatch(a: OpenBrowserSessionOptions, b: OpenBrowserSessionOptions): boolean {
+  const keys: Array<keyof OpenBrowserSessionOptions> = [
+    'profileId', 'stealth', 'proxyCountry', 'proxyTier', 'proxySession',
+    'proxySmart', 'webBotAuth', 'captcha', 'recording', 'longLived',
+  ];
+  return keys.every((k) => (a[k] ?? undefined) === (b[k] ?? undefined));
 }
 
 function personaKey(botId: string, profileId?: string): string {
@@ -168,8 +205,21 @@ export async function openBrowserSession(
 ): Promise<BrowserSessionHandle> {
   const existing = browserRegistry.get(missionId);
   if (existing) {
-    if (existing.profileId === opts.profileId && existing.botId === opts.botId) return existing.handle;
+    if (existing.botId === opts.botId && flagsMatch(existing.flags, opts)) return existing.handle;
     await releaseBrowser(missionId, { hard: true });
+  }
+
+  // C49b — resurrect a parked persona from the LEDGER (crash-safe): the
+  // in-memory botBrowserRegistry dies with the process, the ledger does not.
+  if (opts.botId && opts.longLived && !botBrowserRegistry.has(personaKey(opts.botId, opts.profileId))) {
+    const ledger = await readLedger();
+    const parkedRow = ledger.browserSessions.find(
+      (s) => s.botId === opts.botId && s.longLived && s.profileId === opts.profileId,
+    );
+    if (parkedRow) {
+      const resumed = await resumeBrowserSession(missionId, opts.botId);
+      if (resumed) return resumed;
+    }
   }
 
   // C49 — adopt a parked long-lived persona session for this bot+profile
@@ -211,6 +261,8 @@ export async function openBrowserSession(
       botId: opts.botId,
       longLived: opts.longLived === true,
       openedAt,
+      flags: { ...opts },
+      recording: opts.recording === true,
     };
     browserRegistry.set(missionId, entry);
     if (opts.botId && opts.longLived) {
@@ -292,6 +344,8 @@ export async function resumeBrowserSession(
       botId: entry.botId,
       longLived: entry.longLived,
       openedAt: entry.openedAt,
+      // Resumed sessions keep the profile flag so flagsMatch accepts reuse.
+      flags: { profileId: entry.profileId, botId: entry.botId, longLived: entry.longLived },
     };
     browserRegistry.set(missionId, browserEntry);
     if (entry.botId && entry.longLived) {
@@ -309,6 +363,145 @@ export async function resumeBrowserSession(
     console.warn('[solariSessions] resumeBrowserSession failed — leaving ledger entry:', entry.id, err);
     return null;
   }
+}
+
+/** Best-effort: capture cookies/localStorage via CDP and save them into the
+ *  session's Solari profile so logins actually persist across sessions —
+ *  this is what makes a profile a "persona" instead of an empty shell. */
+async function saveProfileState(entry: BrowserEntry): Promise<void> {
+  if (!entry.profileId) return;
+  try {
+    const page = entry.handle.browser.contexts()[0]?.pages()[0];
+    if (!page) return;
+    const storageState = await page.context().storageState();
+    if (storageState.cookies.length === 0 && storageState.origins.length === 0) return;
+    const clients = await getSolariClients();
+    await clients.browser.profiles.save(entry.profileId, storageState);
+  } catch (err) {
+    console.warn('[solariSessions] profile save failed for', entry.profileId, err);
+  }
+}
+
+/** After releaseAndWait, the replay URL becomes available (~1-3s). Persist
+ *  the NDJSON transcript under .lazy/replays/ — credential material, never
+ *  logged — and remember the URL for run history.
+ *
+ *  The presigned URL lives on storage.googleapis.com — webview fetch() to
+ *  that origin is CORS-blocked (verified live), so the bytes are pulled by
+ *  the Rust `solari_replay_download` command (no Origin policy, host-
+ *  allowlisted to *.storage.googleapis.com, project-jailed dest). Falls
+ *  back to a direct fetch in non-Tauri contexts (tests, web platform). */
+/** base64 → Uint8Array (the solari_replay_fetch bridge payload). Chunked
+ *  atob — String.fromCharCode(...bytes) blows the argument limit ~100KB. */
+function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+/** Replay bytes → NDJSON text. GCS stores the transcript gzipped (magic
+ *  1f 8b); anything else is assumed already-plaintext and decoded as UTF-8.
+ *  DecompressionStream is evergreen-Chromium / Node ≥17 — available in the
+ *  webview, tests, and the packaged app alike. */
+async function replayBytesToNdjson(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
+  if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+    const stream = new DecompressionStream('gzip');
+    const writer = stream.writable.getWriter();
+    void writer.write(bytes).then(() => writer.close());
+    const decompressed = await new Response(stream.readable).arrayBuffer();
+    return new TextDecoder().decode(decompressed);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+async function captureReplay(entry: BrowserEntry, missionId: string): Promise<void> {
+  if (!entry.recording) return;
+  try {
+    const clients = await getSolariClients();
+    const { url } = await clients.browser.sessions.getReplayUrl(entry.handle.sessionId);
+    recordBrowserArtifact(missionId, { sessionId: entry.handle.sessionId, replayUrl: url });
+    const platform = getPlatform();
+    const root = getCachedProjectRoot();
+    if (platform?.fs && root) {
+      const dir = joinPath(root, '.lazy', 'replays');
+      await platform.fs.createDir(dir);
+      // Stored DECOMPRESSED as plain .ndjson — a human-readable transcript
+      // the user can actually inspect (open-source transparency), and the
+      // ordinary text write path covers both the Rust-fetch and dev-proxy
+      // byte sources without a binary fs primitive.
+      const path = joinPath(dir, `${entry.handle.sessionId}.ndjson`);
+      let bytes: Uint8Array<ArrayBuffer> | null = null;
+      try {
+        // Packaged Tauri: Rust does the GCS fetch (no Origin policy, host-
+        // allowlisted). The command returns base64 — never touches disk.
+        const { invoke } = await import('@tauri-apps/api/core');
+        bytes = base64ToBytes(await invoke<string>('solari_replay_fetch', { url }));
+      } catch {
+        // Non-Tauri context, dev on an older shell, or web: fall back to a
+        // webview fetch — in dev the Vite /solari-replay proxy forwards the
+        // bytes same-origin past the GCS CORS block.
+        try {
+          bytes = new Uint8Array(
+            await clients.browser.sessions.downloadReplay(entry.handle.sessionId),
+          );
+        } catch {
+          bytes = null;
+        }
+      }
+      if (bytes) {
+        await platform.fs.writeFile(path, await replayBytesToNdjson(bytes));
+        recordBrowserArtifact(missionId, { sessionId: entry.handle.sessionId, replayUrl: url, replayPath: path });
+      }
+    }
+  } catch (err) {
+    console.warn('[solariSessions] replay capture failed:', err);
+  }
+}
+
+/** Browser artifacts captured at release (replay URL / saved path). */
+export interface BrowserArtifacts {
+  sessionId: string;
+  replayUrl?: string;
+  replayPath?: string;
+}
+
+const browserArtifacts = new Map<string, BrowserArtifacts>();
+
+/** Late-bound stamper registered by botEngine at module init — this module
+ *  cannot import botEngine (botEngine already imports us), so the engine
+ *  hands over the function. It stamps artifacts onto the live BotRun AND
+ *  re-persists `.lazy/bot-runtime.json`, which is what actually survives a
+ *  renderer reload mid-run: this in-memory map does not (real M138 incident
+ *  — a restart between browser-close and run-finalize dropped the recorded
+ *  replayUrl/replayPath from the history entry even though the .ndjson file
+ *  was safely on disk). */
+let runArtifactStamper:
+  | ((missionId: string, artifact: { replayUrl?: string; replayPath?: string }) => void)
+  | null = null;
+
+export function registerRunArtifactStamper(
+  fn: (missionId: string, artifact: { replayUrl?: string; replayPath?: string }) => void,
+): void {
+  runArtifactStamper = fn;
+}
+
+function recordBrowserArtifact(missionId: string, artifact: BrowserArtifacts): void {
+  browserArtifacts.set(missionId, { ...browserArtifacts.get(missionId), ...artifact });
+  runArtifactStamper?.(missionId, artifact);
+}
+
+/** Read the captured artifacts without consuming them — run history still
+ *  owns the take; tools (e.g. cloud_browser_replay_url) only peek. */
+export function peekBrowserArtifacts(missionId: string): BrowserArtifacts | undefined {
+  return browserArtifacts.get(missionId);
+}
+
+/** Consume the captured artifacts for a mission (run history attaches them). */
+export function takeBrowserArtifacts(missionId: string): BrowserArtifacts | undefined {
+  const a = browserArtifacts.get(missionId);
+  browserArtifacts.delete(missionId);
+  return a;
 }
 
 /** Close or park the mission's browser session. Long-lived persona sessions
@@ -338,11 +531,16 @@ export async function releaseBrowser(
   if (entry.botId) {
     botBrowserRegistry.delete(personaKey(entry.botId, entry.profileId));
   }
+  // Persist login state into the Solari profile BEFORE the session dies —
+  // after browser.close() the CDP socket is gone and cookies are lost.
+  await saveProfileState(entry);
   try {
     await entry.handle.browser.close();
   } catch (err) {
     console.error('[solariSessions] Failed to close browser session for mission', missionId, err);
   }
+  // The session is released now — the presigned replay becomes fetchable.
+  await captureReplay(entry, missionId);
   await updateLedger((state) => ({
     ...state,
     browserSessions: state.browserSessions.filter((s) => s.id !== entry.handle.sessionId),
@@ -350,14 +548,36 @@ export async function releaseBrowser(
   if (entry.profileId) releaseProfileLock(entry.profileId, missionId);
 }
 
-/** Hard-destroy a parked long-lived persona browser (C49). */
+/** Hard-destroy a parked long-lived persona browser (C49). Falls back to
+ *  the ledger when the in-memory registry lost the session (crash). */
 export async function destroyPersonaBrowserSession(
   botId: string,
   profileId?: string,
 ): Promise<void> {
   const key = personaKey(botId, profileId);
   const parked = botBrowserRegistry.get(key);
-  if (!parked) return;
+  if (!parked) {
+    // Crash-recovery path: the registry is empty but the ledger still lists
+    // a longLived session for this bot — release it remotely, then clean up.
+    const ledger = await readLedger();
+    const row = ledger.browserSessions.find(
+      (s) => s.botId === botId && s.longLived && (profileId === undefined || s.profileId === profileId),
+    );
+    if (row) {
+      try {
+        const clients = await getSolariClients();
+        await clients.browser.sessions.releaseAndWait(row.id);
+      } catch (err) {
+        console.warn('[solariSessions] persona release unreachable — dropping ledger entry:', row.id, err);
+      }
+      await updateLedger((state) => ({
+        ...state,
+        browserSessions: state.browserSessions.filter((s) => s.id !== row.id),
+      }));
+      if (row.profileId) releaseProfileLock(row.profileId, row.id);
+    }
+    return;
+  }
   botBrowserRegistry.delete(key);
   for (const [missionId, entry] of [...browserRegistry.entries()]) {
     if (entry.handle.sessionId === parked.handle.sessionId) browserRegistry.delete(missionId);
@@ -385,15 +605,30 @@ export async function openSandbox(
   const existing = sandboxRegistry.get(missionId);
   if (existing) return existing.handle;
   const clients = await getSolariClients();
-  const volumeId = await ensureWorkspaceVolume();
-  const sandbox = await clients.sandbox.create({
+  const base = {
     template: opts.template,
     cpu: opts.cpu,
     memMb: opts.memMb,
     timeoutMs: SESSION_TIMEOUT_MS,
-    lifecycle: { onTimeout: 'pause' },
-    volumes: [{ volumeId, path: WORKSPACE_MOUNT_PATH }],
-  });
+    lifecycle: { onTimeout: 'pause' as const },
+  };
+  // The shared /workspace volume is best-effort: the Solari sandbox backend
+  // rejects `volumes` on providers where mounts are unsupported (501
+  // "volumes not yet available on gcp"). Try the mount, retry without it —
+  // a bare create surfaces real errors (auth/concurrency) unchanged.
+  let sandbox;
+  try {
+    const volumeId = await ensureWorkspaceVolume();
+    sandbox = await clients.sandbox.create({
+      ...base,
+      volumes: [{ volumeId, path: WORKSPACE_MOUNT_PATH }],
+    });
+  } catch {
+    sandbox = await clients.sandbox.create(base);
+  }
+  // The control WebSocket is NOT opened by create() — every channel op
+  // (commands.run, runCode, files.*) fails "Not connected" without it.
+  await sandbox.connect();
   const openedAt = Date.now();
   const handle: SandboxHandle = { sandbox, close: () => releaseSandbox(missionId) };
   sandboxRegistry.set(missionId, { handle, openedAt });
@@ -501,6 +736,37 @@ export async function sweepOrphans(): Promise<void> {
       await ensureAgentComputer();
     } catch (err) {
       console.warn('[solariSessions] Could not re-attach Agent Computer — keeping its ledger entry:', err);
+    }
+  }
+
+  // Per-bot desktops (C50): without this check a bot VM that died while the
+  // app was closed stays in the ledger forever — and still counts against
+  // the account concurrency cap server-side (real incident: a 4-day-old
+  // phantom desktop made every cloud_desktop_open return 429). Verify each
+  // entry; destroy + drop the dead ones, keep live ones for warm reuse.
+  if (clients) {
+    const deadBots: string[] = [];
+    for (const [botId, entry] of Object.entries(ledger.agentComputersByBotId ?? {})) {
+      if (!entry?.desktopId) continue;
+      try {
+        const info = await clients.desktop.get(entry.desktopId);
+        if (desktopRecordIsDead(info)) {
+          await destroyQuietly(clients, entry.desktopId);
+          deadBots.push(botId);
+        }
+      } catch {
+        // lookup failed (404/gone) — the entry can never re-attach
+        deadBots.push(botId);
+      }
+    }
+    if (deadBots.length > 0) {
+      const dead = new Set(deadBots);
+      await updateLedger((state) => ({
+        ...state,
+        agentComputersByBotId: Object.fromEntries(
+          Object.entries(state.agentComputersByBotId ?? {}).filter(([botId]) => !dead.has(botId)),
+        ),
+      }));
     }
   }
 }

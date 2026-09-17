@@ -2007,6 +2007,36 @@ export type ManagerAction =
   /** Lists all saved LazyBots with a coarse runtime summary
    *  ({ id, name, autonomy, enabled, activeRuns, status }). */
   | { type: 'list_lazybots' }
+  /** Permanently deletes a LazyBot's configuration — bots have no archived
+   *  state, so this is irreversible. The executor first stops every active
+   *  run (same path as stop_lazybot) and closes the bot's canvas VM window,
+   *  then removes the config; its real result reports exactly what was
+   *  stopped/deleted. Requires approval even in YOLO (destructive tier). */
+  | { type: 'delete_lazybot'; botId: string }
+  /** Resolves a bot's outstanding human-intervention gate — the chat-side
+   *  equivalent of the header note's "Resolved — resume bot" button. Marks
+   *  the gate solved so a parked bot_wait_for_human call returns. Honest
+   *  no-op result when the bot has nothing outstanding. */
+  | { type: 'resolve_bot_intervention'; botId: string }
+  /** Releases Solari cloud resources (browser sessions, sandboxes, Agent
+   *  Computer desktops) still held by missions that are no longer live —
+   *  the in-app recovery for "the bot's cloud session is stuck" that
+   *  otherwise requires an app restart to trigger the boot sweep. */
+  | { type: 'sweep_solari' }
+  /** Lists a LazyBot's recent run history entries (status, summary,
+   *  replayUrl/replayPath presence) — newest first, `limit` (default 10). */
+  | { type: 'lazybot_runs'; botId: string; limit?: number }
+  /** Opens (`open: true`) or closes (`open: false`, or toggles when omitted)
+   *  the bot's live VM window node on the canvas — "montre-moi le bot X en
+   *  direct". Display-only. */
+  | { type: 'toggle_bot_vm'; botId: string; open?: boolean }
+  /** Teach-by-demonstration lifecycle for a LazyBot. `start` opens the bot's
+   *  canvas VM window (the user demonstrates in the live view — every
+   *  navigation/action is journaled) and begins recording; `stop` compiles
+   *  the journal into a skill and merges it into the bot's systemPrompt
+   *  under the "=== TEACH SKILL ===" marker (replacing any prior teach
+   *  block). `skillName` names the skill on start. */
+  | { type: 'teach_lazybot'; botId: string; mode: 'start' | 'stop'; skillName?: string }
   | { type: 'info'; message: string };
 
 // ── Mission contract (spec §8, T1.2) ───────────────────────────────

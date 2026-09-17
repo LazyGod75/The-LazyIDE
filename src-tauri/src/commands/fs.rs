@@ -678,6 +678,8 @@ pub(crate) fn write_file(path: String, content: String, project_registry: tauri:
         .map_err(|e| format!("write_file failed for '{}': {}", safe_path.display(), e))
 }
 
+
+
 /// Testable core of `append_to_file` — takes the registered project roots
 /// directly (not a `tauri::State`), same `xxx_inner` split convention as
 /// `read_file_base64_inner` / `read_text_file_inner` above. Goes through

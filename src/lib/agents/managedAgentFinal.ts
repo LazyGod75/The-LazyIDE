@@ -39,6 +39,19 @@ export function missingProofNudgeContent(kindsList: string): string {
   return `ERROR: cannot finish yet — this mission's contract still requires proof of kind(s): ${kindsList}, and none has been attached yet. Call ACTION: attach_proof for each missing kind (reflecting work you actually did — never fabricate a result) before calling FINAL again.`;
 }
 
+/** Zero-tool FINAL bounce (M141 incident): the agent emitted a confident
+ *  "done" summary without a single tool call — no file read, no write, no
+ *  command — and the mission parked in review with an EMPTY diff while the
+ *  summary claimed the deliverable existed. When toolCallCount is 0 the
+ *  claim cannot be true for any work-producing task, so FINAL is bounced
+ *  once (bounded by the same proofNudges budget). A genuinely tool-free
+ *  task (pure question/analysis) still terminates: the bounce text tells
+ *  the model to say so explicitly, and after maxProofNudges the FINAL is
+ *  let through to the emptyDeliverable/eval path as before. */
+export function noToolCallsNudgeContent(): string {
+  return 'ERROR: cannot finish yet — you called FINAL without executing a single tool call: nothing was read, written, or run. If this task requires producing or changing files, DO the work now via ACTION (read_file / write_file / run_command / …) and call FINAL only once the work is actually done. If the task genuinely needed no tools (a pure question), call FINAL again and state explicitly in the summary that no file/tool work was required.';
+}
+
 /**
  * Auto-capture mission summary to brain (Brain Synergy). Bypasses
  * capture.ts's dispatch() — must apply isConflictError itself (BUG 3,
@@ -91,6 +104,9 @@ export async function finishManagedFinal(opts: {
   attachedProofs: ReadonlyArray<Pick<ProofArtifact, 'kind'>>;
   proofNudges: number;
   maxProofNudges: number;
+  /** Real executed tool calls so far — a FINAL at 0 means the agent never
+   *  acted (see noToolCallsNudgeContent). */
+  toolCallCount: number;
   args: Record<string, unknown>;
   t?: TFunc;
   nowTime: () => string;
@@ -119,6 +135,21 @@ export async function finishManagedFinal(opts: {
       flow: 'continue',
       proofNudges: opts.proofNudges + 1,
       bounceContent: missingProofNudgeContent(kindsList),
+    };
+  }
+  // Zero-tool FINAL (M141): never let a fabricated "done" through unchallenged.
+  if (opts.toolCallCount === 0 && opts.proofNudges < opts.maxProofNudges) {
+    opts.onAction({
+      time: opts.nowTime(),
+      text: opts.t
+        ? opts.t('agents.managedAgent.noToolCallsBeforeFinal')
+        : `FINAL refusé — aucun appel d'outil exécuté, le résumé prétend un livrable. Relance de l'agent pour faire le travail réellement`,
+      isLive: false,
+    });
+    return {
+      flow: 'continue',
+      proofNudges: opts.proofNudges + 1,
+      bounceContent: noToolCallsNudgeContent(),
     };
   }
   const summary = String(opts.args.summary ?? 'Task completed');

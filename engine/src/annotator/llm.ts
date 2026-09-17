@@ -1,5 +1,6 @@
 import { callClaudeCliJsonArray, isClaudeCliAvailable } from '../util/claude-cli.js';
 import { getLogger } from '../util/logger.js';
+import { parseJsonArrayLoose } from '../util/json-loose.js';
 import { callVibeCliJsonArray, isVibeCliAvailable } from '../util/vibe-cli.js';
 import { type AnnotateOutput, type SessionInput, annotateSession } from './heuristic.js';
 import { emitWikipediaNote } from './template.js';
@@ -44,6 +45,11 @@ export async function annotateWithLlm(input: SessionInput): Promise<AnnotateOutp
       }
       return heuristic;
     }
+    if (backend === 'lazy-proxy') {
+      const upgraded = await callLazyProxyEnrich(input, heuristic);
+      if (upgraded) return upgraded;
+      return heuristic;
+    }
     // backend === 'anthropic'
     if (apiKey) {
       const upgraded = await callClaude(input, heuristic, apiKey);
@@ -84,7 +90,10 @@ async function callClaude(
   apiKey: string,
 ): Promise<AnnotateOutput | null> {
   const body = {
-    model: 'claude-haiku-4-5-20251001',
+    // Env-overridable: model ids rotate; the caller (LazyIDE seed flow)
+    // resolves the current cheap extractor model from its catalog and passes
+    // it down rather than baking a versioned id into this file.
+    model: process.env.LAZYBRAIN_ANTHROPIC_MODEL ?? 'claude-haiku-4-5-20251001',
     max_tokens: 1024,
     system: [
       {
@@ -149,7 +158,7 @@ async function callClaudeCliEnrich(
 ): Promise<AnnotateOutput | null> {
   const facts = await callClaudeCliJsonArray<LlmFact>(input.text.slice(0, 8000), {
     system: SYSTEM_PROMPT,
-    model: 'haiku',
+    model: process.env.LAZYBRAIN_CLAUDE_CLI_MODEL ?? 'haiku',
     // 60s (was 20s): claude-cli.ts's spawnClaude cold-starts a full CLI
     // session (MCP servers, hooks, CLAUDE.md) before the prompt is even
     // read; 20s measured too tight and made every note in a real import run
@@ -200,7 +209,7 @@ function rebuildHtmlWithFacts(
  * extract.ts (batch extraction). The two callers previously had divergent
  * resolvers; this single export is the source of truth for both.
  */
-export type ExtractorBackend = 'anthropic' | 'claude-cli' | 'openai' | 'vibe';
+export type ExtractorBackend = 'anthropic' | 'claude-cli' | 'openai' | 'vibe' | 'lazy-proxy';
 
 /**
  * Resolve which LLM backend to use.
@@ -212,6 +221,7 @@ export type ExtractorBackend = 'anthropic' | 'claude-cli' | 'openai' | 'vibe';
  *      LAZYBRAIN_EXTRACTOR=haiku          → anthropic  (legacy alias)
  *      LAZYBRAIN_EXTRACTOR=claude         → anthropic  (legacy alias)
  *      LAZYBRAIN_EXTRACTOR=claude-cli     → claude-cli (explicit only; no auto-fallback)
+ *      LAZYBRAIN_EXTRACTOR=lazy-proxy     → lazy-proxy (LazyIDE managed rail)
  *   2. ANTHROPIC_API_KEY present (and no explicit override) → anthropic
  *   3. default → openai  (sovereign: local devstral at http://127.0.0.1:8080/v1)
  *
@@ -228,6 +238,7 @@ export function resolveExtractorBackend(): ExtractorBackend {
   if (explicit === 'devstral') return 'openai';
   if (explicit === 'anthropic' || explicit === 'haiku' || explicit === 'claude') return 'anthropic';
   if (explicit === 'claude-cli') return 'claude-cli';
+  if (explicit === 'lazy-proxy') return 'lazy-proxy';
 
   // No explicit override: ANTHROPIC_API_KEY present → anthropic; else sovereign local
   return process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'openai';
@@ -250,6 +261,90 @@ async function callOpenAiEnrich(
   });
   if (!facts || facts.length === 0) return null;
   return rebuildHtmlWithFacts(input, heuristic, facts, `llm:${openAiDefaults().model}`);
+}
+
+/**
+ * LazyIDE ai-proxy backend — the app's managed rail (incl. the free models
+ * "offerts par LazyIDE"). NOT OpenAI-compatible: the Supabase Edge Function
+ * takes a custom body ({messages, system, model, request_id, feature})
+ * authenticated with the user's session JWT (+ the anon key in `apikey`),
+ * and streams raw text deltas interleaved with control lines:
+ * `\x1b[reasoning]...` (thinking traces from reasoning models — must be
+ * stripped before JSON parsing) and a final `\x1b[usage]{...}` billing
+ * marker. Nothing is hardcoded so a rotated catalog never means rebuilding
+ * this file.
+ *
+ * Env (required unless noted):
+ *   LAZYBRAIN_PROXY_URL    e.g. https://<ref>.supabase.co/functions/v1/ai-proxy
+ *   LAZYBRAIN_PROXY_TOKEN  the caller's Supabase session JWT
+ *   LAZYBRAIN_PROXY_MODEL  managed catalog id (e.g. z-ai/glm-5.2:free)
+ *   LAZYBRAIN_PROXY_MODELS optional comma-separated ordered candidate list —
+ *                          each entry is tried in turn when the previous one
+ *                          errors or returns nothing parseable (the free
+ *                          routes 429/404 individually; the caller passes the
+ *                          whole free group so one dead route never degrades
+ *                          the run to heuristic).
+ *   LAZYBRAIN_PROXY_ANON   optional `apikey` header (Supabase anon key)
+ */
+export function lazyProxyModels(): string[] {
+  const list = (process.env.LAZYBRAIN_PROXY_MODELS ?? '')
+    .split(',')
+    .map((m) => m.trim())
+    .filter(Boolean);
+  if (list.length > 0) return list;
+  const single = process.env.LAZYBRAIN_PROXY_MODEL?.trim();
+  return single ? [single] : [];
+}
+
+async function callLazyProxyEnrich(
+  input: SessionInput,
+  heuristic: AnnotateOutput,
+): Promise<AnnotateOutput | null> {
+  const url = process.env.LAZYBRAIN_PROXY_URL;
+  const token = process.env.LAZYBRAIN_PROXY_TOKEN;
+  const models = lazyProxyModels();
+  if (!url || !token || models.length === 0) return null;
+
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    authorization: `Bearer ${token}`,
+  };
+  const anon = process.env.LAZYBRAIN_PROXY_ANON;
+  if (anon) headers['apikey'] = anon;
+
+  for (const model of models) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        // Same discipline as the other backends' timeoutMs — a hung proxy
+        // connection must not stall the whole per-note enrichment loop.
+        signal: AbortSignal.timeout(30_000),
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: input.text.slice(0, 8000) }],
+          system: SYSTEM_PROMPT,
+          model,
+          request_id: `brain-import-${Date.now().toString(36)}`,
+          feature: 'assistant',
+        }),
+      });
+      if (!res.ok) continue;
+      const raw = await res.text();
+      const text = raw
+        .split('\n')
+        .filter((line) => !line.startsWith('\x1B[reasoning]') && !line.startsWith('\x1B[usage]'))
+        .join('')
+        .trim();
+      if (!text) continue;
+      const facts = parseJsonArrayLoose(text) as LlmFact[] | null;
+      if (Array.isArray(facts) && facts.length > 0) {
+        return rebuildHtmlWithFacts(input, heuristic, facts, `llm:${model}`);
+      }
+    } catch {
+      // try the next candidate, else heuristic
+    }
+  }
+  return null;
 }
 
 /**

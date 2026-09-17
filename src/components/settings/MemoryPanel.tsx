@@ -64,6 +64,14 @@ import type { BrainInfo, BrainPublishOptions, BrainPublishResult } from '../../l
 import { useI18n } from '../../i18n';
 import { pluralKey } from '../../i18n/plural';
 import { SeedProgress } from '../brain/SeedProgress';
+import {
+  listSeedRails,
+  resolveSeedExtractor,
+  railEstimateSpec,
+  markEnrichedSeed,
+  markHeuristicSeed,
+  type SeedRail,
+} from '../../lib/brain/seedExtractor';
 
 // ── localStorage keys (public contract for other modules) ──────────
 // lazy.memory.scopesEnabled  — boolean (default: true)
@@ -2192,6 +2200,11 @@ function HistoryReimportSection() {
   const [progress, setProgress] = useState<SeedProgressEvent | null>(null);
   const [result, setResult] = useState<{ imported: number; skipped: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Extractor rail picker — same rail list as onboarding's BrainSetupStep
+  // (seedExtractor.ts): free managed rail, claude CLI, BYOK providers, plus
+  // the always-available 'heuristic' option.
+  const [rails, setRails] = useState<SeedRail[]>([]);
+  const [railId, setRailId] = useState<string>('heuristic');
   const unsubRef = useRef<(() => void) | null>(null);
 
   useEffect(() => () => { unsubRef.current?.(); }, []);
@@ -2218,7 +2231,15 @@ function HistoryReimportSection() {
     setPhase('estimating');
     setErrorMsg(null);
     try {
-      const est = await platform.brain.seedEstimate(selected);
+      const railList = await listSeedRails();
+      setRails(railList);
+      const defaultRailId = railList.length > 0 ? railList[0].id : 'heuristic';
+      setRailId(defaultRailId);
+      const defaultRail = railList.find(r => r.id === defaultRailId);
+      const est = await platform.brain.seedEstimate(
+        selected,
+        defaultRail ? railEstimateSpec(defaultRail) : undefined,
+      );
       setEstimate(est);
       setPhase('confirm');
     } catch (err: unknown) {
@@ -2240,11 +2261,24 @@ function HistoryReimportSection() {
     const unsub = platform.brain.onSeedProgress(setProgress);
     unsubRef.current = unsub;
     try {
-      const res = await platform.brain.seedBrain({ sources: selected, useLlm: estimate?.llmAvailable ?? false });
+      const rail = rails.find(r => r.id === railId);
+      const extractor = rail ? ((await resolveSeedExtractor(rail).catch(() => null)) ?? undefined) : undefined;
+      const res = await platform.brain.seedBrain({
+        sources: selected,
+        useLlm: Boolean(extractor),
+        extractor,
+      });
       unsub();
       unsubRef.current = null;
       setResult(res);
       setPhase('done');
+      // Record how the brain was built — an LLM seed clears the deferred-
+      // enrichment offer; a heuristic one keeps it eligible for when a new
+      // rail appears (see seedExtractor.ts's flag helpers).
+      try {
+        if (extractor) markEnrichedSeed();
+        else markHeuristicSeed(rails.map(r => r.id));
+      } catch { /* bookkeeping only */ }
     } catch (err: unknown) {
       unsub();
       unsubRef.current = null;
@@ -2328,9 +2362,38 @@ function HistoryReimportSection() {
               <div style={{ fontSize: 12, color: 'var(--color-text)' }}>
                 {t(pluralKey('settings.memory.reimport.estimateLine', estimate.items, locale), { items: estimate.items, minutes: estimate.estMinutes })}
               </div>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--color-text)' }}>
+                {t('onboarding.brain.railLabel')}
+                <select
+                  value={railId}
+                  onChange={(e) => setRailId(e.target.value)}
+                  style={{
+                    padding: '7px 10px',
+                    background: 'var(--color-panel-2)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 7,
+                    color: 'var(--color-text)',
+                    fontSize: 12,
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {rails.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.label}{r.modelLabel ? ` · ${r.modelLabel}` : ''}{r.hintKey ? ` — ${t(r.hintKey)}` : ''}
+                    </option>
+                  ))}
+                  <option value="heuristic">{t('onboarding.brain.railHeuristic')}</option>
+                </select>
+              </label>
               <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-                {estimate.llmAvailable
-                  ? t('onboarding.brain.backendDetected', { backend: estimate.backend ?? '' })
+                {railId !== 'heuristic'
+                  ? t('onboarding.brain.backendDetected', {
+                      backend: (() => {
+                        const r = rails.find(x => x.id === railId);
+                        return r ? `${r.label}${r.modelLabel ? ` · ${r.modelLabel}` : ''}` : (estimate.backend ?? '');
+                      })(),
+                    })
                   : t('onboarding.brain.backendNone')}
               </div>
               <div style={{

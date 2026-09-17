@@ -137,12 +137,27 @@ export async function loadBotLastTime(botId: string): Promise<BotLastTime | unde
   return enqueue(async () => (await readFile()).lastTime[botId]);
 }
 
-/** Append a finished run (with summary) to history, newest first, capped (C53). */
+/** Append a finished run (with summary) to history, newest first, capped (C53).
+ *  Two async writers race on the same missionId — finalizeBotRunLearning
+ *  (summary-bearing) and finishBotRun/stopBotRun (bookkeeping, often no
+ *  summary yet). Last-write-wins on dedupe used to let the bare entry erase
+ *  the report (real incident: blocking bot_handoff got an empty childReport).
+ *  Merge instead: an incoming run inherits fields it lacks from the entry it
+ *  replaces. */
 export async function appendBotRunHistory(run: BotRun): Promise<void> {
   return enqueue(async () => {
     const state = await readFile();
+    const prev = state.history.find((r) => r.missionId === run.missionId);
+    const merged: BotRun = prev
+      ? {
+          ...run,
+          summary: run.summary ?? prev.summary,
+          replayUrl: run.replayUrl ?? prev.replayUrl,
+          replayPath: run.replayPath ?? prev.replayPath,
+        }
+      : run;
     const withoutDup = state.history.filter((r) => r.missionId !== run.missionId);
-    const forBot = [run, ...withoutDup.filter((r) => r.botId === run.botId)].slice(0, MAX_BOT_RUN_HISTORY);
+    const forBot = [merged, ...withoutDup.filter((r) => r.botId === run.botId)].slice(0, MAX_BOT_RUN_HISTORY);
     const others = withoutDup.filter((r) => r.botId !== run.botId);
     state.history = [...forBot, ...others];
     await writeFile(state);

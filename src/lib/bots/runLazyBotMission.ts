@@ -193,6 +193,22 @@ export async function runLazyBotMission(
     false,
   );
   pushTimeline(label(t, 'agents.lazybot.openingSolari', 'Ordinateur cloud Solari — ouverture de session…'), true);
+
+  // Solari gate (fail-fast): a LazyBot IS a Solari cloud computer — without
+  // a configured key every cloud_* tool would error one call at a time and
+  // the mission would die mid-run. Fail BEFORE patching 'running' below.
+  const { isSolariConfigured } = await import('../solari/solariClient.js');
+  if (!(await isSolariConfigured().catch(() => false))) {
+    const reason = label(
+      t,
+      'agents.lazybot.solariMissing',
+      'Clé Solari absente — configure-la dans Réglages > Solari puis relance le bot.',
+    );
+    emitEvent({ type: 'mission.failed', tsMs: Date.now(), projectId, missionId: mission.id, actor: 'system', payload: { reason: 'solari_not_configured' } });
+    fail(reason, 'solari_not_configured');
+    return;
+  }
+
   patch({
     status: 'running',
     progress: 0,

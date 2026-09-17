@@ -435,7 +435,12 @@ function AccessModeSection({ settings, onChange }: {
           invoke<boolean>('claude_available').catch(() => false),
           invoke<boolean>('agent_cli_available', { tool: 'codex' }).catch(() => false),
           invoke<boolean>('agent_cli_available', { tool: 'devin' }).catch(() => false),
-          invoke<boolean>('devin_auth_status').catch(() => false),
+          // Live probe (`devin auth status`) — a stored-but-server-rejected
+          // key must show "not logged in", not the file check's blind true.
+          // Older backends lack the command → fall back to the file check.
+          invoke<boolean>('devin_auth_probe')
+            .catch(() => invoke<boolean>('devin_auth_status'))
+            .catch(() => false),
         ]);
         setCliStatus({ claude, codex, devin, devinAuthed: devin ? devinAuthed : null });
       } catch {

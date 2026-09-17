@@ -62,6 +62,63 @@ export async function handleBotRequestIntervention(
   return `Intervention requested (${reason}). The human was notified in the manager header — take over the live session, then continue. Poll/wait until the gate clears (captcha resume loop).`;
 }
 
+/** bot_wait_for_human — BLOCKING human gate. Unlike bot_request_intervention
+ *  (fire-and-forget), this parks the tool call until the human clears the
+ *  gate (or timeout): the classic Grok-style "needs you for login/2FA/
+ *  captcha" pause. The wait polls the live page when a browser session is
+ *  up (advanceCaptchaResume detects the gate gone); for desktop-only gates
+ *  the human resolves it from the manager header note. */
+export async function handleBotWaitForHuman(
+  args: Record<string, unknown>,
+  ctx: ToolExecutionContext,
+): Promise<string> {
+  const botId = botIdForMission(ctx.missionId);
+  if (!botId) return 'ERROR: bot_wait_for_human is only available inside a LazyBot run.';
+  const reason = String(args.reason ?? 'human input needed');
+  const detail = typeof args.detail === 'string' ? args.detail : undefined;
+  const timeoutMs = Math.min(Math.max(Number(args.timeout_ms) || 300_000, 10_000), 1_800_000);
+  requestUserIntervention(botId, reason, detail);
+  const {
+    waitForCaptchaClear,
+    markCaptchaWaiting,
+    getCaptchaResumeState,
+  } = await import('./botCaptchaResume.js');
+  const { getOutstandingIntervention } = await import('./botRequestIntervention.js');
+  markCaptchaWaiting(botId, detail ?? reason);
+  const { getBrowserSession } = await import('../solari/solariSessions.js');
+  const hasPage = (): boolean => Boolean(getBrowserSession(ctx.missionId ?? '')?.browser.pages[0]);
+  const state = hasPage()
+    ? await waitForCaptchaClear(botId, {
+        timeoutMs,
+        intervalMs: 2_000,
+        probe: async () => {
+          const page = getBrowserSession(ctx.missionId ?? '')?.browser.pages[0];
+          if (!page) return { title: '', url: '' };
+          const [title, url] = await Promise.all([
+            page.title().catch(() => ''),
+            page.url().catch(() => ''),
+          ]);
+          return { title, url };
+        },
+      })
+    // Desktop-only gate: no page to probe — wait until the human resolves
+    // the intervention from the manager header (markCaptchaSolved) or timeout.
+    : await (async () => {
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+          if (getCaptchaResumeState(botId) === 'solved') return 'solved' as const;
+          if (!getOutstandingIntervention(botId)) return 'clear' as const;
+          await new Promise((r) => setTimeout(r, 2_000));
+        }
+        return getCaptchaResumeState(botId);
+      })();
+  if (state === 'waiting_human') {
+    return `TIMEOUT: still waiting for the human after ${Math.round(timeoutMs / 1000)}s. ` +
+      `Retry bot_wait_for_human to keep waiting, or continue if the gate cleared.`;
+  }
+  return `Human gate cleared (${state}) — the human finished the step; resume the task.`;
+}
+
 export async function handleBotHandoff(
   args: Record<string, unknown>,
   ctx: ToolExecutionContext,
@@ -81,9 +138,11 @@ export async function handleBotHandoff(
     context: typeof args.context === 'string' ? args.context : undefined,
     createMission: toolContext.createMission,
     model: String(args.model ?? toolContext.defaultModel()),
+    blocking: args.blocking === true,
   });
   if (!result.success) return `ERROR: bot_handoff failed: ${result.error}`;
-  return `Handoff launched: ${result.childBot?.name} (${result.childRunId}).`;
+  const childReport = 'childReport' in result && result.childReport ? `\nChild report:\n${result.childReport}` : '';
+  return `Handoff launched: ${result.childBot?.name} (${result.childRunId}).${childReport}`;
 }
 
 async function wrappedAskUser(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
@@ -137,6 +196,7 @@ export function registerBotToolHandlers(): void {
   originalCloudDesktopWrite = toolHandlers.cloud_desktop_file_write;
   originalCloudSandboxWrite = toolHandlers.cloud_sandbox_write_file;
   toolHandlers.bot_request_intervention = handleBotRequestIntervention;
+  toolHandlers.bot_wait_for_human = handleBotWaitForHuman;
   toolHandlers.bot_handoff = handleBotHandoff;
   toolHandlers.ask_user = wrappedAskUser;
   toolHandlers.write_file = wrappedWriteFile;
@@ -154,6 +214,7 @@ export function resetBotToolHandlers(): void {
   toolHandlers.cloud_desktop_file_write = originalCloudDesktopWrite;
   toolHandlers.cloud_sandbox_write_file = originalCloudSandboxWrite;
   delete toolHandlers.bot_request_intervention;
+  delete toolHandlers.bot_wait_for_human;
   delete toolHandlers.bot_handoff;
   offApproval?.();
   offApproval = null;

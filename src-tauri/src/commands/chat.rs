@@ -28,6 +28,14 @@ pub struct AgentCliChatRequest {
     pub messages: Vec<ChatMessageReq>,
     /// Chat mode: "ask" | "edit" | "plan" — controls --permission-mode on claude invocations.
     pub mode: Option<String>,
+    /// Per-request session cwd override (Devin ACP only). A managed mission
+    /// runs inside a git worktree: its agent's NATIVE tools must read/write
+    /// that worktree, not the global active project root — otherwise
+    /// relative-path writes bypass the worktree isolation entirely (real
+    /// incident M142: swe-2 wrote AGENT_NOTES.md straight into the project
+    /// root while the mission's worktree diff was meant to gate it).
+    /// Falls back to ProjectState's active root when absent.
+    pub session_cwd: Option<String>,
 }
 
 /// Check whether an agent CLI tool is available on PATH.
@@ -1222,7 +1230,8 @@ async fn stream_anthropic(app: tauri::AppHandle, req: ModelChatRequest) -> Resul
 // against devin 3000.x:
 //
 //   -> initialize            {protocolVersion:1, clientCapabilities, ...}
-//   -> authenticate          {methodId:"devin-browser", apiKey}   (see below)
+//   -> authenticate          {methodId:"windsurf-api-key",
+//                             _meta:{api_key, api_server_url}} (below)
 //   -> session/new           {cwd, mcpServers:[]}                 -> sessionId
 //   -> session/set_mode      {sessionId, modeId}  ("ask"/"accept-edits"/"plan")
 //   -> session/prompt        {sessionId, prompt:[{type:"text",...}]}
@@ -1233,10 +1242,21 @@ async fn stream_anthropic(app: tauri::AppHandle, req: ModelChatRequest) -> Resul
 // One ACP process per turn (same per-turn lifecycle as codex — deliberately
 // NOT a persistent server, which would keep an idle agent resident between
 // turns and complicate crash/cancel recovery; spawn cost is ~300-400ms).
-// ACP intentionally ignores the CLI's interactive login state — auth comes
-// from an explicit `authenticate` call carrying the api key read LOCALLY
-// from the Devin CLI's own credentials store. The key never enters a log,
-// an event, or a frontend payload.
+// ACP intentionally ignores the CLI's interactive login state ("ACP host is
+// the sole source of credentials" per the CLI's own log) — auth comes from
+// an explicit `authenticate` call carrying the api key read LOCALLY from the
+// Devin CLI's own credentials store. The key never enters a log, an event,
+// or a frontend payload.
+//
+// CRITICAL: the key must travel inside `_meta.api_key` — that is the only
+// field the agent reads ("API key provided directly via authenticate meta").
+// A top-level `apiKey` param is silently IGNORED (observed meta_keys=[] in
+// the CLI log). The methodId must be `windsurf-api-key` — the same one the
+// Devin desktop sends (meta_keys=["api_key","api_server_url"] in CLI logs).
+// `devin-browser` instead invokes the PKCE browser flow whenever the key is
+// absent or rejected — one OAuth tab per spawn, i.e. the auth-tab storm
+// reported 2026-09. `windsurf-api-key` NEVER touches a browser: a bad key
+// just errors the RPC.
 //
 // Cancellation reuses the same contract as the other chat backends: the
 // child pid is tracked under "chat-devin-{id}" and devin_chat_stream_cancel
@@ -1275,6 +1295,103 @@ fn resolve_devin_program() -> std::ffi::OsString {
     "devin".into()
 }
 
+// ── Devin auth circuit breaker ─────────────────────────────────────
+// `authenticate` must carry `_meta.api_key` — with a valid key it resolves
+// in-process in ~3s with no browser at all. When the stored key is REJECTED
+// the authenticate/session call fails with an auth-shaped error; the
+// breaker records that FIRST failure plus the credentials.toml mtime, and
+// while engaged devin_list_models / devin_chat_stream_inner refuse to spawn
+// and surface the actionable error instead (a retrying caller used to
+// produce a tab storm when the key was silently dropped into the PKCE
+// browser flow). The block lifts when the cooldown elapses OR the user
+// re-logs (credentials.toml rewritten by `devin auth login` → mtime change).
+static DEVIN_AUTH_FAILURE: std::sync::Mutex<Option<(std::time::Instant, Option<std::time::SystemTime>)>> =
+    std::sync::Mutex::new(None);
+const DEVIN_AUTH_COOLDOWN: std::time::Duration = std::time::Duration::from_secs(15 * 60);
+const DEVIN_AUTH_ERR: &str =
+    "Devin CLI rejected the stored credential — run `devin auth login` once, then retry. (Further attempts are paused for 15min to avoid opening more auth tabs.)";
+
+fn devin_credentials_mtime() -> Option<std::time::SystemTime> {
+    let appdata = std::env::var("APPDATA").ok()?;
+    std::fs::metadata(format!("{appdata}\\devin\\credentials.toml"))
+        .ok()?
+        .modified()
+        .ok()
+}
+
+/// Some(message) while the breaker is engaged — callers must NOT spawn.
+fn devin_auth_blocked() -> Option<&'static str> {
+    let guard = DEVIN_AUTH_FAILURE.lock().ok()?;
+    let (at, mtime) = (*guard)?;
+    if devin_breaker_engaged(at, mtime, devin_credentials_mtime()) {
+        Some(DEVIN_AUTH_ERR)
+    } else {
+        None
+    }
+}
+
+/// Pure breaker predicate — engaged only while inside the cooldown AND the
+/// credentials file is untouched. An `Instant` past the cooldown or a
+/// credentials.toml rewritten by `devin auth login` lifts the block.
+fn devin_breaker_engaged(
+    recorded_at: std::time::Instant,
+    recorded_mtime: Option<std::time::SystemTime>,
+    current_mtime: Option<std::time::SystemTime>,
+) -> bool {
+    recorded_at.elapsed() <= DEVIN_AUTH_COOLDOWN && recorded_mtime == current_mtime
+}
+
+/// True when an ACP failure looks like a genuine credential rejection —
+/// the only class where retrying the same key cannot help. Deliberately
+/// does NOT match bare "auth"/"forbidden"/"permission": a network timeout
+/// ON the `authenticate` RPC contains "auth" in the method name (real
+/// incident: flaky network armed the 15-min breaker mid-mission), and
+/// "forbidden"/"permission" appear in quota/concurrency rejections.
+fn is_devin_auth_failure(err: &str) -> bool {
+    let l = err.to_lowercase();
+    l.contains("401")
+        || l.contains("403")
+        || l.contains("unauthorized")
+        // "authentication" (the noun — the thing that failed), never bare
+        // "auth"/"authenticate" (the RPC method name appears in timeouts).
+        || l.contains("authentication")
+        // Devin's own "run devin auth login" guidance is auth-shaped; the
+        // bare word "authenticate" (RPC method) never is.
+        || l.contains("auth login")
+        || l.contains("invalid api key")
+        || l.contains("api key") && l.contains("reject")
+        || l.contains("not authenticated")
+        || l.contains("not logged in")
+        || l.contains("invalid credential")
+        || l.contains("expired credential")
+        || l.contains("bad credentials")
+}
+
+fn note_devin_auth_failure() {
+    if let Ok(mut guard) = DEVIN_AUTH_FAILURE.lock() {
+        *guard = Some((std::time::Instant::now(), devin_credentials_mtime()));
+    }
+}
+
+/// Passthrough for ACP calls that trips the breaker on auth-shaped errors —
+/// `session/new`/`session/prompt` can also reject a stale key server-side
+/// even when `authenticate` was skipped, so every call goes through this.
+fn guard_devin_auth<T>(r: Result<T, String>) -> Result<T, String> {
+    if let Err(e) = &r {
+        if is_devin_auth_failure(e) { note_devin_auth_failure(); }
+    }
+    r
+}
+
+/// The credential pair the Devin CLI stores at %APPDATA%\devin\credentials.toml.
+/// `api_server_url` rides along because the ACP `authenticate` meta carries it
+/// (the desktop sends meta_keys=["api_key","api_server_url"]) — a session token
+/// minted for one backend host means nothing to another.
+struct DevinCredentials {
+    api_key: String,
+    api_server_url: Option<String>,
+}
+
 /// Reads the api key the Devin CLI itself stores at
 /// %APPDATA%\devin\credentials.toml (`windsurf_api_key = "..."`). We never
 /// log or forward this value — it is only placed into the `authenticate`
@@ -1282,17 +1399,42 @@ fn resolve_devin_program() -> std::ffi::OsString {
 /// file or key is absent (user not logged in) so the caller can surface a
 /// precise "run `devin auth login`" error instead of an opaque ACP failure.
 fn read_devin_api_key() -> Option<String> {
+    read_devin_credentials().map(|c| c.api_key)
+}
+
+fn read_devin_credentials() -> Option<DevinCredentials> {
     let appdata = std::env::var("APPDATA").ok()?;
     let content = std::fs::read_to_string(format!("{appdata}\\devin\\credentials.toml")).ok()?;
+    let mut api_key = None;
+    let mut api_server_url = None;
     for line in content.lines() {
         let l = line.trim();
-        let Some(rest) = l.strip_prefix("windsurf_api_key") else { continue };
-        let value = rest.trim_start().strip_prefix('=')?.trim().trim_matches('"');
-        if !value.is_empty() {
-            return Some(value.to_string());
+        for (field, slot) in [("windsurf_api_key", &mut api_key), ("api_server_url", &mut api_server_url)] {
+            if let Some(rest) = l.strip_prefix(field) {
+                if let Some(value) = rest.trim_start().strip_prefix('=') {
+                    let value = value.trim().trim_matches('"');
+                    if !value.is_empty() {
+                        *slot = Some(value.to_string());
+                    }
+                }
+            }
         }
     }
-    None
+    api_key.map(|api_key| DevinCredentials { api_key, api_server_url })
+}
+
+/// The `authenticate` params the ACP agent honors — `_meta.api_key` is the
+/// only field it reads ("API key provided directly via authenticate meta"),
+/// and `windsurf-api-key` is the method the Devin desktop itself uses (seen
+/// in CLI logs: `method_id=windsurf-api-key`). CRITICAL: never use
+/// `devin-browser` here — that methodId invokes the PKCE browser flow and
+/// opens one OAuth tab per spawn, the 2026-09 auth-tab storm.
+fn devin_authenticate_params(creds: &DevinCredentials) -> serde_json::Value {
+    let mut meta = serde_json::json!({ "api_key": creds.api_key });
+    if let Some(url) = &creds.api_server_url {
+        meta["api_server_url"] = serde_json::Value::String(url.clone());
+    }
+    serde_json::json!({ "methodId": "windsurf-api-key", "_meta": meta })
 }
 
 /// True when the Devin CLI is installed AND has a stored credential the ACP
@@ -1301,6 +1443,70 @@ fn read_devin_api_key() -> Option<String> {
 #[tauri::command]
 pub(crate) fn devin_auth_status() -> bool {
     read_devin_api_key().is_some()
+}
+
+/// Live credential probe: spawns a short-lived `devin acp` and runs
+/// initialize -> authenticate with the stored key — the SAME handshake the
+/// chat rail performs. `devin auth status` is NOT used: it maintains its own
+/// bookkeeping and reports "Not logged in" for `devin-session-token$…`
+/// credentials that authenticate fine over ACP (verified 2026-09-17). The
+/// `windsurf-api-key` methodId means the probe can never open a browser tab
+/// — a rejected key just errors. Returns:
+///   Ok(true)  — authenticate accepted the stored credential
+///   Ok(false) — authenticate rejected it / no credential on disk
+///   Err       — probe couldn't run (CLI missing, spawn/read failed):
+///               the caller must NOT treat this as logged-out.
+#[tauri::command]
+pub(crate) fn devin_auth_probe() -> Result<bool, String> {
+    if let Some(msg) = devin_auth_blocked() {
+        // Breaker already engaged — report "not authed" without spawning.
+        let _ = msg;
+        return Ok(false);
+    }
+    let Some(creds) = read_devin_credentials() else {
+        return Ok(false);
+    };
+    let mut cmd = quiet_command(resolve_devin_program());
+    cmd.arg("acp")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null());
+    let mut child = cmd.spawn()
+        .map_err(|e| format!("devin acp spawn failed: {e}"))?;
+    let pid = child.id();
+    // Watchdog: no frontend abort path — a wedged child must be reaped.
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(15));
+        let _ = quiet_command("taskkill").args(tree_kill_args(pid)).output();
+    });
+    let verdict = (|| -> Result<bool, String> {
+        let mut conn = AcpConn::new(&mut child);
+        conn.call("initialize", serde_json::json!({
+            "protocolVersion": 1,
+            "clientCapabilities": {},
+            "clientInfo": { "name": "lazy-ide", "version": "0" },
+        }), &mut |_| {})?;
+        match conn.call("authenticate", devin_authenticate_params(&creds), &mut |_| {}) {
+            Ok(_) => Ok(true),
+            Err(e) if is_devin_auth_failure(&e) => Ok(false),
+            // Transport/timeout etc. — indeterminate, not "logged out".
+            Err(e) => Err(e),
+        }
+    })();
+    let _ = child.kill();
+    let _ = child.wait();
+    verdict
+}
+
+/// Milliseconds-since-epoch mtime of the Devin CLI credentials file — the
+/// frontend breaker watches this to lift its block the moment `devin auth
+/// login` rewrites the file (same signal the Rust breaker uses). Returns
+/// null when the file is absent or unreadable.
+#[tauri::command]
+pub(crate) fn devin_credentials_mtime_ms() -> Option<u64> {
+    devin_credentials_mtime()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as u64)
 }
 
 /// A single option from the model config_option_update — one entry in the
@@ -1333,7 +1539,10 @@ pub(crate) async fn devin_list_models(app: tauri::AppHandle) -> Result<Vec<Devin
 }
 
 fn devin_list_models_blocking(project_root: &str) -> Result<Vec<DevinModelOption>, String> {
-    let Some(api_key) = read_devin_api_key() else {
+    if let Some(msg) = devin_auth_blocked() {
+        return Err(msg.to_string());
+    }
+    let Some(creds) = read_devin_credentials() else {
         return Err("Devin CLI not authenticated — run `devin auth login` first.".to_string());
     };
     let mut cmd = quiet_command(resolve_devin_program());
@@ -1365,12 +1574,12 @@ fn devin_list_models_blocking(project_root: &str) -> Result<Vec<DevinModelOption
                 "clientCapabilities": {},
                 "clientInfo": { "name": "lazy-ide", "version": "0" },
             }), &mut |_| {})?;
-            conn.call("authenticate", serde_json::json!({
-                "methodId": "devin-browser",
-                "apiKey": api_key,
-            }), &mut |_| {})?;
+            // authenticate via _meta.api_key — the ONLY shape the agent
+            // honors (see module doc). A stale key errors here → breaker.
+            guard_devin_auth(conn.call("authenticate",
+                devin_authenticate_params(&creds), &mut |_| {}))?;
             let mut found: Vec<DevinModelOption> = Vec::new();
-            conn.call("session/new", serde_json::json!({
+            guard_devin_auth(conn.call("session/new", serde_json::json!({
                 "cwd": if project_root.is_empty() { "." } else { project_root },
                 "mcpServers": [],
             }), &mut |update| {
@@ -1391,7 +1600,7 @@ fn devin_list_models_blocking(project_root: &str) -> Result<Vec<DevinModelOption
                         }
                     }
                 }
-            })?;
+            }))?;
             Ok(found)
         })()
         // conn dropped here — its stdin closes, letting `devin acp` exit on EOF
@@ -1578,17 +1787,26 @@ async fn devin_chat_stream_inner(
     let action_event = format!("model://action/{}", req.id);
     let pid_key = format!("chat-devin-{}", req.id);
 
-    let Some(api_key) = read_devin_api_key() else {
+    if let Some(msg) = devin_auth_blocked() {
+        let _ = app.emit(&error_event, &msg);
+        return Err(msg.to_string());
+    }
+    let Some(creds) = read_devin_credentials() else {
         let msg = "Devin CLI is not authenticated — run `devin auth login` once, then retry.".to_string();
         let _ = app.emit(&error_event, &msg);
         return Err(msg);
     };
 
     let prompt = build_claude_prompt(req.system.as_deref(), &req.messages);
-    let project_root: String = app.state::<ProjectState>()
-        .0.lock()
-        .map(|g| g.clone())
-        .unwrap_or_default();
+    let project_root: String = match req.session_cwd.as_deref() {
+        // Mission-scoped override (see the field's doc comment): the ACP
+        // session AND the read-jail anchor both bind to the worktree.
+        Some(cwd) if !cwd.trim().is_empty() => cwd.trim().to_string(),
+        _ => app.state::<ProjectState>()
+            .0.lock()
+            .map(|g| g.clone())
+            .unwrap_or_default(),
+    };
     let model = req.model.clone().unwrap_or_default();
     let mode = req.mode.clone();
     let app2 = app.clone();
@@ -1618,7 +1836,7 @@ async fn devin_chat_stream_inner(
         // Drain stderr concurrently (pipe-buffer deadlock guard), tail-capped.
         let stderr_handle = child.stderr.take().map(|se| spawn_stderr_tail(se, STDERR_TAIL_CAP_BYTES));
 
-        let result = devin_acp_turn(&mut child, api_key, &project_root, mode.as_deref(), &prompt, &app2, &chunk_event, &action_event);
+        let result = devin_acp_turn(&mut child, &creds, &project_root, mode.as_deref(), &prompt, &app2, &chunk_event, &action_event);
         // AcpConn (dropped with devin_acp_turn's scope) owned stdin — its
         // close already let the child see EOF. kill() is the belt-and-braces
         // for a turn that ended on error before stdin closed.
@@ -1699,7 +1917,7 @@ fn strip_devin_log_lines(text: &str) -> String {
 
 fn devin_acp_turn(
     child: &mut std::process::Child,
-    api_key: String,
+    creds: &DevinCredentials,
     project_root: &str,
     mode: Option<&str>,
     prompt: &str,
@@ -1754,17 +1972,17 @@ fn devin_acp_turn(
         "clientInfo": { "name": "lazy-ide", "version": env!("CARGO_PKG_VERSION") },
     }), &mut |_| {})?;
 
-    conn.call("authenticate", serde_json::json!({
-        "methodId": "devin-browser",
-        "apiKey": api_key,
-    }), &mut |_| {})?;
+    // authenticate via _meta.api_key — in-process, no browser (see module
+    // doc). A rejected key errors here and trips the breaker.
+    guard_devin_auth(conn.call("authenticate",
+        devin_authenticate_params(&creds), &mut |_| {}))?;
 
     // session/new requires a valid cwd — "." (the child's inherited cwd)
     // when no project is open yet.
-    let session = conn.call("session/new", serde_json::json!({
+    let session = guard_devin_auth(conn.call("session/new", serde_json::json!({
         "cwd": if project_root.is_empty() { "." } else { project_root },
         "mcpServers": [],
-    }), &mut |_| {})?;
+    }), &mut |_| {}))?;
     let session_id = session.get("sessionId").and_then(|v| v.as_str())
         .ok_or_else(|| "session/new returned no sessionId".to_string())?
         .to_string();
@@ -1777,10 +1995,10 @@ fn devin_acp_turn(
         }), &mut |_| {});
     }
 
-    let result = conn.call("session/prompt", serde_json::json!({
+    let result = guard_devin_auth(conn.call("session/prompt", serde_json::json!({
         "sessionId": session_id,
         "prompt": [{ "type": "text", "text": prompt }],
-    }), &mut |update| emit_update(update))?;
+    }), &mut |update| emit_update(update)))?;
 
     // Each turn is its own session; deleting it keeps the user's
     // `devin list` / session DB free of one-shot chat junk. Best-effort —
@@ -2266,5 +2484,86 @@ mod tests {
         let chunk = "real answer\n2026-09-11T03:25:53.581922Z WARN noise: x\nmore answer";
         assert_eq!(strip_devin_log_lines(chunk), "real answer\nmore answer");
         assert!(strip_devin_log_lines("2026-09-11T03:25:53Z ERROR e: m").is_empty());
+    }
+
+    // ── Devin auth circuit breaker ─────────────────────────────────────
+    // Regression coverage for the browser-tab storm: a rejected
+    // `authenticate{devin-browser}` makes the CLI open an OAuth tab, and any
+    // retrying caller (wakeup, routine, failover) produced one tab per spawn.
+
+    #[test]
+    fn is_devin_auth_failure_matches_credential_shaped_errors() {
+        assert!(is_devin_auth_failure("authentication failed"));
+        assert!(is_devin_auth_failure("HTTP 401 Unauthorized"));
+        assert!(is_devin_auth_failure("invalid credentials"));
+        assert!(is_devin_auth_failure("please run devin auth login"));
+        assert!(is_devin_auth_failure("403 forbidden"));
+        assert!(!is_devin_auth_failure("session/new returned no sessionId"));
+        assert!(!is_devin_auth_failure("failed to spawn `devin acp`"));
+        assert!(!is_devin_auth_failure("The weekly quota is exhausted."));
+    }
+
+    #[test]
+    fn devin_breaker_engages_within_cooldown_same_credentials() {
+        let now = std::time::Instant::now();
+        let mtime = Some(std::time::SystemTime::now());
+        assert!(devin_breaker_engaged(now, mtime, mtime));
+        // Never-written credentials file (None) stays engaged too.
+        assert!(devin_breaker_engaged(now, None, None));
+    }
+
+    #[test]
+    fn devin_breaker_lifts_after_cooldown() {
+        let past = std::time::Instant::now() - (DEVIN_AUTH_COOLDOWN + std::time::Duration::from_secs(1));
+        let mtime = Some(std::time::SystemTime::now());
+        assert!(!devin_breaker_engaged(past, mtime, mtime));
+    }
+
+    #[test]
+    fn devin_breaker_lifts_when_credentials_change() {
+        // `devin auth login` rewrites credentials.toml → mtime differs → the
+        // user has fixed the root cause and retries are allowed again.
+        let now = std::time::Instant::now();
+        let old = std::time::SystemTime::now() - std::time::Duration::from_secs(60);
+        let new = std::time::SystemTime::now();
+        assert!(!devin_breaker_engaged(now, Some(old), Some(new)));
+        assert!(!devin_breaker_engaged(now, Some(old), None));
+        assert!(!devin_breaker_engaged(now, None, Some(new)));
+    }
+
+    #[test]
+    fn guard_devin_auth_passes_through_and_trips_only_on_auth_errors() {
+        let ok: Result<i32, String> = Ok(7);
+        assert_eq!(guard_devin_auth(ok).unwrap(), 7);
+        let quota: Result<i32, String> = Err("quota exhausted".to_string());
+        assert_eq!(guard_devin_auth(quota).unwrap_err(), "quota exhausted");
+        let auth: Result<i32, String> = Err("401 unauthorized".to_string());
+        assert_eq!(guard_devin_auth(auth).unwrap_err(), "401 unauthorized");
+        // The auth error above engaged the process-global breaker — reset it
+        // so this test can't poison others running in the same process.
+        if let Ok(mut g) = DEVIN_AUTH_FAILURE.lock() { *g = None; }
+    }
+
+    #[test]
+    fn auth_matcher_ignores_transient_and_quota_errors() {
+        // A timeout ON the `authenticate` RPC contains "auth" — must NOT arm
+        // the breaker (real incident: flaky network → 15min dead zone).
+        assert!(!is_devin_auth_failure("RPC method authenticate timed out after 15000ms"));
+        assert!(!is_devin_auth_failure("authenticate request failed: fetch timed out"));
+        assert!(!is_devin_auth_failure("forbidden: concurrency limit reached"));
+        assert!(!is_devin_auth_failure("permission denied: plan does not include this model"));
+        assert!(!is_devin_auth_failure("quota exhausted for today"));
+        // Genuine rejections still trip it.
+        assert!(is_devin_auth_failure("401 unauthorized"));
+        assert!(is_devin_auth_failure("API key rejected by server"));
+        assert!(is_devin_auth_failure("not authenticated — run devin auth login"));
+    }
+
+    #[test]
+    fn devin_auth_error_message_contains_no_secret() {
+        // The surfaced error must never embed the api key — only the
+        // actionable `devin auth login` hint.
+        assert!(!DEVIN_AUTH_ERR.contains("windsurf_api_key"));
+        assert!(DEVIN_AUTH_ERR.contains("devin auth login"));
     }
 }

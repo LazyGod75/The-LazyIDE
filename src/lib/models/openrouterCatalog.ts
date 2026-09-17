@@ -37,12 +37,13 @@ export interface OpenRouterModel {
 
 /** OpenRouter id of the free rail's default model. Retired aliases map here.
  *  Verified live against openrouter.ai/api/v1/models AND /endpoints on
- *  2026-09-11: minimax-m3:free and glm-5.2:free were pulled upstream, and
- *  nemotron-3-super-120b-a12b:free (the first replacement pick) is listed
- *  but its free route returns "no endpoints" (live send → upstream_error_404).
- *  Gemma 4 31B is the default: 14 endpoints, and its :free route demonstrably
- *  serves (a real send hit the shared rate limit — 429, not 404). */
-export const FREE_OPENROUTER_MODEL_ID = 'google/gemma-4-31b-it:free';
+ *  2026-09-17: glm-5.2:free is back upstream (Decart endpoint, ~99% uptime)
+ *  and restored as the default; stealth/union-alpha (preview, $0) is the
+ *  second free entry. Gemma/Nemotron/Inkling were removed from the rail —
+ *  their quality was judged too low for the product's image — and joined
+ *  RETIRED below so persisted selections migrate here instead of silently
+ *  vanishing from the picker. */
+export const FREE_OPENROUTER_MODEL_ID = 'z-ai/glm-5.2:free';
 
 const RETIRED_OPENROUTER_IDS: ReadonlySet<string> = new Set([
   'stealth/ox-alpha',
@@ -51,12 +52,18 @@ const RETIRED_OPENROUTER_IDS: ReadonlySet<string> = new Set([
   // a persisted selection of either must migrate to the current free
   // default instead of failing every launch with upstream_error_404.
   'minimax/minimax-m3:free',
-  'z-ai/glm-5.2:free',
   // Listed but dead free routes (live-verified upstream_error_404 on
   // 2026-09-11): nemotron-super has zero free-serving endpoints despite
   // appearing in /models, and nano-omni reports 0 endpoints total.
   'nvidia/nemotron-3-super-120b-a12b:free',
   'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+  // Dropped from the free rail on 2026-09-17 (quality bar — see the
+  // FREE_OPENROUTER_MODEL_ID comment above). Still live upstream, but no
+  // longer offered: a persisted selection migrates to the free default.
+  'google/gemma-4-31b-it:free',
+  'nvidia/nemotron-3-ultra-550b-a55b:free',
+  'thinkingmachines/inkling:free',
+  'nvidia/nemotron-3.5-lightning:free',
   // Older removals kept for migration of persisted selections.
   'poolside/laguna-s-2.1:free',
   'cohere/north-mini-code:free',
@@ -80,59 +87,36 @@ export function nextFreeOpenRouterModelId(currentId: string): string | undefined
 
 // Provider groups ordered: Z.ai (free), Anthropic, OpenAI, Google, xAI, DeepSeek, Meta
 export const OPENROUTER_MODELS: readonly OpenRouterModel[] = [
-  // ── Free tier — genuine OpenRouter `:free` models (no credits needed) ──
+  // ── Free tier — genuine $0 routes (no credits needed) ──────────────
   // Any authenticated user can call these: the ai-proxy serves them with a
   // zero credit reservation and zero charge (see pricing.ts's isFree path),
   // and every client gate below treats them as always-ready. The privacy
   // trade-off (upstream provider may train on submitted data) is surfaced by
   // FreeModelPrivacyNotice at the point of selection.
-  // Verified live on openrouter.ai/api/v1/models + /endpoints (2026-09-11) —
-  // every entry below has free-serving endpoints actually routable right now.
-  // The previous pair (MiniMax M3, GLM 5.2) was pulled upstream; the interim
-  // Nemotron replacements were listed but returned upstream_error_404 /
-  // reported 0 endpoints, so they joined RETIRED_OPENROUTER_IDS instead.
+  // Verified live on openrouter.ai/api/v1/models + /endpoints (2026-09-17):
+  // glm-5.2:free is back upstream (Decart, ~99% uptime) and is the default.
+  // union-alpha is a STEALTH preview — free today, priced or pulled without
+  // notice later (same playbook as ox-alpha, revealed as glm-5.3-flash);
+  // its anonymous provider may retain prompts (no zero-retention guarantee),
+  // which the privacy notice must not understate.
   {
     id: FREE_OPENROUTER_MODEL_ID,
-    label: 'Gemma 4 31B (free)',
-    provider: 'Google',
+    label: 'GLM 5.2 (free)',
+    provider: 'Z.ai',
+    tier: 'free',
+    reasoning: true,
+    priceIn: 0,
+    priceOut: 0,
+    maxTokens: 8192,
+    webSearch: false,
+    isFree: true,
+  },
+  {
+    id: 'stealth/union-alpha',
+    label: 'Union Alpha (free preview)',
+    provider: 'Stealth',
     tier: 'free',
     reasoning: false,
-    priceIn: 0,
-    priceOut: 0,
-    maxTokens: 8192,
-    webSearch: false,
-    isFree: true,
-  },
-  {
-    id: 'nvidia/nemotron-3-ultra-550b-a55b:free',
-    label: 'Nemotron 3 Ultra 550B (free)',
-    provider: 'NVIDIA',
-    tier: 'free',
-    reasoning: true,
-    priceIn: 0,
-    priceOut: 0,
-    maxTokens: 8192,
-    webSearch: false,
-    isFree: true,
-  },
-  {
-    id: 'thinkingmachines/inkling:free',
-    label: 'Inkling (free)',
-    provider: 'Thinking Machines',
-    tier: 'free',
-    reasoning: true,
-    priceIn: 0,
-    priceOut: 0,
-    maxTokens: 8192,
-    webSearch: false,
-    isFree: true,
-  },
-  {
-    id: 'nvidia/nemotron-3.5-lightning:free',
-    label: 'Nemotron 3.5 Lightning (free)',
-    provider: 'NVIDIA',
-    tier: 'free',
-    reasoning: true,
     priceIn: 0,
     priceOut: 0,
     maxTokens: 8192,

@@ -81,6 +81,24 @@ describe('actionClassifier', () => {
     expect(classifyAction('delete_router')).toBe('destructive');
     expect(classifyAction('delete_join')).toBe('destructive');
     expect(classifyAction('delete_frame')).toBe('destructive');
+    // A deleted LazyBot has no archive — the config is gone for good.
+    expect(classifyAction('delete_lazybot')).toBe('destructive');
+  });
+
+  it('classifies the LazyBot lifecycle actions at the right tiers', () => {
+    // Live-execution touchers — sensitive, like stop_mission.
+    expect(classifyAction('sweep_solari')).toBe('sensitive');
+    expect(classifyAction('resolve_bot_intervention')).toBe('sensitive');
+    // Rewrites the bot's systemPrompt on stop — a live config mutation.
+    expect(classifyAction('teach_lazybot')).toBe('sensitive');
+    // Read/display-only — safe.
+    expect(classifyAction('lazybot_runs')).toBe('safe');
+    expect(classifyAction('toggle_bot_vm')).toBe('safe');
+  });
+
+  it('asks for delete_lazybot even in yolo mode (destructive)', async () => {
+    const gate = await evaluateActionGate('delete_lazybot', getEffectiveAutonomy({ mode: 'yolo' }));
+    expect(gate.decision).toBe('ask');
   });
 
   // clear_canvas is field-dependent: 'archive' (the executor's own default —

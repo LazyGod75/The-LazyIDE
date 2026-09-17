@@ -39,6 +39,7 @@ import type {
   CaptureResult,
   HistorySource,
   SeedEstimate,
+  SeedExtractorSpec,
   SeedProgressEvent,
   Tests,
   TestRunResult,
@@ -861,8 +862,8 @@ const nativeBrain: Brain & {
     return invoke<HistorySource[]>('detect_history_sources');
   },
 
-  async seedEstimate(sources: string[]): Promise<SeedEstimate> {
-    return invoke<SeedEstimate>('brain_seed_estimate', { sources });
+  async seedEstimate(sources: string[], extractor?: SeedExtractorSpec): Promise<SeedEstimate> {
+    return invoke<SeedEstimate>('brain_seed_estimate', { sources, extractor: extractor ?? null });
   },
 
   async seedBrain(opts: {
@@ -870,12 +871,14 @@ const nativeBrain: Brain & {
     useLlm: boolean;
     since?: string;
     projectRoot?: string;
+    extractor?: SeedExtractorSpec;
   }): Promise<{ imported: number; skipped: number }> {
     return invoke<{ imported: number; skipped: number }>('brain_seed', {
       sources: opts.sources,
       useLlm: opts.useLlm,
       since: opts.since ?? null,
       projectRoot: opts.projectRoot ?? null,
+      extractor: opts.extractor ?? null,
     });
   },
 

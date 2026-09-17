@@ -22,9 +22,26 @@ function cleanReActText(text: string): string {
 }
 
 function matchActionLine(unfenced: string): { action: string; actionLower: string; match: RegExpMatchArray } | null {
-  const actionMatch = unfenced.match(/^\*{0,2}ACTION\*{0,2}:\s*(.+)$/mi);
+  // Prefer a line-start ACTION. Fallback: some brains glue the marker onto
+  // the THOUGHT sentence ("…capture screen.ACTION: cloud_desktop_screenshot"
+  // — real M132 incident: the line-start anchor missed it and burned two
+  // retry turns). Requiring sentence punctuation before ACTION keeps stray
+  // prose mentions ("emit ACTION: x") from re-anchoring.
+  const actionMatch =
+    unfenced.match(/^\*{0,2}ACTION\*{0,2}:\s*(.+)$/mi) ??
+    unfenced.match(/[.!?]\s*\*{0,2}ACTION\*{0,2}:\s*(.+)$/mi);
   if (!actionMatch) return null;
-  const action = actionMatch[1].trim().replace(/\*+/g, '');
+  // Models sometimes inline the args on the ACTION line itself
+  // ("ACTION: cloud_browser_open ARGS: {}" or "..._open {}") — the tool
+  // name is only the first token sequence, never the ARGS payload. Cutting
+  // here keeps the name clean; the ARGS extractors below still find the
+  // JSON in the full text. (Real repro: M114 glued name rejected by
+  // allowedTools, escalated to a needless failover cascade.)
+  const raw = actionMatch[1].replace(/\*+/g, '');
+  const action = raw
+    .split(/ARGS\s*:/i)[0]
+    .split('{')[0]
+    .trim();
   return { action, actionLower: action.toLowerCase(), match: actionMatch };
 }
 
@@ -42,8 +59,15 @@ function extractArgsString(unfenced: string): string | undefined {
  *  immediate zone after the ACTION line (bounded by the next
  *  THOUGHT/ACTION/FINAL marker) so prose braces elsewhere never anchor the
  *  balanced scan. Returns the raw JSON substring or undefined. */
-function extractBareArgsAfterAction(unfenced: string, actionEnd: number): string | undefined {
-  const rest = unfenced.slice(actionEnd);
+function extractBareArgsAfterAction(unfenced: string, actionMatch: RegExpMatchArray): string | undefined {
+  // A model may inline the JSON on the ACTION line itself ("ACTION: t {}") —
+  // start the scan at that first '{' so the payload is not skipped; the
+  // bounded zone below still stops at the next marker for the normal case.
+  const lineBrace = actionMatch[0].indexOf('{');
+  const zoneStart = lineBrace !== -1
+    ? actionMatch.index! + lineBrace
+    : actionMatch.index! + actionMatch[0].length;
+  const rest = unfenced.slice(zoneStart);
   const nextMarker = rest.search(/\n(?:THOUGHT|ACTION|FINAL)\s*:/i);
   const zone = nextMarker === -1 ? rest : rest.slice(0, nextMarker);
   const balanced = extractBalancedJsonObject(zone);
@@ -83,7 +107,7 @@ export function parseReActAction(text: string): ReActParsed | null {
     const fileArgs = parseFileToolAction(actionLower, textAfterAction);
     if (fileArgs) return { action, args: fileArgs };
   }
-  const argsStr = extractArgsString(unfenced) ?? extractBareArgsAfterAction(unfenced, match.index! + match[0].length);
+  const argsStr = extractArgsString(unfenced) ?? extractBareArgsAfterAction(unfenced, match);
   if (!argsStr) {
     // No ARGS at all: for FINAL and for tools that take no arguments this is
     // legitimate (deepseek-class models omit the ARGS line for no-arg tools).
@@ -155,15 +179,20 @@ export function applyUnparseableStep(opts: {
     opts.maxConsecutiveFailures,
   );
   const attempt = Math.min(tracked.consecutiveFailures, opts.maxConsecutiveFailures);
+  // Surface a snippet of what the model actually emitted — without it a
+  // stuck mission shows "Could not parse" with zero way to tell prose from
+  // a broken tag (real incident: 6 desktop missions died opaque).
+  const snippet = opts.cleaned.trim().replace(/\s+/g, ' ').slice(0, 160);
   opts.onAction({
     time: opts.nowTime(),
-    text: opts.t
+    text: (opts.t
       ? opts.t('agents.managedAgent.parseFailed', {
           step: opts.step + 1,
           attempt,
           max: opts.maxConsecutiveFailures,
         })
-      : `Could not parse agent response at step ${opts.step + 1} (attempt ${attempt}/${opts.maxConsecutiveFailures})`,
+      : `Could not parse agent response at step ${opts.step + 1} (attempt ${attempt}/${opts.maxConsecutiveFailures})`) +
+      (snippet ? ` — got: "${snippet}"` : ' — empty response'),
     isLive: false,
   });
   const messages = [

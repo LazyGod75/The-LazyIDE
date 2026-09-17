@@ -88,7 +88,13 @@ describe('createCliAgentTurnStreamer', () => {
     const arg = mockedClaude.mock.calls[0]![0] as { model: string; system: string; signal: AbortSignal };
     expect(arg.model).toBe(ALL_MODELS.find((m) => m.id.includes('sonnet'))!.id);
     expect(arg.system).toBe('SYS');
-    expect(arg.signal).toBe(ctrl.signal);
+    // The turn gets the idle watchdog's DERIVED signal, not the parent's —
+    // cliTurn wraps opts.signal so a silent stream self-aborts (and the
+    // parent propagates into it while the turn is in flight; after
+    // completion the listener is disposed, so only identity is assertable).
+    expect(arg.signal).toBeInstanceOf(AbortSignal);
+    expect(arg.signal).not.toBe(ctrl.signal);
+    expect(arg.signal.aborted).toBe(false);
     expect(mockedCliProvider).not.toHaveBeenCalled();
   });
 

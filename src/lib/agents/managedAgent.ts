@@ -216,6 +216,17 @@ export interface PlanAndActManagedOpts {
     signal?: AbortSignal;
     cacheableSystem?: { core: string; dynamic: string };
     maxTokens?: number;
+    /** Fired for every tool call the CLI agent executed NATIVELY (outside
+     *  the text ReAct protocol — e.g. swe-2 writing the file itself via its
+     *  ACP tools). The loop counts these as real work: they feed
+     *  toolCallCount so a FINAL after native work is not bounced as
+     *  zero-tool, and a prose-only turn that still produced native actions
+     *  is not scored a protocol failure (M141/M142 incidents). */
+    onNativeAction?: () => void;
+    /** Mission worktree path — forwarded to CLI backends as the ACP
+     *  session cwd so the agent's NATIVE relative-path writes land inside
+     *  the isolated worktree instead of the real project root (M142). */
+    worktreePath?: string;
   }) => AsyncIterable<string>;
   /** 'plan' blocks write/exec tools (write_file, edit_file, run_command, run_tests, brain_record) — enforced in executeTool. */
   permissionMode?: PermissionMode;
@@ -407,6 +418,12 @@ async function* streamAgentTurn(opts: {
    *  spend.tokens event (T0.4) carries the right journal identity. */
   missionId?: string;
   projectId?: string;
+  /** Forwarded to a CLI streamTurn so native model://action tool calls
+   *  (swe-2 acting with its own tools) count as real work. */
+  onNativeAction?: () => void;
+  /** Mission worktree — CLI backends anchor their ACP session cwd to it so
+   *  native writes stay inside the isolated worktree. */
+  worktreePath?: string;
   /** BYOK wave: overrides the ai-proxy rail with the user's own BYOK
    *  provider streamer (see resolveByokAgentTurnStreamer). */
   streamTurn?: PlanAndActManagedOpts['streamTurn'];
@@ -615,6 +632,17 @@ export async function planAndActManaged(opts: PlanAndActManagedOpts): Promise<vo
   let outputTokensAccum = 0;
   let costUsdAccum = 0;
   let toolCallCount = 0;
+  /** Native CLI tool calls observed via model://action (swe-2 acting with
+   *  its OWN tools instead of the text protocol — M141/M142). Counted
+   *  separately from toolCallCount (hosted ACTION executions) but folded
+   *  into metrics/FINAL gates as real work. */
+  let nativeToolCount = 0;
+  /** Per-STEP native action count — reset at the top of each main turn,
+   *  incremented across that step's retries. Read by runManagedTurn's
+   *  parse path to spare a work-producing prose turn from the
+   *  consecutive-failure cap. */
+  let turnNativeActions = 0;
+  const noteNativeAction = (): void => { nativeToolCount += 1; turnNativeActions += 1; };
   let sawReal = false;
   let sawEstimated = false;
   /** T1.3 — dedupes budget.warning to exactly once per mission run (spec:
@@ -688,7 +716,7 @@ export async function planAndActManaged(opts: PlanAndActManagedOpts): Promise<vo
         inputTokens: inputTokensAccum,
         outputTokens: outputTokensAccum,
         costUsd: costUsdAccum,
-        toolCount: toolCallCount,
+        toolCount: toolCallCount + nativeToolCount,
         tokensSource: sawReal && sawEstimated ? 'mixed' : sawReal ? 'real' : 'estimated',
       });
     }
@@ -734,6 +762,8 @@ export async function planAndActManaged(opts: PlanAndActManagedOpts): Promise<vo
         missionId,
         projectId,
         streamTurn,
+        onNativeAction: noteNativeAction,
+        worktreePath,
       })) {
         text += chunk;
       }
@@ -942,6 +972,7 @@ export async function planAndActManaged(opts: PlanAndActManagedOpts): Promise<vo
         boundHistory: boundMissionHistory,
         collectTurn: async (working) => {
           lastTurnUsage = undefined;
+          turnNativeActions = 0;
           return collectManagedTurnText(streamAgentTurn({
             messages: working,
             system: lrSystemPrompt,
@@ -952,8 +983,13 @@ export async function planAndActManaged(opts: PlanAndActManagedOpts): Promise<vo
             missionId,
             projectId,
             streamTurn,
+            onNativeAction: noteNativeAction,
+            worktreePath,
           }));
         },
+        /** Native CLI tool calls observed during THIS step (main turn +
+         *  its format retries) — read after collectTurn/retryParse ran. */
+        getTurnNativeActions: () => turnNativeActions,
         addTurnTokens: (working, turnText) => {
           addTurnTokens(lrSystemPrompt, working, turnText, model, lastTurnUsage);
         },
@@ -1031,7 +1067,7 @@ export async function planAndActManaged(opts: PlanAndActManagedOpts): Promise<vo
         proofNudges: state.proofNudges,
         prmInvocations: state.prmInvocations,
         prmMax: PRM_MAX,
-        toolCallCount: state.toolCallCount,
+        toolCallCount: state.toolCallCount + nativeToolCount,
         step,
         maxSteps: MAX_STEPS,
         maxProofNudges: MAX_PROOF_NUDGES,

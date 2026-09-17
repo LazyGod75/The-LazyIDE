@@ -94,34 +94,51 @@ export type DesktopStreamResult =
   | { streamUrl: string; token?: string }
   | { error: string };
 
-let sharedDesktopStream: Promise<DesktopStreamResult> | null = null;
-let sharedDesktopStreamValue: Extract<DesktopStreamResult, { streamUrl: string }> | null = null;
+/** Stream cache keyed by scope (botId, or the shared fallback key) so two
+ *  bots never receive each other's noVNC session — the pre-keyed singleton
+ *  leaked whichever stream started first to every surface. */
+const STREAM_SCOPE_SHARED = '__shared__';
+const streamByScope = new Map<string, Promise<DesktopStreamResult>>();
+const streamValueByScope = new Map<string, Extract<DesktopStreamResult, { streamUrl: string }>>();
 
-/** Start (or reuse) the Agent Computer's live noVNC stream — one stream for
- *  every BotVmSurface / BotVmHost / BotsSpace embed (C78). Optional botId
- *  selects that bot's desktop when C50 isolation is active. */
+function streamScope(botId?: string): string {
+  return botId ?? STREAM_SCOPE_SHARED;
+}
+
+/** Start (or reuse) the Agent Computer's live noVNC stream — one stream per
+ *  desktop scope for every BotVmSurface / BotVmHost / BotsSpace embed (C78).
+ *  botId selects that bot's dedicated desktop when C50 isolation is active. */
 export async function openDesktopStream(botId?: string): Promise<DesktopStreamResult> {
-  if (sharedDesktopStreamValue) return sharedDesktopStreamValue;
-  if (sharedDesktopStream) return sharedDesktopStream;
-  sharedDesktopStream = (async () => {
+  const scope = streamScope(botId);
+  const cachedValue = streamValueByScope.get(scope);
+  if (cachedValue) return cachedValue;
+  const pending = streamByScope.get(scope);
+  if (pending) return pending;
+  const started = (async () => {
     try {
       const { desktop } = await ensureAgentComputer(botId);
       const stream = await desktop.stream.start();
       const value = { streamUrl: stream.streamUrl, token: stream.token };
-      sharedDesktopStreamValue = value;
+      streamValueByScope.set(scope, value);
       return value;
     } catch (err) {
-      sharedDesktopStream = null;
+      streamByScope.delete(scope);
       return { error: err instanceof Error ? err.message : String(err) };
     }
   })();
-  return sharedDesktopStream;
+  streamByScope.set(scope, started);
+  return started;
 }
 
-/** Tests / hot-reload — drop the shared stream cache. */
-export function resetDesktopStreamState(): void {
-  sharedDesktopStream = null;
-  sharedDesktopStreamValue = null;
+/** Drop the cached stream for one bot (VM reverted/destroyed) or all scopes. */
+export function resetDesktopStreamState(botId?: string): void {
+  if (botId === undefined) {
+    streamByScope.clear();
+    streamValueByScope.clear();
+    return;
+  }
+  streamByScope.delete(streamScope(botId));
+  streamValueByScope.delete(streamScope(botId));
 }
 
 export interface BrowserTakeover {
@@ -146,6 +163,19 @@ export async function openBrowserTakeover(botId: string): Promise<BrowserTakeove
     page,
     stop: () => { void page.close(); },
   };
+}
+
+/** View-only live watch of the bot's browser: starts a CDP screencast on the
+ *  live page and forwards each frame as a data URL. Returns a stop fn. The
+ *  watcher never sends input — takeover is the interactive counterpart. */
+export async function watchBrowserSession(
+  botId: string,
+  onFrame: (dataUrl: string) => void,
+): Promise<{ stop: () => void } | { error: string }> {
+  const page = firstLivePage(botId);
+  if (!page) return { error: 'No live browser session for this bot yet.' };
+  const stop = await page.startScreencast(onFrame);
+  return { stop };
 }
 
 /** C78 — single source of truth for the live VM view + stream. */

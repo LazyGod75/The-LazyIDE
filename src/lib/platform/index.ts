@@ -40,6 +40,7 @@ export type {
   BrainNoteMeta,
   HistorySource,
   SeedEstimate,
+  SeedExtractorSpec,
   SeedProgressEvent,
   ModelInfo,
   ModelProvider,

@@ -49,6 +49,12 @@ export interface ManagedTurnOpts {
   getBudget: () => Parameters<typeof applyMissionCaps>[1];
   getDuration: () => Parameters<typeof applyMissionCaps>[2];
   retryParse: (working: ChatMessage[], cleaned: string) => Promise<string>;
+  /** Native CLI tool calls observed during THIS step (main turn + format
+   *  retries) — a prose-only turn that still produced real native work
+   *  (swe-2 writing the file via its own ACP tools, M142) must not burn a
+   *  consecutive-failure slot: the work happened, only the protocol was
+   *  skipped. Read after collectTurn and again after retryParse. */
+  getTurnNativeActions?: () => number;
   step: number;
   t?: TFunc;
   nowTime: () => string;
@@ -88,6 +94,32 @@ async function parseManagedTurn(
   const cleaned = stripManagedTurnText(turnText);
   const parsed = await parseReActActionWithRetry(cleaned, () => opts.retryParse(workingMessages, cleaned));
   if (parsed) return { kind: 'parsed', action: parsed.action, args: parsed.args, cleaned, messages };
+  // Native-work sparing (M142): the agent executed real tool calls itself
+  // this turn — its prose narration is a contract miss, not a work
+  // failure. Don't burn a consecutive-failure slot; instead hand it an
+  // honest Observation so the next turn can emit ACTION or FINAL.
+  const nativeActions = opts.getTurnNativeActions?.() ?? 0;
+  if (nativeActions > 0) {
+    opts.onAction({
+      time: opts.nowTime(),
+      text: opts.t
+        ? opts.t('agents.managedAgent.nativeWorkObserved', { count: nativeActions })
+        : `${nativeActions} appel(s) d'outil natif(s) exécuté(s) par l'agent sur le worktree — travail réel comptabilisé`,
+      isLive: false,
+    });
+    return {
+      kind: 'retry',
+      consecutiveFailures: opts.consecutiveFailures,
+      messages: [
+        ...messages,
+        { role: 'assistant', content: cleaned },
+        {
+          role: 'user',
+          content: `Observation: the host observed ${nativeActions} tool call(s) your CLI executed natively on the worktree this turn — that work is real and counted. Next: emit ACTION: <action> + ARGS: <json> for the next host-side step, or FINAL: {"summary": "..."} if the task is complete. Do not narrate results as prose.`,
+        },
+      ],
+    };
+  }
   const unparsed = applyUnparseableStep({
     cleaned,
     consecutiveFailures: opts.consecutiveFailures,

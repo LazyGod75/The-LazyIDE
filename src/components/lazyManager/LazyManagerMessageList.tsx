@@ -212,6 +212,13 @@ function actionSummary(action: ManagerAction, t: (key: string, params?: Record<s
     case 'run_lazybot': return t('cockpit.manager.action.runLazybot', { name: action.botId });
     case 'stop_lazybot': return t('cockpit.manager.action.stopLazybot', { name: action.botId });
     case 'list_lazybots': return t('cockpit.manager.action.listLazybots');
+    // Same "label only" convention as above — t() falls back to the raw key.
+    case 'delete_lazybot': return t('cockpit.manager.action.deleteLazybot', { name: action.botId });
+    case 'resolve_bot_intervention': return t('cockpit.manager.action.resolveBotIntervention', { name: action.botId });
+    case 'sweep_solari': return t('cockpit.manager.action.sweepSolari');
+    case 'lazybot_runs': return t('cockpit.manager.action.lazybotRuns', { name: action.botId });
+    case 'toggle_bot_vm': return t('cockpit.manager.action.toggleBotVm', { name: action.botId });
+    case 'teach_lazybot': return t('cockpit.manager.action.teachLazybot', { name: action.botId });
     case 'info': return action.message;
     // Structural project digest (projectDigest.ts) — grounding action, same
     // display treatment as brain_query/brain_query_css/brain_neighbours

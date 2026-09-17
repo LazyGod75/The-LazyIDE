@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const desktopCreate = vi.fn();
 const desktopConnect = vi.fn();
+// reconnectDesktop() probes liveness via desktop.get() before opening the
+// control channel — the mock must answer "alive" or the reconnect path
+// falls through to a fresh create() and the reuse assertions break.
+const desktopGet = vi.fn(async (id: string) => ({ id, status: 'running', expiresAt: null }));
 const files = new Map<string, string>();
 
 vi.mock('../lib/solari/solariClient', () => ({
@@ -10,6 +14,7 @@ vi.mock('../lib/solari/solariClient', () => ({
     desktop: {
       create: desktopCreate,
       connect: desktopConnect,
+      get: desktopGet,
     },
     sandbox: {
       volumes: {
@@ -50,6 +55,8 @@ describe('desktop VM isolation (C50)', () => {
     files.clear();
     desktopCreate.mockReset();
     desktopConnect.mockReset();
+    desktopGet.mockReset();
+    desktopGet.mockImplementation(async (id: string) => ({ id, status: 'running', expiresAt: null }));
     let n = 0;
     desktopCreate.mockImplementation(async () => {
       n += 1;

@@ -58,4 +58,10 @@ export const CLOUD_READONLY_TOOLS: ReadonlySet<string> = new Set([
   'cloud_browser_close',
   'cloud_sandbox_close',
   'cloud_browser_profiles_list',
+  'cloud_desktop_process_list',
+  'cloud_desktop_file_read',
+  'cloud_desktop_file_list',
+  'cloud_sandbox_file_search',
+  'cloud_sandbox_download',
+  'cloud_sandbox_command_poll',
 ]);

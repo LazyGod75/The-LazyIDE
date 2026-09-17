@@ -20,6 +20,7 @@ import {
   openBrowserSession,
   openSandbox,
   readLedger,
+  registerRunArtifactStamper,
   releaseAll,
   releaseBrowser,
   releaseSandbox,
@@ -27,6 +28,7 @@ import {
   setSolariSessionsRoot,
   sweepOrphans,
 } from '../lib/solari/solariSessions';
+import { setCachedProjectRoot, invalidateProjectRootCache } from '../lib/agents/projectRootCache';
 import type { LedgerState } from '../lib/solari/solariSessions';
 import {
   acquireAgentComputer,
@@ -45,6 +47,8 @@ const browserLaunch = vi.fn();
 const browserReleaseAndWait = vi.fn();
 const desktopConnect = vi.fn();
 const desktopCreate = vi.fn();
+const desktopGet = vi.fn();
+const desktopDestroy = vi.fn();
 const sandboxCreate = vi.fn();
 const sandboxKill = vi.fn();
 const volumeCreate = vi.fn();
@@ -63,7 +67,7 @@ vi.mock('@solarisdk/sandbox', () => ({ SandboxClient: vi.fn() }));
 
 const mockClients = {
   browser: { launch: browserLaunch, sessions: { releaseAndWait: browserReleaseAndWait, release: vi.fn() } },
-  desktop: { connect: desktopConnect, create: desktopCreate, volumes: { create: volumeCreate } },
+  desktop: { connect: desktopConnect, create: desktopCreate, get: desktopGet, destroy: desktopDestroy, volumes: { create: volumeCreate } },
   sandbox: { create: sandboxCreate, kill: sandboxKill, volumes: { create: volumeCreate } },
 } as unknown as SolariClients;
 
@@ -80,7 +84,7 @@ function fakeBrowser(id: string, close: Mock = vi.fn().mockResolvedValue(undefin
 }
 
 function fakeSandbox(id: string, kill: Mock = vi.fn().mockResolvedValue(undefined)): Sandbox {
-  return { id, sandboxId: id, kill } as unknown as Sandbox;
+  return { id, sandboxId: id, kill, connect: vi.fn().mockResolvedValue(undefined) } as unknown as Sandbox;
 }
 
 function fakeDesktop(id: string, snapshot: Mock = vi.fn().mockResolvedValue(`snap_${id}`)): Desktop & { connect: Mock } {
@@ -107,6 +111,15 @@ beforeEach(() => {
   browserReleaseAndWait.mockReset();
   desktopConnect.mockReset();
   desktopCreate.mockReset();
+  desktopGet.mockReset();
+  desktopDestroy.mockReset();
+  // Default: every persisted desktop is alive (far-future expiry). Tests that
+  // exercise the stale-VM path override this per-case.
+  desktopGet.mockImplementation(async (id: string) => ({
+    id,
+    status: 'ready',
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+  }));
   sandboxCreate.mockReset();
   sandboxKill.mockReset();
   volumeCreate.mockReset();
@@ -214,6 +227,43 @@ describe('browser sessions', () => {
     expect(getBrowserSession('m1')).toBeUndefined();
     const ledger = await readLedger();
     expect(ledger.browserSessions).toHaveLength(0);
+  });
+
+  // M138 regression: the replay bytes must persist AND the artifact must be
+  // stamped onto the live run (via registerRunArtifactStamper) at capture
+  // time — the in-memory artifact map alone did not survive a renderer
+  // reload between session-close and run-finalize.
+  it('captureReplay writes the decompressed .ndjson and stamps the live run', async () => {
+    setCachedProjectRoot('/repo');
+    const stamper = vi.fn();
+    registerRunArtifactStamper(stamper);
+    const getReplayUrl = vi.fn().mockResolvedValue({
+      url: 'https://storage.googleapis.com/bucket/replay.ndjson.gz?X-Goog-Signature=fake',
+    });
+    // Plaintext body (not gzipped) exercises the no-magic-bytes decode path.
+    const downloadReplay = vi
+      .fn()
+      .mockResolvedValue(new TextEncoder().encode('{"type":4,"data":{}}\n').buffer);
+    vi.mocked(getSolariClients).mockResolvedValue({
+      ...mockClients,
+      browser: {
+        launch: browserLaunch,
+        sessions: { releaseAndWait: browserReleaseAndWait, getReplayUrl, downloadReplay },
+      },
+    } as unknown as SolariClients);
+    browserLaunch.mockResolvedValueOnce(fakeBrowser('ses_rec'));
+    const h = await openBrowserSession('m-rec', { recording: true });
+    await h.close();
+    const path = joinPath('/repo', '.lazy/replays/ses_rec.ndjson');
+    expect(files.get(path)).toBe('{"type":4,"data":{}}\n');
+    expect(stamper).toHaveBeenCalledWith(
+      'm-rec',
+      expect.objectContaining({
+        replayUrl: expect.stringContaining('storage.googleapis.com'),
+        replayPath: path,
+      }),
+    );
+    invalidateProjectRootCache();
   });
 });
 
@@ -327,7 +377,7 @@ describe('agent computer desktop', () => {
     expect(desktopCreate).toHaveBeenCalledTimes(1);
   });
 
-  it('does not wipe the ledger or create a blank VM when control connect fails', async () => {
+  it('destroys a dead VM and creates a replacement on the same volume when reconnect fails', async () => {
     seedLedger({
       version: '1.0.0',
       browserSessions: [],
@@ -338,10 +388,15 @@ describe('agent computer desktop', () => {
     const attached = fakeDesktop('dsk_pause');
     attached.connect.mockRejectedValue(new Error('Not connected — call connect() first'));
     desktopConnect.mockResolvedValue(attached);
-    await expect(ensureAgentComputer()).rejects.toThrow(/Not connected|timed out|control/);
-    expect(desktopCreate).not.toHaveBeenCalled();
+    desktopCreate.mockResolvedValue(fakeDesktop('dsk_fresh'));
+    const handle = await ensureAgentComputer();
+    // Stale slot freed before create — otherwise the account cap 429s.
+    expect(desktopDestroy).toHaveBeenCalledWith('dsk_pause');
+    expect(desktopCreate).toHaveBeenCalled();
+    expect(handle.desktopId).toBe('dsk_fresh');
+    // Volume survives the VM swap — only the dead desktopId is replaced.
     expect(await readLedger()).toMatchObject({
-      agentComputer: { desktopId: 'dsk_pause', volumeId: 'vol_1', lastSnapshotId: 'snap_keep' },
+      agentComputer: { desktopId: 'dsk_fresh', volumeId: 'vol_1', lastSnapshotId: 'snap_keep' },
     });
   });
 
@@ -415,6 +470,40 @@ describe('sweepOrphans and ledger resilience', () => {
     expect(warn).toHaveBeenCalled();
     expect((await readLedger()).browserSessions).toHaveLength(0);
     warn.mockRestore();
+  });
+
+  it('sweeps dead per-bot desktops and keeps live ones', async () => {
+    seedLedger({
+      version: '1.0.0',
+      browserSessions: [],
+      sandboxes: [],
+      agentComputer: null,
+      agentComputersByBotId: {
+        bot_dead: { desktopId: 'dsk_expired', volumeId: 'vol_1' },
+        bot_gone: { desktopId: 'dsk_404', volumeId: 'vol_1' },
+        // Real API shape: a reclaimed VM reports status 'gone', expiresAt null.
+        bot_reclaimed: { desktopId: 'dsk_gone', volumeId: 'vol_1' },
+        bot_live: { desktopId: 'dsk_live', volumeId: 'vol_1' },
+      },
+    });
+    desktopGet.mockImplementation(async (id: string) => {
+      if (id === 'dsk_404') throw new Error('404 not found');
+      if (id === 'dsk_gone') return { id, status: 'gone', expiresAt: null };
+      if (id === 'dsk_expired') {
+        return { id, status: 'paused', expiresAt: new Date(Date.now() - 60_000).toISOString() };
+      }
+      return { id, status: 'ready', expiresAt: new Date(Date.now() + 60_000).toISOString() };
+    });
+    await sweepOrphans();
+    // Expired VM is destroyed server-side to free its concurrency slot.
+    expect(desktopDestroy).toHaveBeenCalledWith('dsk_expired');
+    expect(desktopDestroy).toHaveBeenCalledWith('dsk_gone');
+    expect(desktopDestroy).not.toHaveBeenCalledWith('dsk_live');
+    const ledger = await readLedger();
+    expect(ledger.agentComputersByBotId).not.toHaveProperty('bot_dead');
+    expect(ledger.agentComputersByBotId).not.toHaveProperty('bot_gone');
+    expect(ledger.agentComputersByBotId).not.toHaveProperty('bot_reclaimed');
+    expect(ledger.agentComputersByBotId).toHaveProperty('bot_live');
   });
 
   it('tolerates a missing ledger and starts fresh', async () => {

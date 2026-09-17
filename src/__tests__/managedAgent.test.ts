@@ -1614,10 +1614,12 @@ describe('planAndActManaged — onMetrics real usage vs estimate', () => {
     const metrics = onMetrics.mock.calls[0][0];
     expect(metrics.tokensSource).toBe('real');
     // Exact totals (not "greater than 0"): real usage is used as-is, not
-    // blended with the chars/4 estimate.
-    expect(metrics.inputTokens).toBe(realUsage.inputTokens);
-    expect(metrics.outputTokens).toBe(realUsage.outputTokens);
-    expect(metrics.costUsd).toBeCloseTo(realUsage.costUsd, 10);
+    // blended with the chars/4 estimate. The mission fast-FINALs with zero
+    // tool calls, so the bounded zero-tool FINAL bounce (M141 fix) re-runs
+    // the turn twice before letting it through — 3 turns total.
+    expect(metrics.inputTokens).toBe(realUsage.inputTokens * 3);
+    expect(metrics.outputTokens).toBe(realUsage.outputTokens * 3);
+    expect(metrics.costUsd).toBeCloseTo(realUsage.costUsd * 3, 10);
   });
 
   it('reports tokensSource "estimated" (unchanged) when onUsage is never called — old ai-proxy compat', async () => {
@@ -1919,9 +1921,11 @@ ARGS: {"path": "missing.ts", "old_string": "NOT_FOUND", "new_string": "x"}`;
     const opts = makeOpts();
     await planAndActManaged(opts);
 
-    // Exactly 2 calls: the original turn + the one format retry that
-    // recovered it — no third step was ever needed.
-    expect(mockedStream).toHaveBeenCalledTimes(2);
+    // 4 calls: the original turn + the format retry that recovered it into
+    // a FINAL, then the bounded zero-tool FINAL bounce (M141 fix) — the
+    // recovered FINAL ran no tools, so it is re-emitted twice before the
+    // nudge budget lets it through.
+    expect(mockedStream).toHaveBeenCalledTimes(4);
 
     const actions = (opts.onAction as ReturnType<typeof vi.fn>).mock.calls.map(
       (c: unknown[]) => (c[0] as ActionEvent).text,
@@ -2358,9 +2362,10 @@ describe('planAndActManaged — pause/intervene', () => {
     const opts = makeOpts({ pauseSignal });
     await planAndActManaged(opts);
 
-    // No model turn happens until the pause clears — only the post-resume
-    // FINAL turn is ever streamed.
-    expect(mockedStream).toHaveBeenCalledTimes(1);
+    // No model turn happens until the pause clears — then the FINAL turn
+    // streams, and the bounded zero-tool FINAL bounce (M141 fix) re-runs
+    // it twice before letting it through: 3 streamed turns total.
+    expect(mockedStream).toHaveBeenCalledTimes(3);
 
     const actions = (opts.onAction as ReturnType<typeof vi.fn>).mock.calls.map(
       (c: unknown[]) => (c[0] as ActionEvent).text,

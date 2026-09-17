@@ -875,6 +875,80 @@ pub(crate) fn web_search(
     })
 }
 
+// ── Solari replay download ─────────────────────────────────────────
+//
+// A recorded browser session's replay is a PRESIGNED URL on
+// storage.googleapis.com. The webview's fetch() to that origin is
+// CORS-blocked (verified live: fetch → TypeError "Failed to fetch"), so
+// captureReplay could persist the replay URL but never the NDJSON itself.
+// Rust carries no Origin policy — this command downloads the bytes and
+// writes them to a project-jailed path (same guard write_file uses).
+// The URL is host-allowlisted to *.storage.googleapis.com so this is not
+// a generic "download any URL to disk" primitive.
+
+/// Byte ceiling for a replay download — a session transcript is KB-to-a-few-MB;
+/// beyond this the file is refused outright.
+const REPLAY_CAP_BYTES: u64 = 64 * 1024 * 1024; // 64 MB
+
+/// Whether `host` is the GCS host Solari presigns replay URLs on. Split out
+/// for unit tests — the host check is the whole SSRF surface of this command.
+fn is_gcs_replay_host(host: &str) -> bool {
+    host == "storage.googleapis.com" || host.ends_with(".storage.googleapis.com")
+}
+
+/// Fetch the raw bytes of a Solari session replay (presigned GCS URL) and
+/// return them base64-encoded. Fetch-only — this command never touches the
+/// filesystem, so it needs no write jail; the caller persists through the
+/// ordinary jailed write_file path. The allowlist makes this a narrowly
+/// scoped "fetch GCS replay" primitive, not a generic URL fetcher.
+#[tauri::command]
+pub(crate) fn solari_replay_fetch(url: String) -> Result<String, String> {
+    // A presigned replay URL is always https — refuse http outright so a
+    // tampered renderer can't swap schemes for a plaintext fetch.
+    if !url.starts_with("https://") {
+        return Err("solari_replay_fetch: only https:// URLs are allowed".to_string());
+    }
+    let (host, _port) = url_host_and_default_port(&url)?;
+    if !is_gcs_replay_host(&host.to_ascii_lowercase()) {
+        return Err(format!(
+            "solari_replay_fetch: host '{}' is not storage.googleapis.com",
+            host
+        ));
+    }
+
+    let _web_op_guard = WEB_OPS_GATE.acquire();
+    let response = shared_http_client()
+        .get(&url)
+        .timeout(std::time::Duration::from_secs(MAX_TIMEOUT_SECS))
+        .send()
+        .map_err(|e| format!("solari_replay_fetch: request failed: {}", e))?;
+    if !response.status().is_success() {
+        return Err(format!("solari_replay_fetch: HTTP {}", response.status()));
+    }
+    if let Some(len) = response.content_length() {
+        if len > REPLAY_CAP_BYTES {
+            return Err(format!(
+                "solari_replay_fetch: replay too large ({} bytes, cap {})",
+                len, REPLAY_CAP_BYTES
+            ));
+        }
+    }
+    // Same read-the-cap-plus-one pattern as read_capped_body, but binary —
+    // the replay is .ndjson.gz, not text.
+    let mut buf: Vec<u8> = Vec::new();
+    response
+        .take(REPLAY_CAP_BYTES + 1)
+        .read_to_end(&mut buf)
+        .map_err(|e| format!("solari_replay_fetch: body read failed: {}", e))?;
+    if buf.len() as u64 > REPLAY_CAP_BYTES {
+        return Err(format!(
+            "solari_replay_fetch: replay over the {} byte cap",
+            REPLAY_CAP_BYTES
+        ));
+    }
+    Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &buf))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -897,6 +971,20 @@ mod tests {
         assert!(!is_textual_content_type("application/octet-stream"));
         assert!(!is_textual_content_type("application/pdf"));
         eprintln!("is_textual_content_type_classifies_known_types PASSED");
+    }
+
+    /// is_gcs_replay_host: accepts the real GCS host + regional/bucket
+    /// subdomains, rejects lookalikes (storage.googleapis.com.evil.com must
+    /// NOT pass — ends_with would otherwise let an attacker host through).
+    #[test]
+    fn is_gcs_replay_host_accepts_gcs_and_rejects_lookalikes() {
+        assert!(is_gcs_replay_host("storage.googleapis.com"));
+        assert!(is_gcs_replay_host("solari-prod-replays.storage.googleapis.com"));
+        assert!(!is_gcs_replay_host("storage.googleapis.com.evil.com"));
+        assert!(!is_gcs_replay_host("notstorage.googleapis.com"));
+        assert!(!is_gcs_replay_host("169.254.169.254"));
+        assert!(!is_gcs_replay_host("localhost"));
+        eprintln!("is_gcs_replay_host_accepts_gcs_and_rejects_lookalikes PASSED");
     }
 
     /// resolve_content_type: a missing (or unparseable, per the

@@ -117,6 +117,16 @@ export default defineConfig(({ mode }) => {
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/solari-api/, ''),
       },
+      // Session replay downloads: the presigned URL lives on
+      // storage.googleapis.com — a webview fetch there is CORS-blocked, so
+      // dev forwards the bytes same-origin (packaged Tauri uses the Rust
+      // solari_replay_download command instead). Path+query are passed
+      // through untouched — the signature is in the query string.
+      '/solari-replay': {
+        target: 'https://storage.googleapis.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/solari-replay/, ''),
+      },
       // Solari CDP/ws browser sessions. The gateway 403s any WebSocket handshake
       // carrying an Origin header (verified: no-origin opens, any Origin 403s),
       // and a browser WebSocket always sends Origin. So the app dials a

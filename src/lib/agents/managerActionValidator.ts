@@ -386,6 +386,12 @@ const validators: Record<string, Validator> = {
   run_lazybot: (a) => check(requireString(a, 'botId'), requireString(a, 'task')),
   stop_lazybot: (a) => check(requireString(a, 'botId')),
   list_lazybots: () => ok(),
+  delete_lazybot: (a) => check(requireString(a, 'botId')),
+  resolve_bot_intervention: (a) => check(requireString(a, 'botId')),
+  sweep_solari: () => ok(),
+  lazybot_runs: (a) => check(requireString(a, 'botId'), optionalNumber(a, 'limit')),
+  toggle_bot_vm: (a) => check(requireString(a, 'botId'), optionalBoolean(a, 'open')),
+  teach_lazybot: (a) => check(requireString(a, 'botId'), requireString(a, 'mode'), optionalString(a, 'skillName')),
   // Mission D — generic web-surface publishing via a driven browser (see
   // src/lib/agents/browserRecipe.ts). `recipe` is opaque DATA here (no
   // site-specific shape checking belongs in the manager dispatch layer —

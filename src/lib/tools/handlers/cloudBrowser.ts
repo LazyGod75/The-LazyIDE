@@ -9,6 +9,7 @@ import { getSolariClients } from '../../solari/solariClient.js';
 import {
   getBrowserSession,
   openBrowserSession,
+  peekBrowserArtifacts,
   releaseBrowser,
 } from '../../solari/solariSessions.js';
 import {
@@ -34,21 +35,40 @@ function noSession(): string {
   return 'ERROR: no browser session — call cloud_browser_open first';
 }
 
+const VALID_PROXY_TIERS = new Set(['residential', 'static', 'mobile', 'smart']);
+
 export async function cloudBrowserOpen(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
   if (!ctx.missionId) return MISSION_REQUIRED;
+  const proxyTier = optionalString(args.proxy_tier);
+  if (proxyTier && !VALID_PROXY_TIERS.has(proxyTier)) {
+    return `ERROR: proxy_tier must be one of ${[...VALID_PROXY_TIERS].join('/')}`;
+  }
   emitActivity(ctx, 'cloud_browser_open', 'Open cloud browser session');
   try {
     const { botIdForMission } = await import('../../bots/botEngine.js');
     const botId = botIdForMission(ctx.missionId);
+    // profile_name without profile_id: create (or reuse) a named Solari
+    // profile so the bot's logins persist under a human-readable handle.
+    let profileId = optionalString(args.profile_id);
+    const profileName = optionalString(args.profile_name);
+    if (!profileId && profileName) {
+      const clients = await getSolariClients();
+      const existing = (await clients.browser.profiles.list()).find((p) => p.name === profileName);
+      profileId = existing?.id ?? (await clients.browser.profiles.create({ name: profileName })).id;
+    }
     const handle = await openBrowserSession(ctx.missionId, {
-      profileId: optionalString(args.profile_id),
+      profileId,
       stealth: args.stealth === true,
       proxyCountry: optionalString(args.proxy_country),
+      proxyTier: proxyTier === 'smart' ? undefined : proxyTier,
+      proxySession: optionalString(args.proxy_session),
+      proxySmart: args.proxy_smart === true || proxyTier === 'smart',
+      webBotAuth: args.web_bot_auth === true,
       captcha: args.captcha === true,
       recording: args.recording === true,
       botId,
       // Persona profile sessions stay warm across missions (C49).
-      longLived: Boolean(botId && optionalString(args.profile_id)),
+      longLived: Boolean(botId && profileId),
     });
     return `Browser session opened (id: ${handle.sessionId}). Use cloud_browser_navigate to go to a URL.`;
   } catch (err) {
@@ -62,6 +82,14 @@ export async function cloudBrowserClose(_args: Record<string, unknown>, ctx: Too
   try {
     // Explicit close is always hard — user/model asked to destroy the session.
     await releaseBrowser(ctx.missionId, { hard: true });
+    // releaseBrowser captures the replay artifact before returning, so a
+    // recorded session surfaces its URL right in the close observation —
+    // no second tool call needed.
+    const artifacts = peekBrowserArtifacts(ctx.missionId);
+    if (artifacts?.replayUrl) {
+      return `Browser session closed. Replay URL: ${artifacts.replayUrl}` +
+        (artifacts.replayPath ? ` — local transcript: ${artifacts.replayPath}` : '');
+    }
     return 'Browser session closed.';
   } catch (err) {
     return errorMessage('cloud_browser_close', err);
@@ -170,6 +198,7 @@ export async function cloudBrowserScreenshot(args: Record<string, unknown>, ctx:
       lastAction: 'cloud_browser_screenshot',
       lastActionAt: Date.now(),
       screenshotDataUrl: bytesToDataUrl(shot),
+      missionId: ctx.missionId,
     });
     return `Screenshot captured — ${url}`;
   } catch (err) {
@@ -224,17 +253,77 @@ export async function cloudBrowserWait(args: Record<string, unknown>, ctx: ToolE
   }
 }
 
-export async function cloudBrowserReplayUrl(_args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+export async function cloudBrowserReplayUrl(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
   if (!ctx.missionId) return MISSION_REQUIRED;
   emitActivity(ctx, 'cloud_browser_replay_url', 'Get replay URL');
   try {
     const session = getBrowserSession(ctx.missionId);
-    if (!session) return noSession();
+    if (session) {
+      // The gateway only mints the replay URL once the session is released —
+      // a live-session lookup can never succeed, so skip the API call
+      // entirely (it only produced a doomed network round-trip, and any
+      // transient client failure surfaced as an opaque error that models
+      // then retried pointlessly — M138 burned two turns on exactly that).
+      return 'ERROR: the replay URL only exists after the session is released — ' +
+        'call cloud_browser_close first, then cloud_browser_replay_url again ' +
+        '(the URL is also embedded in the close observation).';
+    }
+    // Post-close: release already captured the artifact — peek, never take,
+    // so run history still owns the record.
+    const artifacts = peekBrowserArtifacts(ctx.missionId);
+    if (artifacts?.replayUrl) {
+      return artifacts.replayPath
+        ? `${artifacts.replayUrl}\nLocal transcript: ${artifacts.replayPath}`
+        : artifacts.replayUrl;
+    }
+    const sessionId = optionalString(args.session_id);
+    if (!sessionId) return noSession();
+    // Released sessions mint the replay ~1-3s after release — brief poll.
     const clients = await getSolariClients();
-    const replay = await clients.browser.sessions.getReplayUrl(session.sessionId);
-    return replay.url;
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const replay = await clients.browser.sessions.getReplayUrl(sessionId);
+        return replay.url;
+      } catch (err) {
+        lastErr = err;
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+    throw lastErr;
   } catch (err) {
     return errorMessage('cloud_browser_replay_url', err);
+  }
+}
+
+export async function cloudBrowserPressKey(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  if (!ctx.missionId) return MISSION_REQUIRED;
+  const key = optionalString(args.key);
+  if (!key) return 'ERROR: Provide key (Enter, Tab, Escape, ArrowDown, ...)';
+  emitActivity(ctx, 'cloud_browser_press_key', 'Press key', key);
+  try {
+    const page = await getSessionPage(ctx.missionId);
+    if (!page) return noSession();
+    await page.pressKey(key);
+    return `Pressed ${key}.`;
+  } catch (err) {
+    return errorMessage('cloud_browser_press_key', err);
+  }
+}
+
+export async function cloudBrowserProfileCreate(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  if (!ctx.missionId) return MISSION_REQUIRED;
+  const name = optionalString(args.name);
+  if (!name) return 'ERROR: Provide a profile name';
+  emitActivity(ctx, 'cloud_browser_profile_create', 'Create browser profile', name);
+  try {
+    const clients = await getSolariClients();
+    const existing = (await clients.browser.profiles.list()).find((p) => p.name === name);
+    if (existing) return `Profile "${name}" already exists (id: ${existing.id}).`;
+    const created = await clients.browser.profiles.create({ name });
+    return `Created profile "${created.name}" (id: ${created.id}). Open a session with profile_id="${created.id}" to attach it.`;
+  } catch (err) {
+    return errorMessage('cloud_browser_profile_create', err);
   }
 }
 

@@ -102,6 +102,7 @@ export async function runManagedAction(opts: ManagedActionOpts): Promise<Managed
     attachedProofs: opts.attachedProofs,
     proofNudges: opts.proofNudges,
     maxProofNudges: opts.maxProofNudges,
+    toolCallCount: opts.toolCallCount,
     args: opts.args,
     t: opts.t,
     nowTime: opts.nowTime,

@@ -29,11 +29,19 @@ import { runManagerActionHandler } from '../../lib/agents/managerActionDispatch'
 // LazyBots (A3) — the manager creates/manages LazyBots from the chat. The
 // bot storage/engine modules are deliberately imported at module top (no
 // circular dependency: they never import back from agentsStore).
-import { listBots, saveBot } from '../../lib/bots/botStorage';
+import { listBots, saveBot, deleteBot } from '../../lib/bots/botStorage';
+import { listBotRunHistory } from '../../lib/bots/botRuntimeStore';
 import { launchBotRun, stopBotRun, finishBotRun, registerBotRun, listActiveRunsForBot, getBotRuntimeState, pruneBotRunsNotLive, toBotNewMissionInput } from '../../lib/bots/botEngine';
 import type { BotConfig } from '../../lib/bots/botTypes';
 import { resolveLazyBotRef, summarizeLazyBot } from '../../lib/bots/botManagerContext';
 import { resolveLazyBotRunModel } from '../../lib/bots/botRunModel';
+import { markCaptchaSolved } from '../../lib/bots/botCaptchaResume';
+import { getOutstandingIntervention } from '../../lib/bots/botRequestIntervention';
+import { sweepOrphans } from '../../lib/solari/solariSessions';
+import { isBotVmWindowOpen, toggleBotVmWindow, openBotVmWindow } from '../../lib/solari/botVmWindows';
+import { startTeachSession, endTeachSession, isTeachModeActive } from '../../lib/bots/teachMode';
+import { compileSkillOverlay } from '../../lib/bots/skillCompiler';
+import { applyTeachSkillToPersona } from '../../lib/bots/applyTeachSkill';
 import {
   buildBotConfigFromCreateLazybot,
   sanitizeLazyBotPatch,
@@ -12907,6 +12915,142 @@ stopAll(action.filter);
           : '(no LazyBots saved yet)';
         toast(summary.length > 0 ? `LazyBots found: ${summary.length}` : 'No LazyBots saved yet', 'info');
         return { message: `list_lazybots:\n${lines}` };
+      },
+      delete_lazybot: async () => {
+        if (action.type !== 'delete_lazybot') return;
+        const bot = resolveLazyBotRef(await listBots(), action.botId);
+        if (!bot) {
+          const msg = `delete_lazybot: no LazyBot matches "${action.botId}" — nothing deleted.`;
+          toast(msg, 'error');
+          return { failed: true, message: msg };
+        }
+        // Stop every live run through the same real-abort path stop_lazybot
+        // uses — deleting a bot must never orphan a running mission or its
+        // Solari cloud resources.
+        const runs = listActiveRunsForBot(bot.id);
+        for (const run of runs) {
+          stopMission(run.missionId);
+          await stopBotRun(run).catch(() => {});
+        }
+        // Close the canvas VM window so the derived botVm node disappears
+        // with the bot node (both re-derive from the emitted lazybots:changed).
+        if (isBotVmWindowOpen(bot.id)) toggleBotVmWindow(bot.id);
+        await deleteBot(bot.id);
+        const msg = `delete_lazybot: deleted LazyBot "${bot.name}" (${bot.id})`
+          + (runs.length > 0 ? ` — stopped ${runs.length} active run(s) first.` : '.')
+          + ' The bot config is permanently removed (no archive); its run history is kept in .lazy.';
+        toast(msg, 'success');
+        return { message: msg };
+      },
+      resolve_bot_intervention: async () => {
+        if (action.type !== 'resolve_bot_intervention') return;
+        const bot = resolveLazyBotRef(await listBots(), action.botId);
+        if (!bot) {
+          const msg = `resolve_bot_intervention: no LazyBot matches "${action.botId}".`;
+          toast(msg, 'error');
+          return { failed: true, message: msg };
+        }
+        const pending = getOutstandingIntervention(bot.id);
+        if (!pending) {
+          const msg = `resolve_bot_intervention: bot "${bot.name}" (${bot.id}) has no outstanding human gate — nothing to resolve.`;
+          toast(msg, 'info');
+          return { message: msg };
+        }
+        // Same signal the header's "Resolved — resume bot" button emits:
+        // a parked bot_wait_for_human call returns "gate cleared (solved)".
+        markCaptchaSolved(bot.id);
+        const msg = `resolve_bot_intervention: marked the human gate on "${bot.name}" (${bot.id}) solved (was: ${pending.reason}) — a parked wait resumes now.`;
+        toast(msg, 'success');
+        return { message: msg };
+      },
+      sweep_solari: async () => {
+        if (action.type !== 'sweep_solari') return;
+        // The boot-time orphan sweep, runnable on demand — releases browser
+        // sessions / sandboxes / Agent Computers still held by dead missions.
+        await sweepOrphans();
+        const msg = 'sweep_solari: orphan sweep complete — cloud sessions, sandboxes and desktops held by dead missions were released (live ones untouched).';
+        toast(msg, 'success');
+        return { message: msg };
+      },
+      lazybot_runs: async () => {
+        if (action.type !== 'lazybot_runs') return;
+        const bot = resolveLazyBotRef(await listBots(), action.botId);
+        if (!bot) {
+          const msg = `lazybot_runs: no LazyBot matches "${action.botId}".`;
+          toast(msg, 'error');
+          return { failed: true, message: msg };
+        }
+        const limit = Math.max(1, Math.min(50, action.limit ?? 10));
+        const history = (await listBotRunHistory(bot.id)).slice(0, limit);
+        const lines = history.length > 0
+          ? history.map((r) => `${r.missionId} [${r.status}] started ${r.startedAt}`
+              + (r.summary ? ` — ${r.summary.slice(0, 200)}` : '')
+              + (r.replayUrl || r.replayPath ? ' (replay saved)' : '')).join('\n')
+          : `(no run history for "${bot.name}")`;
+        toast(`LazyBot "${bot.name}": ${history.length} run(s) in history`, 'info');
+        return { message: `lazybot_runs "${bot.name}" (${bot.id}), newest first:\n${lines}` };
+      },
+      toggle_bot_vm: async () => {
+        if (action.type !== 'toggle_bot_vm') return;
+        const bot = resolveLazyBotRef(await listBots(), action.botId);
+        if (!bot) {
+          const msg = `toggle_bot_vm: no LazyBot matches "${action.botId}".`;
+          toast(msg, 'error');
+          return { failed: true, message: msg };
+        }
+        const wasOpen = isBotVmWindowOpen(bot.id);
+        const shouldOpen = action.open ?? !wasOpen;
+        if (shouldOpen !== wasOpen) toggleBotVmWindow(bot.id);
+        const msg = `toggle_bot_vm: VM window for "${bot.name}" (${bot.id}) is now ${shouldOpen ? 'open' : 'closed'} on the canvas.`;
+        toast(msg, 'success');
+        return { message: msg };
+      },
+      teach_lazybot: async () => {
+        if (action.type !== 'teach_lazybot') return;
+        const bot = resolveLazyBotRef(await listBots(), action.botId);
+        if (!bot) {
+          const msg = `teach_lazybot: no LazyBot matches "${action.botId}".`;
+          toast(msg, 'error');
+          return { failed: true, message: msg };
+        }
+        if (action.mode === 'start') {
+          if (isTeachModeActive(bot.id)) {
+            const msg = `teach_lazybot: "${bot.name}" (${bot.id}) is already recording — demonstrate in the live view, then stop to compile.`;
+            toast(msg, 'info');
+            return { message: msg };
+          }
+          // The journal is fed by the bot's live-view state stream — the VM
+          // window must be open for the user to demonstrate, so open it.
+          openBotVmWindow(bot.id);
+          const name = action.skillName?.trim() || `Skill ${new Date().toLocaleTimeString()}`;
+          startTeachSession(bot.id, name);
+          const msg = `teach_lazybot: recording started for "${bot.name}" (${bot.id}) — skill "${name}". Its VM window is open on the canvas: demonstrate the workflow in the live view (or a run), then teach_lazybot {mode:"stop"} compiles it into the bot's system prompt.`;
+          toast(msg, 'success');
+          return { message: msg };
+        }
+        if (action.mode === 'stop') {
+          const journal = endTeachSession(bot.id);
+          if (!journal) {
+            const msg = `teach_lazybot: "${bot.name}" (${bot.id}) has no active teach session — nothing to compile.`;
+            toast(msg, 'info');
+            return { message: msg };
+          }
+          if (journal.steps.length === 0) {
+            const msg = `teach_lazybot: session "${journal.skillName}" recorded 0 steps — nothing was demonstrated, no skill was saved.`;
+            toast(msg, 'info');
+            return { message: msg };
+          }
+          const overlay = compileSkillOverlay(journal);
+          const saved = await applyTeachSkillToPersona(bot.id, overlay);
+          const msg = saved
+            ? `teach_lazybot: compiled "${journal.skillName}" (${journal.steps.length} step(s)) into "${bot.name}" (${bot.id})'s system prompt — the skill applies from the next run.`
+            : `teach_lazybot: compiled "${journal.skillName}" but could not save "${bot.name}" (${bot.id}) — bot vanished mid-operation.`;
+          toast(msg, saved ? 'success' : 'error');
+          return saved ? { message: msg } : { failed: true, message: msg };
+        }
+        const msg = `teach_lazybot: unknown mode "${action.mode}" — expected "start" or "stop".`;
+        toast(msg, 'error');
+        return { failed: true, message: msg };
       },
     };
     return runManagerActionHandler(action, handlers);

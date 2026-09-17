@@ -17,6 +17,7 @@ import { ModelPickerDropdown } from '../common/ModelPickerDropdown';
 import { findOpenRouterModel, isOpenRouterFreeModel, migrateRetiredOpenRouterId } from '../../lib/models/openrouterCatalog';
 import { useSubscriptionContext, formatRenewalDate } from '../../lib/billing';
 import { emit, on } from '../../lib/bus';
+import { markCaptchaSolved } from '../../lib/bots/botCaptchaResume';
 import type { AutonomyMode } from '../../lib/agents/types';
 import { LazyManagerConversationTabs, OPEN_CONVERSATION_CAP_REASON_ID } from './LazyManagerConversationTabs';
 import { getPanelWidthTier, type PanelWidthTier } from './panelWidthTier';
@@ -447,9 +448,36 @@ export function LazyManagerHeader({
             padding: '5px 16px', fontSize: 11, lineHeight: 1.4,
             color: '#FCD34D', background: 'rgba(245,158,11,0.08)',
             borderBottom: '1px solid var(--color-border-2)',
+            display: 'flex', alignItems: 'center', gap: 8,
           }}
         >
-          ⚠ LazyBot <strong>{botId}</strong> needs you: {iv.reason}
+          <span style={{ flex: 1, minWidth: 0 }}>
+            ⚠ LazyBot <strong>{botId}</strong> needs you: {iv.reason}
+          </span>
+          {/* Resolve path for non-browser gates: bot_wait_for_human's
+              desktop-only loop exits on markCaptchaSolved / a cleared
+              intervention — without this button the only exit was the
+              timeout, so a resolved gate still burned up to 30min. */}
+          <button
+            type="button"
+            data-testid={`bot-intervention-resolve-${botId}`}
+            onClick={() => {
+              markCaptchaSolved(botId);
+              setBotInterventions((prev) => {
+                const next = { ...prev };
+                delete next[botId];
+                return next;
+              });
+            }}
+            style={{
+              padding: '2px 8px', borderRadius: 5, cursor: 'pointer', flexShrink: 0,
+              fontSize: 10, fontWeight: 600,
+              background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.4)',
+              color: '#34D399',
+            }}
+          >
+            Resolved — resume bot
+          </button>
         </div>
       ))}
       {/* Conversation tab strip — extracted to its own file

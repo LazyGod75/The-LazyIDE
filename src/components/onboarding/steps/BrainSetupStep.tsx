@@ -11,7 +11,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '../../../i18n';
 import { pluralKey } from '../../../i18n/plural';
 import { getPlatform } from '../../../lib/platform';
-import type { HistorySource, SeedEstimate } from '../../../lib/platform';
+import type { HistorySource, SeedEstimate, SeedExtractorSpec } from '../../../lib/platform';
+import {
+  listSeedRails,
+  resolveSeedExtractor,
+  railEstimateSpec,
+  markDeferredSeed,
+  type SeedRail,
+} from '../../../lib/brain/seedExtractor';
 import { SeedProgress } from '../../brain/SeedProgress';
 import {
   getSeedProgressState,
@@ -66,11 +73,14 @@ export function BrainSetupStep({ onNext, onBack }: BrainSetupStepProps) {
   // true it stays true, so the note keeps explaining that context even if
   // the user toggles back and forth.
   const [autoSelectedSeed, setAutoSelectedSeed] = useState(false);
-  // Real user-facing toggle (was hardcoded `false` at seedBrain() call time).
-  // Defaulted once the estimate resolves — see handleEstimate below — to ON
-  // when a backend was actually detected, OFF otherwise, so it never claims
-  // an AI-assisted import is happening when none is available.
-  const [useLlm, setUseLlm] = useState(false);
+  // Real user-facing rail picker (was hardcoded `false` useLlm at
+  // seedBrain() call time). `rails` = the extractor backends usable right
+  // now (free managed rail, claude CLI, BYOK providers… — see
+  // seedExtractor.ts); 'heuristic' is the always-present no-LLM option and
+  // the default when nothing else is detected, so the import never claims
+  // an AI-assisted run it cannot deliver.
+  const [rails, setRails] = useState<SeedRail[]>([]);
+  const [railId, setRailId] = useState<string>('heuristic');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Global, app-lifetime seed state (src/lib/brain/seedProgressStore.ts) —
@@ -84,6 +94,16 @@ export function BrainSetupStep({ onNext, onBack }: BrainSetupStepProps) {
   // step's own live progress card while the user is still looking at it.
   const [seedState, setSeedState] = useState<SeedProgressState>(getSeedProgressState);
   useEffect(() => subscribeSeedProgress(setSeedState), []);
+
+  // Resolve the extractor rail list once per mount — needed not only by the
+  // estimate flow but by the deferral paths too: markDeferredSeed snapshots
+  // which rails existed so the enrichment toast fires only for genuinely
+  // NEW rails later (CLI connected, Pro activated, BYOK key added).
+  const loadRails = useCallback(async (): Promise<SeedRail[]> => {
+    const railList = await listSeedRails();
+    setRails(railList);
+    return railList;
+  }, []);
 
   // Auto-detect on mount: when this machine actually has importable history,
   // preselect "Seed from history" instead of defaulting every user to
@@ -105,6 +125,9 @@ export function BrainSetupStep({ onNext, onBack }: BrainSetupStepProps) {
         setChoice('seed');
         setPhase('picking');
         setAutoSelectedSeed(true);
+        // Fire-and-forget: snapshot today's rails so a later Continue or
+        // "Faire plus tard" records them (see loadRails' comment above).
+        void loadRails().catch(() => {});
       } catch {
         // Non-fatal — "Start empty" stays the default choice.
       }
@@ -136,6 +159,7 @@ export function BrainSetupStep({ onNext, onBack }: BrainSetupStepProps) {
       // Pre-select all available sources.
       setSelected(detected.filter(s => s.available).map(s => s.source));
       setPhase('picking');
+      void loadRails().catch(() => {});
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setErrorMsg(`Detection failed: ${msg}`);
@@ -161,18 +185,29 @@ export function BrainSetupStep({ onNext, onBack }: BrainSetupStepProps) {
     setErrorMsg(null);
 
     try {
-      const est = await getPlatform().brain.seedEstimate(selected);
+      // Resolve the available extractor rails FIRST so the estimate's
+      // `backend` label reflects the rail the user will actually run (a
+      // credential-free spec is enough — see railEstimateSpec) and so the
+      // picker defaults to the best rail (free managed first) the moment
+      // the cost card renders. Usually already loaded by the picker's
+      // mount/choose path — re-resolve only when that preload hasn't
+      // landed yet.
+      const railList = rails.length > 0 ? rails : await loadRails();
+      const defaultRailId = railList.length > 0 ? railList[0].id : 'heuristic';
+      setRailId(defaultRailId);
+      const defaultRail = railList.find(r => r.id === defaultRailId);
+      const est = await getPlatform().brain.seedEstimate(
+        selected,
+        defaultRail ? railEstimateSpec(defaultRail) : undefined,
+      );
       setEstimate(est);
-      // Default ON only when a real backend was detected — never claims an
-      // AI-assisted import is about to happen when none is available.
-      setUseLlm(est.llmAvailable ?? false);
       setPhase('estimated');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setErrorMsg(`Estimate failed: ${msg}`);
       setPhase('error');
     }
-  }, [selected]);
+  }, [selected, rails, loadRails]);
 
   // ── Start seed ────────────────────────────────────────────────────
   //
@@ -185,11 +220,26 @@ export function BrainSetupStep({ onNext, onBack }: BrainSetupStepProps) {
   // runs in the background. Progress for THIS step's own card comes from
   // `seedState` (subscribed above) and survives this component unmounting.
 
-  const handleSeed = useCallback(() => {
+  const handleSeed = useCallback(async () => {
     setPhase('seeding');
     setErrorMsg(null);
-    void startSeed({ sources: selected, useLlm });
-  }, [selected, useLlm]);
+    // Resolve the picked rail into the spec Rust needs (JWT for the managed
+    // proxy rails, vault key for BYOK — see resolveSeedExtractor). A rail
+    // whose credential vanished between the estimate and this click (key
+    // removed, session expired) resolves to null → the seed still runs,
+    // heuristic-only, and the completion flag (markHeuristicSeed in
+    // startSeed) keeps the "enrich later" offer eligible.
+    const rail = rails.find(r => r.id === railId);
+    let extractor: SeedExtractorSpec | undefined;
+    if (rail) {
+      try {
+        extractor = (await resolveSeedExtractor(rail)) ?? undefined;
+      } catch {
+        extractor = undefined;
+      }
+    }
+    void startSeed({ sources: selected, useLlm: Boolean(extractor), extractor });
+  }, [selected, rails, railId]);
 
   // ── Cancel seed ───────────────────────────────────────────────────
   //
@@ -202,6 +252,41 @@ export function BrainSetupStep({ onNext, onBack }: BrainSetupStepProps) {
   const handleCancel = useCallback(() => {
     setPhase('cancelled');
   }, []);
+
+  // "Faire plus tard" — skips the import entirely (the brain starts empty)
+  // AND records the deferral with today's rails, so the deferred-enrichment
+  // toast (BrainEnrichmentPrompt) can fire later the moment a NEW rail
+  // appears (CLI connected, LazyPro activated, BYOK key added) instead of
+  // nagging about options the user already saw and declined.
+  const handleLater = useCallback(() => {
+    if (rails.length > 0) {
+      markDeferredSeed(rails.map(r => r.id));
+    } else {
+      // Rail list still resolving — snapshot it anyway (best-effort).
+      void listSeedRails().then(list => markDeferredSeed(list.map(r => r.id))).catch(() => markDeferredSeed([]));
+    }
+    onNext();
+  }, [rails, onNext]);
+
+  // The nav "Continue" must express the same deferral: a user who picked
+  // "Seed from history", saw the detected sources, then clicked Continue
+  // without ever starting the import deferred exactly like "Faire plus
+  // tard" does — without this mark the deferred-enrichment toast could
+  // never fire for them. "Start empty" is likewise a deferral of the
+  // history import (the brain simply starts empty), so it records the
+  // same snapshot: shouldOfferEnrichment only fires when a NEW rail
+  // appears anyway. Skipped while a seed is actually running/done —
+  // startSeed's own flags own the flag in that case.
+  const handleContinue = useCallback(() => {
+    if (!seedState.active && !seedState.result) {
+      if (rails.length > 0) {
+        markDeferredSeed(rails.map(r => r.id));
+      } else {
+        void listSeedRails().then(list => markDeferredSeed(list.map(r => r.id))).catch(() => markDeferredSeed([]));
+      }
+    }
+    onNext();
+  }, [choice, seedState.active, seedState.result, rails, onNext]);
 
   // ── Retry ─────────────────────────────────────────────────────────
 
@@ -277,9 +362,11 @@ export function BrainSetupStep({ onNext, onBack }: BrainSetupStepProps) {
           {phase === 'estimated' && estimate && (
             <EstimateCard
               estimate={estimate}
-              useLlm={useLlm}
-              onToggleUseLlm={setUseLlm}
+              rails={rails}
+              railId={railId}
+              onSelectRail={setRailId}
               onConfirm={handleSeed}
+              onLater={handleLater}
               onBack={() => setPhase('picking')}
             />
           )}
@@ -350,7 +437,7 @@ export function BrainSetupStep({ onNext, onBack }: BrainSetupStepProps) {
             the background (owner directive — NON-BLOCKING onboarding): the
             build continues regardless of which step/screen the user is on;
             see backgroundNote above and seedProgressStore.ts. */}
-        <button onClick={onNext} style={primaryButtonStyle}>
+        <button onClick={handleContinue} style={primaryButtonStyle}>
           {t('onboarding.model.continue')}
         </button>
       </div>
@@ -579,15 +666,18 @@ function SourceRow({ source, checked, onToggle, disabled }: SourceRowProps) {
 
 interface EstimateCardProps {
   estimate: SeedEstimate;
-  useLlm: boolean;
-  onToggleUseLlm: (v: boolean) => void;
+  rails: SeedRail[];
+  railId: string;
+  onSelectRail: (id: string) => void;
   onConfirm: () => void;
+  onLater: () => void;
   onBack: () => void;
 }
 
-function EstimateCard({ estimate, useLlm, onToggleUseLlm, onConfirm, onBack }: EstimateCardProps) {
+function EstimateCard({ estimate, rails, railId, onSelectRail, onConfirm, onLater, onBack }: EstimateCardProps) {
   const { t } = useI18n();
-  const llmAvailable = estimate.llmAvailable ?? false;
+  const selectedRail = rails.find(r => r.id === railId);
+  const llmActive = Boolean(selectedRail);
   const tokenCostCredits = Math.round((estimate.estTokens / 1_000_000) * 3 * 100); // ~3 credits per 1M input tokens (Sonnet ballpark)
 
   return (
@@ -619,36 +709,55 @@ function EstimateCard({ estimate, useLlm, onToggleUseLlm, onConfirm, onBack }: E
         />
       </div>
 
-      {/* useLlm toggle — disabled (and forced off) when no backend was
-          detected, so it can never claim an AI-assisted import that isn't
-          actually possible. */}
+      {/* Extractor rail picker — "choisir le rail qu'on veut", same idea as
+          the LazyManager model picker: free managed rail (offert par
+          LazyIDE), Claude Code CLI, BYOK providers, LazyPro… plus the
+          always-present heuristic option. 'heuristic' means the import
+          runs without any LLM call — honest default when nothing is
+          configured yet. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <label style={{
           display: 'flex',
-          alignItems: 'center',
-          gap: 8,
+          flexDirection: 'column',
+          gap: 6,
           fontSize: 12,
           color: 'var(--color-text)',
-          cursor: llmAvailable ? 'pointer' : 'not-allowed',
-          opacity: llmAvailable ? 1 : 0.5,
         }}>
-          <input
-            type="checkbox"
-            checked={useLlm && llmAvailable}
-            disabled={!llmAvailable}
-            onChange={(e) => onToggleUseLlm(e.target.checked)}
-            style={{ accentColor: 'var(--color-accent)', width: 14, height: 14 }}
-          />
-          {t('onboarding.brain.useLlmToggle')}
+          {t('onboarding.brain.railLabel')}
+          <select
+            value={railId}
+            onChange={(e) => onSelectRail(e.target.value)}
+            style={{
+              padding: '7px 10px',
+              background: 'var(--color-panel)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 7,
+              color: 'var(--color-text)',
+              fontSize: 12,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+            }}
+          >
+            {rails.map(r => (
+              <option key={r.id} value={r.id}>
+                {r.label}{r.modelLabel ? ` · ${r.modelLabel}` : ''}{r.hintKey ? ` — ${t(r.hintKey)}` : ''}
+              </option>
+            ))}
+            <option value="heuristic">{t('onboarding.brain.railHeuristic')}</option>
+          </select>
         </label>
         <div style={{ fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
-          {llmAvailable
-            ? t('onboarding.brain.backendDetected', { backend: estimate.backend ?? '' })
+          {llmActive
+            ? t('onboarding.brain.backendDetected', {
+                backend: selectedRail
+                  ? `${selectedRail.label}${selectedRail.modelLabel ? ` · ${selectedRail.modelLabel}` : ''}`
+                  : (estimate.backend ?? ''),
+              })
             : t('onboarding.brain.backendNone')}
         </div>
       </div>
 
-      {useLlm && llmAvailable && estimate.estTokens > 0 && (
+      {llmActive && !selectedRail?.free && estimate.estTokens > 0 && (
         <div style={{
           padding: '10px 12px',
           background: 'rgba(251,191,36,0.06)',
@@ -681,6 +790,9 @@ function EstimateCard({ estimate, useLlm, onToggleUseLlm, onConfirm, onBack }: E
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
         <button onClick={onBack} style={ghostButtonStyle}>
           {t('onboarding.brain.changeSelection')}
+        </button>
+        <button onClick={onLater} style={ghostButtonStyle}>
+          {t('onboarding.brain.doLater')}
         </button>
         <button
           onClick={onConfirm}

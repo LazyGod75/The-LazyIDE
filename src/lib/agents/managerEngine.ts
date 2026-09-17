@@ -2291,7 +2291,7 @@ const ACTION_REQUIRED_FIELDS_HINT: Readonly<Record<string, string>> = {
   // LazyBots (A3) — one-line schemas, same format as every other entry above.
   create_lazybot: '{"name":"bot-name","systemPrompt":"...","profileIds":["prof_..."],"routines":[{"name":"...","schedule":"0 9 * * 1-5","task":"...","enabled":true}],"avatar":"...","budgetCapUsd":5}',
   update_lazybot: '{"botId":"bot_...","patch":{"profileIds":["prof_..."],"routines":[...],"avatar":"...","budgetCapUsd":5}}',
-  run_lazybot: '{"botId":"bot_...","task":"..."}',
+  run_lazybot: '{"botId":"bot_...","task":"...","model":"<tier|exact id>"}',
   stop_lazybot: '{"botId":"bot_..."}',
   list_lazybots: '{}',
 };

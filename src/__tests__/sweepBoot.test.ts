@@ -5,6 +5,7 @@ import { bootSweepOrphans, resetSweepBoot } from '../lib/bots/sweepBoot';
 
 vi.mock('../lib/solari/solariSessions', () => ({
   sweepOrphans: vi.fn().mockResolvedValue(undefined),
+  registerRunArtifactStamper: vi.fn(),
 }));
 
 beforeEach(() => {

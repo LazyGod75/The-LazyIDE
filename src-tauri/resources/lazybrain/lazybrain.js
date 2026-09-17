@@ -402,6 +402,24 @@ var init_schema = __esm({
           addColumnIfMissing(db, "notes", "conflict_with", "TEXT");
           db.exec("CREATE INDEX IF NOT EXISTS idx_notes_conflict_with ON notes(conflict_with)");
         }
+      },
+      {
+        version: 12,
+        description: "indexer_state key-value table (rules-version markers)",
+        up(db) {
+          db.exec(`
+        CREATE TABLE IF NOT EXISTS indexer_state (
+          key   TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+      `);
+          const noteCount = db.prepare("SELECT COUNT(*) AS n FROM notes").get()?.n ?? 0;
+          if (noteCount === 0) {
+            db.prepare(
+              `INSERT OR IGNORE INTO indexer_state (key, value) VALUES ('indexer_text_version', '2026-09-distilled-v1')`
+            ).run();
+          }
+        }
       }
     ];
   }
@@ -1170,10 +1188,18 @@ var init_embeddings = __esm({
 
 // src/indexer/embed-index.ts
 function buildEmbedText(n) {
-  const title = (n.title ?? "").trim();
-  const tags = (n.tags ?? "").trim();
-  const body = (n.text ?? "").slice(0, EMBED_CHAR_LIMIT).trim();
-  return [title, tags, body].filter(Boolean).join("\n");
+  const tldr = (n.tldr ?? n.section_tldr ?? "").trim();
+  const head = [
+    (n.title ?? "").trim(),
+    tldr,
+    (n.questions ?? "").replace(/\|/g, "; ").trim(),
+    (n.aliases ?? "").trim(),
+    (n.concepts ?? "").replace(/,/g, " ").trim(),
+    (n.tags ?? "").trim()
+  ].filter(Boolean).join("\n");
+  const bodyBudget = Math.max(EMBED_CHAR_LIMIT - head.length, 256);
+  const body = (n.text ?? "").slice(0, bodyBudget).trim();
+  return [head, body].filter(Boolean).join("\n");
 }
 async function resolveCorpusVectors(corpus) {
   const stored = loadAllStoredEmbeddings();
@@ -1243,8 +1269,8 @@ var init_embed_index = __esm({
   "src/indexer/embed-index.ts"() {
     "use strict";
     init_logger();
-    init_embeddings();
     init_embedding_store();
+    init_embeddings();
     EMBED_CHAR_LIMIT = 1800;
     NOOP_RESULT = { considered: 0, unavailable: false };
   }
@@ -1861,7 +1887,17 @@ function indexNote(note) {
   }
   const title = root.querySelector("h1, h2, h3")?.textContent?.trim() ?? note.id;
   const rawText = stripTags(root.outerHTML);
-  const text = augmentTextForIndex(rawText);
+  const sectionTldr = extractSectionTextContent(root, "tldr", 1500);
+  const questionsEarly = extractQuestionsFromHtml(document);
+  const aliasesEarly = extractAliasesFromHtml(document);
+  const distilledText = [
+    sectionTldr,
+    questionsEarly,
+    aliasesEarly,
+    root.getAttribute("data-cerveau-entities") ?? ""
+  ].filter(Boolean).join("\n");
+  const text = augmentTextForIndex(distilledText ? `${rawText}
+${distilledText}` : rawText);
   const conceptList = extractConcepts(rawText);
   const concepts = conceptList.length > 0 ? conceptList.join(",") : null;
   const allFacts = Array.from(root.querySelectorAll("[data-cerveau-fact]"));
@@ -1882,14 +1918,13 @@ function indexNote(note) {
   });
   const saliencyKind = root.getAttribute("data-cerveau-saliency-kind") ?? null;
   const conflictWith = root.getAttribute("data-cerveau-conflict-with") ?? null;
-  const questions = extractQuestionsFromHtml(document);
+  const questions = questionsEarly;
   const errorPatterns = extractErrorPatternsFromHtml(document);
-  const aliases = extractAliasesFromHtml(document);
+  const aliases = aliasesEarly;
   const sectionSummary = extractSectionTextContent(root, "summary", 1500);
   const sectionReasoning = extractSectionTextContent(root, "reasoning", 1500);
   const sectionQa = extractSectionTextContent(root, "qa", 1500);
   const sectionToolTrace = extractSectionTextContent(root, "tool_trace", 1500);
-  const sectionTldr = extractSectionTextContent(root, "tldr", 1500);
   const warnings = extractWarningsFromHtml(root);
   const topic = root.getAttribute("data-cerveau-topic");
   const tldr = root.getAttribute("data-cerveau-tldr");
@@ -2102,6 +2137,39 @@ function listAllReadonly(opts = {}) {
     return db.prepare(`SELECT * FROM notes ${where} ORDER BY created DESC`).all();
   } catch {
     return [];
+  }
+}
+function listGraphNotesReadonly() {
+  let db;
+  try {
+    db = getReadonlyDb();
+  } catch {
+    return [];
+  }
+  try {
+    return db.prepare(
+      `SELECT id, title, type, topic, importance, created FROM notes
+         WHERE (valid_until IS NULL OR valid_until = '')
+         ORDER BY created DESC`
+    ).all();
+  } catch {
+    return [];
+  }
+}
+function countAllNotesReadonly(opts = {}) {
+  let db;
+  try {
+    db = getReadonlyDb();
+  } catch {
+    return 0;
+  }
+  const shouldExcludeInvalidated = !opts.includeExpired || opts.excludeInvalidated;
+  const where = shouldExcludeInvalidated ? `WHERE (valid_until IS NULL OR valid_until = '')` : "";
+  try {
+    const row = db.prepare(`SELECT COUNT(*) AS n FROM notes ${where}`).get();
+    return row?.n ?? 0;
+  } catch {
+    return 0;
   }
 }
 function listAllWithText(opts = {}) {
@@ -2425,7 +2493,7 @@ function noteVocabularyCensus(topicSlug, tagLimit = 12) {
   const where = [`(valid_until IS NULL OR valid_until = '')`];
   const params = [];
   if (topicSlug) {
-    where.push(`(LOWER(topic) = ? OR LOWER(topic) LIKE ?)`);
+    where.push("(LOWER(topic) = ? OR LOWER(topic) LIKE ?)");
     params.push(topicSlug.toLowerCase(), `${topicSlug.toLowerCase()}/%`);
   }
   const rows = db.prepare(`SELECT type, tags FROM notes WHERE ${where.join(" AND ")}`).all(...params);
@@ -4489,6 +4557,11 @@ async function annotateWithLlm(input) {
       }
       return heuristic;
     }
+    if (backend === "lazy-proxy") {
+      const upgraded = await callLazyProxyEnrich(input, heuristic);
+      if (upgraded) return upgraded;
+      return heuristic;
+    }
     if (apiKey) {
       const upgraded = await callClaude(input, heuristic, apiKey);
       if (upgraded) return upgraded;
@@ -4500,7 +4573,10 @@ async function annotateWithLlm(input) {
 }
 async function callClaude(input, heuristic, apiKey) {
   const body = {
-    model: "claude-haiku-4-5-20251001",
+    // Env-overridable: model ids rotate; the caller (LazyIDE seed flow)
+    // resolves the current cheap extractor model from its catalog and passes
+    // it down rather than baking a versioned id into this file.
+    model: process.env.LAZYBRAIN_ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001",
     max_tokens: 1024,
     system: [
       {
@@ -4549,7 +4625,7 @@ async function callClaude(input, heuristic, apiKey) {
 async function callClaudeCliEnrich(input, heuristic) {
   const facts = await callClaudeCliJsonArray(input.text.slice(0, 8e3), {
     system: SYSTEM_PROMPT,
-    model: "haiku",
+    model: process.env.LAZYBRAIN_CLAUDE_CLI_MODEL ?? "haiku",
     // 60s (was 20s): claude-cli.ts's spawnClaude cold-starts a full CLI
     // session (MCP servers, hooks, CLAUDE.md) before the prompt is even
     // read; 20s measured too tight and made every note in a real import run
@@ -4591,6 +4667,7 @@ function resolveExtractorBackend() {
   if (explicit === "devstral") return "openai";
   if (explicit === "anthropic" || explicit === "haiku" || explicit === "claude") return "anthropic";
   if (explicit === "claude-cli") return "claude-cli";
+  if (explicit === "lazy-proxy") return "lazy-proxy";
   return process.env.ANTHROPIC_API_KEY ? "anthropic" : "openai";
 }
 async function callOpenAiEnrich(input, heuristic) {
@@ -4601,6 +4678,52 @@ async function callOpenAiEnrich(input, heuristic) {
   });
   if (!facts || facts.length === 0) return null;
   return rebuildHtmlWithFacts(input, heuristic, facts, `llm:${openAiDefaults2().model}`);
+}
+function lazyProxyModels() {
+  const list = (process.env.LAZYBRAIN_PROXY_MODELS ?? "").split(",").map((m) => m.trim()).filter(Boolean);
+  if (list.length > 0) return list;
+  const single = process.env.LAZYBRAIN_PROXY_MODEL?.trim();
+  return single ? [single] : [];
+}
+async function callLazyProxyEnrich(input, heuristic) {
+  const url = process.env.LAZYBRAIN_PROXY_URL;
+  const token = process.env.LAZYBRAIN_PROXY_TOKEN;
+  const models = lazyProxyModels();
+  if (!url || !token || models.length === 0) return null;
+  const headers = {
+    "content-type": "application/json",
+    authorization: `Bearer ${token}`
+  };
+  const anon = process.env.LAZYBRAIN_PROXY_ANON;
+  if (anon) headers["apikey"] = anon;
+  for (const model of models) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        // Same discipline as the other backends' timeoutMs — a hung proxy
+        // connection must not stall the whole per-note enrichment loop.
+        signal: AbortSignal.timeout(3e4),
+        body: JSON.stringify({
+          messages: [{ role: "user", content: input.text.slice(0, 8e3) }],
+          system: SYSTEM_PROMPT,
+          model,
+          request_id: `brain-import-${Date.now().toString(36)}`,
+          feature: "assistant"
+        })
+      });
+      if (!res.ok) continue;
+      const raw = await res.text();
+      const text = raw.split("\n").filter((line) => !line.startsWith("\x1B[reasoning]") && !line.startsWith("\x1B[usage]")).join("").trim();
+      if (!text) continue;
+      const facts = parseJsonArrayLoose(text);
+      if (Array.isArray(facts) && facts.length > 0) {
+        return rebuildHtmlWithFacts(input, heuristic, facts, `llm:${model}`);
+      }
+    } catch {
+    }
+  }
+  return null;
 }
 async function callVibeEnrich(input, heuristic) {
   const facts = await callVibeCliJsonArray(input.text.slice(0, 8e3), {
@@ -4616,6 +4739,7 @@ var init_llm = __esm({
     "use strict";
     init_claude_cli();
     init_logger();
+    init_json_loose();
     init_vibe_cli();
     init_heuristic();
     init_template();
@@ -4698,7 +4822,7 @@ function extractBashFiles(cmd) {
 function clipProse(s) {
   const trimmed = s.trim();
   if (trimmed.length === 0) return "";
-  const stripped = trimmed.replace(/\u001b\[[0-9;]*m/g, "").replace(/(.)\1{6,}/g, "$1$1$1").replace(/\s+/g, " ").trim();
+  const stripped = trimmed.replace(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g"), "").replace(/(.)\1{6,}/g, "$1$1$1").replace(/\s+/g, " ").trim();
   return stripped.slice(0, 400);
 }
 function salvageWithRegex(text) {
@@ -5919,6 +6043,117 @@ var init_noise = __esm({
   }
 });
 
+// src/util/fingerprints.ts
+var fingerprints_exports = {};
+__export(fingerprints_exports, {
+  computeHash: () => computeHash,
+  getChangedFiles: () => getChangedFiles,
+  getOrphanedFingerprints: () => getOrphanedFingerprints,
+  hasChanged: () => hasChanged,
+  loadFingerprints: () => loadFingerprints,
+  recordProcessed: () => recordProcessed,
+  saveFingerprints: () => saveFingerprints
+});
+import { createHash as createHash3 } from "node:crypto";
+import { existsSync as existsSync9, mkdirSync as mkdirSync6, readFileSync as readFileSync8, statSync as statSync2, writeFileSync as writeFileSync7 } from "node:fs";
+import { dirname as dirname7, join as join10 } from "node:path";
+function storePath() {
+  try {
+    const { cachePath: cachePath3 } = getConfig();
+    return join10(cachePath3, ".fingerprints.json");
+  } catch {
+    const home = process.env.USERPROFILE ?? process.env.HOME ?? ".";
+    return join10(home, ".lazybrain", ".fingerprints.json");
+  }
+}
+function loadFingerprints() {
+  const path = storePath();
+  if (!existsSync9(path)) {
+    return emptyStore();
+  }
+  try {
+    const raw = readFileSync8(path, "utf-8");
+    const parsed = JSON.parse(raw);
+    if (parsed.version !== "1.0.0" || typeof parsed.files !== "object") {
+      return emptyStore();
+    }
+    return parsed;
+  } catch {
+    return emptyStore();
+  }
+}
+function saveFingerprints(store) {
+  const path = storePath();
+  const dir = dirname7(path);
+  mkdirSync6(dir, { recursive: true });
+  const updated = { ...store, generatedAt: (/* @__PURE__ */ new Date()).toISOString() };
+  writeFileSync7(path, JSON.stringify(updated, null, 2), "utf-8");
+}
+function computeHash(filePath) {
+  const content = readFileSync8(filePath);
+  return createHash3("sha256").update(content).digest("hex");
+}
+function hasChanged(filePath, store) {
+  const stored = store.files[filePath];
+  if (!stored) return true;
+  let stat;
+  try {
+    stat = statSync2(filePath);
+  } catch {
+    return true;
+  }
+  if (stat.mtimeMs === stored.mtimeMs && stat.size === stored.size) {
+    return false;
+  }
+  try {
+    const hash = computeHash(filePath);
+    return hash !== stored.contentHash;
+  } catch {
+    return true;
+  }
+}
+function recordProcessed(filePath, notesCreated, store) {
+  let stat;
+  let contentHash2;
+  try {
+    stat = statSync2(filePath);
+    contentHash2 = computeHash(filePath);
+  } catch {
+    return store;
+  }
+  const fingerprint = {
+    filePath,
+    contentHash: contentHash2,
+    mtimeMs: stat.mtimeMs,
+    size: stat.size,
+    processedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    notesCreated
+  };
+  return {
+    ...store,
+    files: { ...store.files, [filePath]: fingerprint }
+  };
+}
+function getChangedFiles(filePaths, store) {
+  return filePaths.filter((fp) => hasChanged(fp, store));
+}
+function getOrphanedFingerprints(store) {
+  return Object.keys(store.files).filter((fp) => !existsSync9(fp));
+}
+function emptyStore() {
+  return {
+    version: "1.0.0",
+    generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    files: {}
+  };
+}
+var init_fingerprints = __esm({
+  "src/util/fingerprints.ts"() {
+    "use strict";
+    init_config();
+  }
+});
+
 // src/annotator/blocks/infobox.ts
 function renderInfobox(input) {
   if (input.rows.length === 0) return "";
@@ -6039,7 +6274,9 @@ function renderArchitectureSection(node) {
 function renderJsdocAndExcerpt(jsdoc, excerpt) {
   const parts = [];
   if (jsdoc?.trim()) {
-    parts.push(`  <aside data-section="jsdoc"><pre><code>${esc(jsdoc.trim())}</code></pre></aside>`);
+    parts.push(
+      `  <aside data-section="jsdoc"><pre><code>${esc(jsdoc.trim())}</code></pre></aside>`
+    );
   }
   if (excerpt?.trim()) {
     parts.push(`  <pre data-section="excerpt"><code>${esc(excerpt.trim())}</code></pre>`);
@@ -6497,9 +6734,14 @@ function parseAstClassesFromHtml(html) {
   const clsRe = /<div[^>]*\sid="cls-([^"]+)"[^>]*>([\s\S]*?)<\/div>|<h3[^>]*\sid="cls-([^"]+)"[^>]*>([\s\S]*?)<\/h3>(?:\s*<ul\s+class="method-list">([\s\S]*?)<\/ul>)?/gi;
   for (let m = clsRe.exec(childrenHtml); m !== null; m = clsRe.exec(childrenHtml)) {
     const headingContent = m[2] ?? m[4] ?? "";
-    const methodsHtml = (headingContent.match(/<ul\s+class="method-list">([\s\S]*?)<\/ul>/i) || [null, m[5] ?? ""])[1];
+    const methodsHtml = (headingContent.match(/<ul\s+class="method-list">([\s\S]*?)<\/ul>/i) || [
+      null,
+      m[5] ?? ""
+    ])[1];
     const isExported = headingContent.includes('class="export-badge"');
-    const codeMatch = headingContent.match(/<h3[\s\S]*?<code>([^<]+)<\/code>|id="cls-[^"]+"[^>]*>[\s\S]*?<code>([^<]+)<\/code>/i) ?? headingContent.match(/<code>([^<]+)<\/code>/);
+    const codeMatch = headingContent.match(
+      /<h3[\s\S]*?<code>([^<]+)<\/code>|id="cls-[^"]+"[^>]*>[\s\S]*?<code>([^<]+)<\/code>/i
+    ) ?? headingContent.match(/<code>([^<]+)<\/code>/);
     if (!codeMatch) continue;
     const codeText = (codeMatch[1] ?? codeMatch[2] ?? "").trim();
     const extendsMatch = codeText.match(/^(\S+)\s+extends\s+(\S+)$/);
@@ -6956,8 +7198,8 @@ __export(enrich_exports, {
   splitIntoSentenceChunks: () => splitIntoSentenceChunks,
   validateTldr: () => validateTldr
 });
-import { existsSync as existsSync9, readFileSync as readFileSync8, writeFileSync as writeFileSync7 } from "node:fs";
-import { join as join10 } from "node:path";
+import { existsSync as existsSync10, readFileSync as readFileSync9, writeFileSync as writeFileSync8 } from "node:fs";
+import { join as join11 } from "node:path";
 function validateTldr(candidate) {
   if (!candidate) return void 0;
   const trimmed = candidate.trim();
@@ -7244,11 +7486,11 @@ async function runConvFileNeuronEnrichment(allNotes, _opts) {
   return runFileNeuronEnrichment({ projectRoot, fileNodes, convNotes });
 }
 function enrichStatePath() {
-  return join10(getConfig().cachePath, "enrich-state.json");
+  return join11(getConfig().cachePath, "enrich-state.json");
 }
 function loadEnrichState() {
   try {
-    const raw = readFileSync8(enrichStatePath(), "utf8");
+    const raw = readFileSync9(enrichStatePath(), "utf8");
     const parsed = JSON.parse(raw);
     return { lastRunMs: typeof parsed.lastRunMs === "number" ? parsed.lastRunMs : 0 };
   } catch {
@@ -7257,7 +7499,7 @@ function loadEnrichState() {
 }
 function saveEnrichState(state) {
   try {
-    writeFileSync7(enrichStatePath(), JSON.stringify(state), "utf8");
+    writeFileSync8(enrichStatePath(), JSON.stringify(state), "utf8");
   } catch {
   }
 }
@@ -7305,8 +7547,8 @@ async function runIncrementalEnrich(opts = {}) {
 }
 function resetEnrichStateForTests() {
   try {
-    if (existsSync9(enrichStatePath())) {
-      writeFileSync7(enrichStatePath(), JSON.stringify({ lastRunMs: 0 }), "utf8");
+    if (existsSync10(enrichStatePath())) {
+      writeFileSync8(enrichStatePath(), JSON.stringify({ lastRunMs: 0 }), "utf8");
     }
   } catch {
   }
@@ -7390,14 +7632,14 @@ var init_enrich = __esm({
 
 // src/commands/prune.ts
 import {
-  existsSync as existsSync10,
-  readFileSync as readFileSync9,
+  existsSync as existsSync11,
+  readFileSync as readFileSync10,
   readdirSync as readdirSync3,
   rmSync,
-  statSync as statSync2,
+  statSync as statSync3,
   unlinkSync
 } from "node:fs";
-import { join as join11 } from "node:path";
+import { join as join12 } from "node:path";
 function isObserverNote(html) {
   const sourceMatch = html.match(/data-cerveau-source\s*=\s*["']([^"']+)["']/i);
   if (sourceMatch && OBSERVER_SOURCE_PATTERN.test(sourceMatch[1])) return true;
@@ -7406,7 +7648,11 @@ function isObserverNote(html) {
   }
   const articleMatch = html.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
   if (articleMatch) {
-    const textContent = articleMatch[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 500);
+    const bodyOnly = articleMatch[1].replace(
+      /<aside[^>]*class\s*=\s*["'][^"']*\binfobox\b[^"']*["'][^>]*>[\s\S]*?<\/aside>/gi,
+      " "
+    );
+    const textContent = bodyOnly.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 500);
     if (isAgentMetaText(textContent)) return true;
     if (isNoteMetadataResidue(textContent)) return true;
   }
@@ -7446,7 +7692,7 @@ function hasEmptyTldr(html) {
 }
 function collectHtmlFiles(dir) {
   const results = [];
-  if (!existsSync10(dir)) return results;
+  if (!existsSync11(dir)) return results;
   let entries;
   try {
     entries = readdirSync3(dir, { withFileTypes: true });
@@ -7455,7 +7701,7 @@ function collectHtmlFiles(dir) {
   }
   for (const entry of entries) {
     const name = entry.name;
-    const full = join11(dir, name);
+    const full = join12(dir, name);
     if (entry.isDirectory()) {
       results.push(...collectHtmlFiles(full));
     } else if (entry.isFile() && name.endsWith(".html")) {
@@ -7465,14 +7711,14 @@ function collectHtmlFiles(dir) {
   return results;
 }
 function collectBackupDirs(root) {
-  if (!existsSync10(root)) return [];
+  if (!existsSync11(root)) return [];
   let entries;
   try {
     entries = readdirSync3(root, { withFileTypes: true });
   } catch {
     return [];
   }
-  return entries.filter((e) => e.isDirectory() && /^notes_backup_/.test(e.name)).map((e) => join11(root, e.name));
+  return entries.filter((e) => e.isDirectory() && /^notes_backup_/.test(e.name)).map((e) => join12(root, e.name));
 }
 function matchPolicy(filePath, html, policy) {
   switch (policy) {
@@ -7507,8 +7753,8 @@ function runPrune(opts = {}) {
   const dryRun = opts.dryRun !== false;
   const policies = parsePolicies(opts.policy);
   const resolvedRoot = opts.brainPath ?? brainRoot();
-  const resolvedNotesDir = join11(resolvedRoot, "notes");
-  const resolvedKnDir = join11(resolvedRoot, "knowledge-nodes");
+  const resolvedNotesDir = join12(resolvedRoot, "notes");
+  const resolvedKnDir = join12(resolvedRoot, "knowledge-nodes");
   const counts = {
     "claude-mem-observer": 0,
     "placeholder-noise": 0,
@@ -7523,7 +7769,7 @@ function runPrune(opts = {}) {
     for (const filePath of noteFiles) {
       let html;
       try {
-        html = readFileSync9(filePath, "utf-8");
+        html = readFileSync10(filePath, "utf-8");
       } catch {
         continue;
       }
@@ -7555,7 +7801,7 @@ function runPrune(opts = {}) {
     for (const candidate of candidates) {
       try {
         if (candidate.policy === "backup-dirs") {
-          const stat = statSync2(candidate.path);
+          const stat = statSync3(candidate.path);
           if (stat.isDirectory()) {
             rmSync(candidate.path, { recursive: true, force: true });
           }
@@ -7606,8 +7852,8 @@ var init_prune = __esm({
 });
 
 // src/commands/repair.ts
-import { readFileSync as readFileSync10, writeFileSync as writeFileSync8 } from "node:fs";
-import { join as join12 } from "node:path";
+import { readFileSync as readFileSync11, writeFileSync as writeFileSync9 } from "node:fs";
+import { join as join13 } from "node:path";
 function extractTags(html) {
   const m = html.match(/data-cerveau-tags\s*=\s*["']([^"']*)["']/i);
   return m ? m[1].split(/\s+/).filter(Boolean) : [];
@@ -7625,7 +7871,7 @@ function repairFileIfEligible(filePath, html, tags, dryRun, log) {
   if (!tags.some((t) => fileTags.includes(t))) return null;
   if (!dryRun) {
     const repaired = html.replace(INVALIDATED_BY_NOISE_RE, "").replace(VALID_UNTIL_RE, "");
-    writeFileSync8(filePath, repaired, "utf-8");
+    writeFileSync9(filePath, repaired, "utf-8");
     try {
       indexNote(readNote(filePath));
     } catch (err) {
@@ -7640,14 +7886,14 @@ function runRepairUnInvalidateNoise(opts = {}) {
   const dryRun = opts.dryRun === true;
   const root = opts.brainPath ?? brainRoot();
   const files = [
-    ...collectHtmlFiles(join12(root, "notes")),
-    ...collectHtmlFiles(join12(root, "knowledge-nodes"))
+    ...collectHtmlFiles(join13(root, "notes")),
+    ...collectHtmlFiles(join13(root, "knowledge-nodes"))
   ];
   const candidates = [];
   for (const filePath of files) {
     let html;
     try {
-      html = readFileSync10(filePath, "utf-8");
+      html = readFileSync11(filePath, "utf-8");
     } catch {
       continue;
     }
@@ -7673,7 +7919,7 @@ function healNoiseExemptNotes(tags = DEFAULT_REPAIR_TAGS, dryRun = false) {
   for (const n of invalidated) {
     let html;
     try {
-      html = readFileSync10(n.path, "utf-8");
+      html = readFileSync11(n.path, "utf-8");
     } catch {
       continue;
     }
@@ -7691,124 +7937,13 @@ var init_repair = __esm({
   "src/commands/repair.ts"() {
     "use strict";
     init_fts();
-    init_reader();
     init_paths();
+    init_reader();
     init_logger();
     init_prune();
     DEFAULT_REPAIR_TAGS = ["mission", "agent", "skill"];
     INVALIDATED_BY_NOISE_RE = /\s*data-cerveau-invalidated-by\s*=\s*["']dream-noise-cleanup["']/i;
     VALID_UNTIL_RE = /\s*data-cerveau-valid-until\s*=\s*["'][^"']*["']/i;
-  }
-});
-
-// src/util/fingerprints.ts
-var fingerprints_exports = {};
-__export(fingerprints_exports, {
-  computeHash: () => computeHash,
-  getChangedFiles: () => getChangedFiles,
-  getOrphanedFingerprints: () => getOrphanedFingerprints,
-  hasChanged: () => hasChanged,
-  loadFingerprints: () => loadFingerprints,
-  recordProcessed: () => recordProcessed,
-  saveFingerprints: () => saveFingerprints
-});
-import { createHash as createHash3 } from "node:crypto";
-import { existsSync as existsSync11, mkdirSync as mkdirSync6, readFileSync as readFileSync11, statSync as statSync3, writeFileSync as writeFileSync9 } from "node:fs";
-import { dirname as dirname7, join as join13 } from "node:path";
-function storePath() {
-  try {
-    const { cachePath: cachePath3 } = getConfig();
-    return join13(cachePath3, ".fingerprints.json");
-  } catch {
-    const home = process.env.USERPROFILE ?? process.env.HOME ?? ".";
-    return join13(home, ".lazybrain", ".fingerprints.json");
-  }
-}
-function loadFingerprints() {
-  const path = storePath();
-  if (!existsSync11(path)) {
-    return emptyStore();
-  }
-  try {
-    const raw = readFileSync11(path, "utf-8");
-    const parsed = JSON.parse(raw);
-    if (parsed.version !== "1.0.0" || typeof parsed.files !== "object") {
-      return emptyStore();
-    }
-    return parsed;
-  } catch {
-    return emptyStore();
-  }
-}
-function saveFingerprints(store) {
-  const path = storePath();
-  const dir = dirname7(path);
-  mkdirSync6(dir, { recursive: true });
-  const updated = { ...store, generatedAt: (/* @__PURE__ */ new Date()).toISOString() };
-  writeFileSync9(path, JSON.stringify(updated, null, 2), "utf-8");
-}
-function computeHash(filePath) {
-  const content = readFileSync11(filePath);
-  return createHash3("sha256").update(content).digest("hex");
-}
-function hasChanged(filePath, store) {
-  const stored = store.files[filePath];
-  if (!stored) return true;
-  let stat;
-  try {
-    stat = statSync3(filePath);
-  } catch {
-    return true;
-  }
-  if (stat.mtimeMs === stored.mtimeMs && stat.size === stored.size) {
-    return false;
-  }
-  try {
-    const hash = computeHash(filePath);
-    return hash !== stored.contentHash;
-  } catch {
-    return true;
-  }
-}
-function recordProcessed(filePath, notesCreated, store) {
-  let stat;
-  let contentHash2;
-  try {
-    stat = statSync3(filePath);
-    contentHash2 = computeHash(filePath);
-  } catch {
-    return store;
-  }
-  const fingerprint = {
-    filePath,
-    contentHash: contentHash2,
-    mtimeMs: stat.mtimeMs,
-    size: stat.size,
-    processedAt: (/* @__PURE__ */ new Date()).toISOString(),
-    notesCreated
-  };
-  return {
-    ...store,
-    files: { ...store.files, [filePath]: fingerprint }
-  };
-}
-function getChangedFiles(filePaths, store) {
-  return filePaths.filter((fp) => hasChanged(fp, store));
-}
-function getOrphanedFingerprints(store) {
-  return Object.keys(store.files).filter((fp) => !existsSync11(fp));
-}
-function emptyStore() {
-  return {
-    version: "1.0.0",
-    generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
-    files: {}
-  };
-}
-var init_fingerprints = __esm({
-  "src/util/fingerprints.ts"() {
-    "use strict";
-    init_config();
   }
 });
 
@@ -8979,7 +9114,7 @@ var init_structural_edges = __esm({
 });
 
 // src/graph/knowledge-graph.ts
-import { existsSync as existsSync13, mkdirSync as mkdirSync8, readFileSync as readFileSync13, writeFileSync as writeFileSync11 } from "node:fs";
+import { existsSync as existsSync13, mkdirSync as mkdirSync8, readFileSync as readFileSync13, statSync as statSync5, writeFileSync as writeFileSync11 } from "node:fs";
 import { join as join15 } from "node:path";
 function firstTopicSegment(topic) {
   if (!topic) return "unknown";
@@ -9346,17 +9481,33 @@ function saveKnowledgeGraph(graph) {
   if (!existsSync13(cfg.cachePath)) mkdirSync8(cfg.cachePath, { recursive: true });
   const path = join15(cfg.cachePath, GRAPH_FILENAME);
   writeFileSync11(path, JSON.stringify(graph, null, 2), "utf8");
+  try {
+    const stats = statSync5(path);
+    cachedGraph = { path, mtimeMs: stats.mtimeMs, size: stats.size, value: graph };
+  } catch {
+    cachedGraph = null;
+  }
   return path;
 }
 function loadKnowledgeGraph() {
   const cfg = getConfig();
   const path = join15(cfg.cachePath, GRAPH_FILENAME);
-  if (!existsSync13(path)) return null;
+  let stats;
+  try {
+    stats = statSync5(path);
+  } catch {
+    return null;
+  }
+  if (cachedGraph && cachedGraph.path === path && cachedGraph.mtimeMs === stats.mtimeMs && cachedGraph.size === stats.size) {
+    return cachedGraph.value;
+  }
   try {
     const data = JSON.parse(readFileSync13(path, "utf8"));
     if (!data.version || !data.nodes || !data.edges) return null;
+    cachedGraph = { path, mtimeMs: stats.mtimeMs, size: stats.size, value: data };
     return data;
   } catch {
+    cachedGraph = null;
     return null;
   }
 }
@@ -9364,7 +9515,7 @@ function buildKnowledgeGraphFromIndex(backlinks, clusters, pagerank) {
   const notes = listAll({ includeExpired: false });
   return buildKnowledgeGraph(notes, backlinks, clusters, pagerank);
 }
-var GRAPH_FILENAME, HUB_COUNT, LAYER_DESCRIPTIONS, MAX_TOUR_STEPS, MAX_TOUR_HUBS, MAX_TOUR_DECISIONS;
+var GRAPH_FILENAME, HUB_COUNT, LAYER_DESCRIPTIONS, MAX_TOUR_STEPS, MAX_TOUR_HUBS, MAX_TOUR_DECISIONS, cachedGraph;
 var init_knowledge_graph = __esm({
   "src/graph/knowledge-graph.ts"() {
     "use strict";
@@ -9389,20 +9540,45 @@ var init_knowledge_graph = __esm({
     MAX_TOUR_STEPS = 15;
     MAX_TOUR_HUBS = 5;
     MAX_TOUR_DECISIONS = 3;
+    cachedGraph = null;
   }
 });
 
 // src/commands/synthesize.ts
 import { parseHTML as parseHTML6 } from "linkedom";
-function groupNotesByFullTopic(notes) {
+function metaFromIndexed(n) {
+  return {
+    type: n.type ?? "",
+    topic: n.topic ?? "",
+    created: n.created ?? "",
+    importance: n.importance ?? 0.5
+  };
+}
+function metaFromHtml(html) {
+  const { document } = parseHTML6(html);
+  const article = document.querySelector("article");
+  return {
+    type: article?.getAttribute("data-cerveau-type") ?? "",
+    topic: article?.getAttribute("data-cerveau-topic") ?? "",
+    created: article?.getAttribute("data-cerveau-created") ?? "",
+    importance: Number.parseFloat(article?.getAttribute("data-cerveau-importance") ?? "0.5") || 0.5
+  };
+}
+function buildNoteMeta(notes, indexed) {
+  const byPath = new Map(indexed.map((n) => [n.path, n]));
+  const meta = /* @__PURE__ */ new Map();
+  for (const note of notes) {
+    const row = byPath.get(note.path);
+    meta.set(note.path, row ? metaFromIndexed(row) : metaFromHtml(note.html));
+  }
+  return meta;
+}
+function groupNotesByFullTopic(notes, meta) {
   const groups = /* @__PURE__ */ new Map();
   for (const note of notes) {
-    const { document } = parseHTML6(note.html);
-    const article = document.querySelector("article");
-    if (!article) continue;
-    const type = article.getAttribute("data-cerveau-type") ?? "";
-    if (SYNTHESIS_TYPES.has(type)) continue;
-    const topicAttr = article.getAttribute("data-cerveau-topic") ?? "";
+    const m = meta?.get(note.path) ?? metaFromHtml(note.html);
+    if (SYNTHESIS_TYPES.has(m.type)) continue;
+    const topicAttr = m.topic;
     if (!topicAttr.trim()) continue;
     const segments = topicAttr.split("/").filter(Boolean);
     for (let depth = 1; depth <= segments.length; depth++) {
@@ -9451,16 +9627,12 @@ function buildChildTopicsSection(topicPath, fullGroups) {
   <ul class="sub-topic-list">${rows}</ul>
 </section>`;
 }
-function groupNotesByTopic(notes) {
+function groupNotesByTopic(notes, meta) {
   const groups = /* @__PURE__ */ new Map();
   for (const note of notes) {
-    const { document } = parseHTML6(note.html);
-    const article = document.querySelector("article");
-    if (!article) continue;
-    const type = article.getAttribute("data-cerveau-type") ?? "";
-    if (SYNTHESIS_TYPES.has(type)) continue;
-    const topicAttr = article.getAttribute("data-cerveau-topic") ?? "";
-    const topicTag = topicAttr.split("/")[0]?.trim();
+    const m = meta?.get(note.path) ?? metaFromHtml(note.html);
+    if (SYNTHESIS_TYPES.has(m.type)) continue;
+    const topicTag = m.topic.split("/")[0]?.trim();
     if (!topicTag) continue;
     const existing = groups.get(topicTag) ?? [];
     existing.push(note);
@@ -9468,20 +9640,17 @@ function groupNotesByTopic(notes) {
   }
   return groups;
 }
-function aggregateTopicStats(notes) {
+function aggregateTopicStats(notes, meta) {
   const typeBreakdown = {};
   let totalImportance = 0;
   let earliest = "";
   let latest = "";
   for (const note of notes) {
-    const { document } = parseHTML6(note.html);
-    const article = document.querySelector("article");
-    if (!article) continue;
-    const type = article.getAttribute("data-cerveau-type") ?? "unknown";
+    const m = meta?.get(note.path) ?? metaFromHtml(note.html);
+    const type = m.type || "unknown";
     typeBreakdown[type] = (typeBreakdown[type] ?? 0) + 1;
-    const importanceRaw = article.getAttribute("data-cerveau-importance") ?? "0.5";
-    totalImportance += Number.parseFloat(importanceRaw);
-    const created = article.getAttribute("data-cerveau-created") ?? "";
+    totalImportance += m.importance;
+    const created = m.created;
     if (created) {
       if (!earliest || created < earliest) earliest = created;
       if (!latest || created > latest) latest = created;
@@ -9764,25 +9933,19 @@ function findRelatedTopics(topic, backlinks, groups) {
     title: name.charAt(0).toUpperCase() + name.slice(1)
   }));
 }
-function findExistingSynthesis(topic, allNotes) {
+function findExistingSynthesis(topic, allNotes, meta) {
   for (const note of allNotes) {
-    const { document } = parseHTML6(note.html);
-    const article = document.querySelector("article");
-    if (!article) continue;
-    const type = article.getAttribute("data-cerveau-type");
-    if (type !== "topic-overview") continue;
-    const topicAttr = article.getAttribute("data-cerveau-topic") ?? "";
-    const firstSegment = topicAttr.split("/")[0]?.trim();
+    const m = meta?.get(note.path) ?? metaFromHtml(note.html);
+    if (m.type !== "topic-overview") continue;
+    const firstSegment = m.topic.split("/")[0]?.trim();
     if (firstSegment === topic) return note;
   }
   return null;
 }
-function findExistingBrainIndex(allNotes) {
+function findExistingBrainIndex(allNotes, meta) {
   for (const note of allNotes) {
-    const { document } = parseHTML6(note.html);
-    const article = document.querySelector("article");
-    const type = article?.getAttribute("data-cerveau-type");
-    if (type === "brain-index") return note;
+    const m = meta?.get(note.path) ?? metaFromHtml(note.html);
+    if (m.type === "brain-index") return note;
   }
   return null;
 }
@@ -9843,8 +10006,10 @@ async function runSynthesize(opts) {
   const log = getLogger();
   const report = { synthesized: [], skipped: [], errors: [] };
   const allNotes = readAllNotes();
-  const groups = groupNotesByTopic(allNotes);
-  const fullGroups = groupNotesByFullTopic(allNotes);
+  const metaByPath = buildNoteMeta(allNotes, listAll({ includeExpired: true }));
+  const notesById = new Map(allNotes.map((n) => [n.id, n]));
+  const groups = groupNotesByTopic(allNotes, metaByPath);
+  const fullGroups = groupNotesByFullTopic(allNotes, metaByPath);
   const backlinks = loadBacklinks();
   const knowledgeGraph = loadKnowledgeGraph();
   const now = nowIso();
@@ -9856,14 +10021,14 @@ async function runSynthesize(opts) {
   for (const topic of topicsToProcess) {
     const topicNotes = groups.get(topic) ?? [];
     if (topicNotes.length === 0) continue;
-    const existingSynth = findExistingSynthesis(topic, allNotes);
+    const existingSynth = findExistingSynthesis(topic, allNotes, metaByPath);
     const latestMtime = Math.max(...topicNotes.map((n) => n.mtimeMs));
     if (!isStale(existingSynth?.html ?? null, latestMtime)) {
       report.skipped.push(topic);
       continue;
     }
     try {
-      const stats = aggregateTopicStats(topicNotes);
+      const stats = aggregateTopicStats(topicNotes, metaByPath);
       const relatedTopics = findRelatedTopics(topic, backlinks, groups);
       const topicTitle = topic.charAt(0).toUpperCase() + topic.slice(1);
       const { leadText, sections } = buildArticleSections(topicTitle, topicNotes);
@@ -9896,7 +10061,10 @@ ${graphHtml}`;
         try {
           indexNote(readNote(written.path));
         } catch (err) {
-          log.warn({ path: written.path, err: err.message }, "synthesize: topic overview reindex");
+          log.warn(
+            { path: written.path, err: err.message },
+            "synthesize: topic overview reindex"
+          );
         }
       }
       report.synthesized.push(topic);
@@ -9913,11 +10081,7 @@ ${graphHtml}`;
     if (topicNotes.length === 0) continue;
     if (opts.topic && !topicPath.startsWith(opts.topic)) continue;
     const pageId = `topic-overview-${topicPath.replace(/\//g, "-")}`;
-    const existingPage = allNotes.find((n) => {
-      const { document } = parseHTML6(n.html);
-      const article = document.querySelector("article");
-      return article?.getAttribute("id") === pageId;
-    });
+    const existingPage = notesById.get(pageId);
     const latestMtime = Math.max(...topicNotes.map((n) => n.mtimeMs));
     if (!isStale(existingPage?.html ?? null, latestMtime)) {
       report.skipped.push(topicPath);
@@ -9980,7 +10144,7 @@ ${graphHtml}`;
     }
   }
   if (!opts.topic) {
-    const existingIndex = findExistingBrainIndex(allNotes);
+    const existingIndex = findExistingBrainIndex(allNotes, metaByPath);
     const latestNoteOverall = allNotes.length > 0 ? Math.max(...allNotes.map((n) => n.mtimeMs)) : 0;
     if (isStale(existingIndex?.html ?? null, latestNoteOverall)) {
       try {
@@ -9993,8 +10157,7 @@ ${graphHtml}`;
           const lastMtime = Math.max(...mtimes);
           const lastActivity = new Date(lastMtime).toISOString().slice(0, 10);
           for (const n of topicNotes) {
-            const { document } = parseHTML6(n.html);
-            const created = document.querySelector("article")?.getAttribute("data-cerveau-created") ?? "";
+            const created = metaByPath.get(n.path)?.created ?? "";
             if (created) {
               if (!globalEarliest || created < globalEarliest) globalEarliest = created;
               if (!globalLatest || created > globalLatest) globalLatest = created;
@@ -10032,7 +10195,10 @@ ${graphHtml}`;
           try {
             indexNote(readNote(written.path));
           } catch (err) {
-            log.warn({ path: written.path, err: err.message }, "synthesize: brain index reindex");
+            log.warn(
+              { path: written.path, err: err.message },
+              "synthesize: brain index reindex"
+            );
           }
         }
         report.synthesized.push("__brain-index__");
@@ -10167,7 +10333,7 @@ var init_tool_trace2 = __esm({
 
 // src/sources/claude-code.ts
 import { createHash as createHash4 } from "node:crypto";
-import { existsSync as existsSync14, readdirSync as readdirSync4, statSync as statSync5 } from "node:fs";
+import { existsSync as existsSync14, readdirSync as readdirSync4, statSync as statSync6 } from "node:fs";
 import { open, readFile } from "node:fs/promises";
 import { join as join16 } from "node:path";
 function makeConversationSessionId(filePath) {
@@ -10287,7 +10453,7 @@ function extractConversationChunks(content, projectRoot, maxChunks = 25, targetC
   return chunks;
 }
 async function readConversationContentBounded(filePath, maxBytes = MAX_CONVERSATION_READ_BYTES) {
-  const size = statSync5(filePath).size;
+  const size = statSync6(filePath).size;
   if (size <= maxBytes) {
     return readFile(filePath, "utf-8");
   }
@@ -10336,7 +10502,7 @@ var init_claude_code = __esm({
           const projPath = join16(claudeDir, proj.name);
           for (const f of findConversationFiles(projPath)) {
             try {
-              const stat = statSync5(f);
+              const stat = statSync6(f);
               refs.push({
                 path: f,
                 mtimeMs: stat.mtimeMs,
@@ -10535,7 +10701,7 @@ var init_vibe_parser = __esm({
 });
 
 // src/sources/vibe.ts
-import { existsSync as existsSync15, readFileSync as readFileSync14, readdirSync as readdirSync5, statSync as statSync6 } from "node:fs";
+import { existsSync as existsSync15, readFileSync as readFileSync14, readdirSync as readdirSync5, statSync as statSync7 } from "node:fs";
 import { readFile as readFile2 } from "node:fs/promises";
 import { homedir as homedir3 } from "node:os";
 import { dirname as dirname8, isAbsolute, join as join17, resolve as resolve2 } from "node:path";
@@ -10615,7 +10781,7 @@ function payloadBase(ref, meta, cwd) {
 function pushRef(refs, path, projectRoot, kind) {
   if (!existsSync15(path)) return;
   try {
-    const stat = statSync6(path);
+    const stat = statSync7(path);
     refs.push({ path, mtimeMs: stat.mtimeMs, projectRoot, agent: "vibe", kind });
   } catch {
   }
@@ -10757,7 +10923,7 @@ var init_registry = __esm({
 });
 
 // src/commands/dream.ts
-import { existsSync as existsSync16, readFileSync as readFileSync15, statSync as statSync7, writeFileSync as writeFileSync12 } from "node:fs";
+import { existsSync as existsSync16, readFileSync as readFileSync15, statSync as statSync8, writeFileSync as writeFileSync12 } from "node:fs";
 import { freemem } from "node:os";
 import { join as join18 } from "node:path";
 import { parseHTML as parseHTML7 } from "linkedom";
@@ -10797,7 +10963,7 @@ function migrateLegacyTrackedFiles(store) {
     if (migrated.files[fp]) continue;
     if (!existsSync16(fp)) continue;
     try {
-      const s = statSync7(fp);
+      const s = statSync8(fp);
       migrated = {
         ...migrated,
         files: {
@@ -10911,10 +11077,7 @@ function checkpointFingerprints(store, log) {
   try {
     saveFingerprints(store);
   } catch (err) {
-    log.warn(
-      { err: err.message },
-      "dream: incremental fingerprint checkpoint failed"
-    );
+    log.warn({ err: err.message }, "dream: incremental fingerprint checkpoint failed");
   }
 }
 async function processUnreadConversations(opts) {
@@ -11066,14 +11229,46 @@ function hasNoiseExemptTag(tags) {
   const set = new Set(tags.split(/\s+/).filter(Boolean));
   return NOISE_EXEMPT_TAGS.some((t) => set.has(t));
 }
+function noiseStatePath() {
+  return join18(getConfig().cachePath, "dream-noise-state.json");
+}
+function selectNoiseCleanupCandidates(notes, state) {
+  if (state.rulesVersion !== NOISE_RULES_VERSION) return notes;
+  return notes.filter((n) => !n.mtime_ms || n.mtime_ms > state.lastRunMs);
+}
+function loadNoiseState() {
+  try {
+    const parsed = JSON.parse(readFileSync15(noiseStatePath(), "utf8"));
+    return {
+      lastRunMs: typeof parsed.lastRunMs === "number" ? parsed.lastRunMs : 0,
+      rulesVersion: typeof parsed.rulesVersion === "number" ? parsed.rulesVersion : 0
+    };
+  } catch {
+    return { lastRunMs: 0, rulesVersion: 0 };
+  }
+}
+function saveNoiseState(state) {
+  try {
+    writeFileSync12(noiseStatePath(), JSON.stringify(state), "utf8");
+  } catch {
+  }
+}
 async function runNoiseCleanup(opts) {
   const log = getLogger();
+  const runStartedMs = Date.now();
   const refreshedNotes = listAll({ includeExpired: false });
+  const state = loadNoiseState();
+  const candidates = selectNoiseCleanupCandidates(refreshedNotes, state);
+  if (candidates.length < refreshedNotes.length) {
+    log.debug(
+      { scanned: candidates.length, total: refreshedNotes.length },
+      "dream: noise cleanup scanning only notes changed since last pass"
+    );
+  }
   let noiseCount = 0;
-  for (let i = 0; i < refreshedNotes.length; i++) {
-    const n = refreshedNotes[i];
-    if (opts.pretty && i % 50 === 0)
-      showProgress(i, refreshedNotes.length, "Checking note quality");
+  for (let i = 0; i < candidates.length; i++) {
+    const n = candidates[i];
+    if (opts.pretty && i % 50 === 0) showProgress(i, candidates.length, "Checking note quality");
     try {
       const note = readNote(n.path);
       const text = stripNote(note.html).text;
@@ -11091,6 +11286,9 @@ async function runNoiseCleanup(opts) {
     } catch {
       log.debug("dream: skipping unreadable note during noise cleanup");
     }
+  }
+  if (!opts.dryRun) {
+    saveNoiseState({ lastRunMs: runStartedMs, rulesVersion: NOISE_RULES_VERSION });
   }
   if (noiseCount > 0) {
     log.info({ invalidatedNotes: noiseCount }, "dream: invalidated noise notes this pass");
@@ -11358,8 +11556,10 @@ function printPrettyReport(report, allNotes, opts) {
 `);
   w(`  Conversations skipped: ${report.conversationsSkipped} (unchanged, fingerprint match)
 `);
-  w(`  Notes healed:          ${report.healedNotes} (wrongly invalidated by a past noise-cleanup bug)
-`);
+  w(
+    `  Notes healed:          ${report.healedNotes} (wrongly invalidated by a past noise-cleanup bug)
+`
+  );
   w(`  Noise cleaned:         ${report.noiseCleanedUp}
 `);
   w(`  Notes enriched:        ${report.tldrsGenerated}
@@ -11478,7 +11678,7 @@ function cosineSimilarity(a, b) {
   const denom = Math.sqrt(normA) * Math.sqrt(normB);
   return denom === 0 ? 0 : dotProduct / denom;
 }
-var DEFAULT_INGESTION_CONCURRENCY, MIN_INGESTION_CONCURRENCY, LOW_MEMORY_THRESHOLD_MB, CRITICAL_MEMORY_THRESHOLD_MB, CRITICAL_BACKOFF_MAX_RETRIES, NOISE_EXEMPT_TAGS;
+var DEFAULT_INGESTION_CONCURRENCY, MIN_INGESTION_CONCURRENCY, LOW_MEMORY_THRESHOLD_MB, CRITICAL_MEMORY_THRESHOLD_MB, CRITICAL_BACKOFF_MAX_RETRIES, NOISE_EXEMPT_TAGS, NOISE_RULES_VERSION;
 var init_dream = __esm({
   "src/commands/dream.ts"() {
     "use strict";
@@ -11491,10 +11691,11 @@ var init_dream = __esm({
     init_reader();
     init_writer();
     init_claude_cli();
-    init_repair();
+    init_config();
     init_fingerprints();
     init_logger();
     init_telemetry();
+    init_repair();
     init_synthesize();
     init_noise();
     init_claude_code();
@@ -11504,6 +11705,7 @@ var init_dream = __esm({
     CRITICAL_MEMORY_THRESHOLD_MB = 700;
     CRITICAL_BACKOFF_MAX_RETRIES = 5;
     NOISE_EXEMPT_TAGS = ["mission", "agent", "skill"];
+    NOISE_RULES_VERSION = 1;
   }
 });
 
@@ -11909,7 +12111,7 @@ async function runExtract(opts) {
   }
   let upgraded = 0;
   try {
-    const facts = backend === "anthropic" && apiKey ? await callHaikuBatch(pending, apiKey) : backend === "openai" ? await callOpenAiBatch(pending) : backend === "vibe" ? await callVibeBatch(pending) : await callClaudeCli2(pending);
+    const facts = backend === "anthropic" && apiKey ? await callHaikuBatch(pending, apiKey) : backend === "openai" ? await callOpenAiBatch(pending) : backend === "vibe" ? await callVibeBatch(pending) : backend === "lazy-proxy" ? await callLazyProxyBatch(pending) : await callClaudeCli2(pending);
     if (facts.length === 0) {
       return JSON.stringify({ status: "ok", upgraded: 0, processed: pending.length });
     }
@@ -11923,7 +12125,7 @@ async function runExtract(opts) {
       const noteFacts = byNote.get(note.id) ?? [];
       if (noteFacts.length === 0) continue;
       try {
-        const extractedBy = backend === "openai" ? `llm:${openAiModelName()}` : backend === "vibe" ? "llm:vibe" : "llm:claude-haiku-4-5";
+        const extractedBy = backend === "openai" ? `llm:${openAiModelName()}` : backend === "vibe" ? "llm:vibe" : backend === "lazy-proxy" ? `llm:${lazyProxyModels()[0] ?? "lazy-proxy"}` : "llm:claude-haiku-4-5";
         patchNoteWithFacts(note.path, noteFacts, extractedBy);
         indexNote(readNote(note.path));
         upgraded += 1;
@@ -11971,7 +12173,9 @@ async function callHaikuBatch(notes, apiKey) {
   const userBlocks = notes.map((n) => `--- note id: ${n.id}
 ${n.text}`).join("\n\n");
   const body = {
-    model: "claude-haiku-4-5-20251001",
+    // Env-overridable — model ids rotate; LazyIDE passes the current cheap
+    // extractor model from its catalog instead of baking an id in here.
+    model: process.env.LAZYBRAIN_ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001",
     max_tokens: 2048,
     system: [
       {
@@ -12068,6 +12272,63 @@ Return ONLY the JSON array, no prose.`;
     (f) => typeof f.for === "string" && typeof f.text === "string" && f.text.length >= 4
   );
 }
+async function callLazyProxyBatch(notes) {
+  const url = process.env.LAZYBRAIN_PROXY_URL;
+  const token = process.env.LAZYBRAIN_PROXY_TOKEN;
+  const models = lazyProxyModels();
+  if (!url || !token || models.length === 0) return [];
+  const userBlocks = notes.map((n) => `--- note id: ${n.id}
+${n.text}`).join("\n\n");
+  const headers = {
+    "content-type": "application/json",
+    authorization: `Bearer ${token}`
+  };
+  const anon = process.env.LAZYBRAIN_PROXY_ANON;
+  if (anon) headers["apikey"] = anon;
+  for (const model of models) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        // A hung proxy connection must not stall the whole batch.
+        signal: AbortSignal.timeout(3e4),
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: `INPUT:
+${userBlocks}
+
+Return ONLY the JSON array, no prose.`
+            }
+          ],
+          system: SYSTEM_PROMPT2,
+          model,
+          request_id: `brain-extract-${Date.now().toString(36)}`,
+          feature: "assistant"
+        })
+      });
+      if (!res.ok) continue;
+      const raw = await res.text();
+      const text = raw.split("\n").filter((line) => !line.startsWith("\x1B[reasoning]") && !line.startsWith("\x1B[usage]")).join("").trim();
+      if (!text) continue;
+      const parsed = parseJsonArrayLoose(text);
+      if (!Array.isArray(parsed)) continue;
+      logTelemetry({
+        event: "capture",
+        ts: nowIso(),
+        tokens_in: Math.ceil((SYSTEM_PROMPT2.length + userBlocks.length) / 4),
+        tokens_out_html: 0,
+        duration_ms: 0
+      });
+      return parsed.filter(
+        (f) => typeof f.for === "string" && typeof f.text === "string" && f.text.length >= 4
+      );
+    } catch {
+    }
+  }
+  return [];
+}
 async function callClaudeCli2(notes) {
   const userBlocks = notes.map((n) => `--- note id: ${n.id}
 ${n.text}`).join("\n\n");
@@ -12117,7 +12378,7 @@ function runClaudeCli(prompt) {
       "--output-format",
       "json",
       "--model",
-      "haiku",
+      process.env.LAZYBRAIN_CLAUDE_CLI_MODEL ?? "haiku",
       "--permission-mode",
       "plan"
     ];
@@ -12167,6 +12428,7 @@ var init_extract = __esm({
     init_fts();
     init_strip();
     init_reader();
+    init_json_loose();
     init_telemetry();
     SYSTEM_PROMPT2 = `You extract atomic facts from short engineering notes for a persistent memory system.
 
@@ -12353,8 +12615,8 @@ async function runL3(input, topK) {
 var init_l3 = __esm({
   "src/retrieval/levels/l3.ts"() {
     "use strict";
-    init_embeddings();
     init_embed_index();
+    init_embeddings();
     init_fts();
     init_logger();
     init_hyde();
@@ -12532,7 +12794,6 @@ function* lazyReadNotes(paths) {
     try {
       yield readNote(path);
     } catch {
-      continue;
     }
   }
 }
@@ -12610,12 +12871,14 @@ var init_structural = __esm({
     "use strict";
     init_strip();
     init_paths();
+    init_reader();
     init_logger();
     init_telemetry();
     init_note_read();
-    init_reader();
     ROOT_TAG = "(?:article|section|memory-batch)";
-    TYPE_PUSHDOWN_RE = new RegExp(`^${ROOT_TAG}?\\[data-cerveau-type\\s*=\\s*(["'])([^"']*)\\1\\]`);
+    TYPE_PUSHDOWN_RE = new RegExp(
+      `^${ROOT_TAG}?\\[data-cerveau-type\\s*=\\s*(["'])([^"']*)\\1\\]`
+    );
     TAGS_PUSHDOWN_RE = new RegExp(
       `^${ROOT_TAG}?\\[data-cerveau-tags\\s*~=\\s*(["'])([^"']*)\\1(?:\\s+[iIsS])?\\]`
     );
@@ -12744,7 +13007,11 @@ async function rerank(query, candidates, topK) {
   }
   let scores;
   try {
-    scores = await scorePairs(ce, safeQuery, filtered.map((c) => c.text));
+    scores = await scorePairs(
+      ce,
+      safeQuery,
+      filtered.map((c) => c.text)
+    );
   } catch (err) {
     return rerankFallback(filtered, topK, getErrorMessage(err));
   }
@@ -14213,7 +14480,9 @@ function buildStubsBlock(parts) {
     const stubIds = allNotes.filter((n) => n.quality === "stub").map((n) => n.id);
     const ids = uniqueShortIds(stubIds, 5);
     if (ids.length > 0) {
-      parts.push(`[STUBS] ${ids.length} notes need expansion: ${ids.map((id) => `#${id}`).join(", ")}`);
+      parts.push(
+        `[STUBS] ${ids.length} notes need expansion: ${ids.map((id) => `#${id}`).join(", ")}`
+      );
     }
   } catch {
   }
@@ -15717,6 +15986,245 @@ var init_brain_guard = __esm({
   }
 });
 
+// src/annotator/blocks/composers/recompose.ts
+import { parseHTML as parseHTML12 } from "linkedom";
+function sortByDateDesc(items) {
+  return [...items].sort((a, b) => b.date.localeCompare(a.date));
+}
+function dedupByItemId(items) {
+  const seen = /* @__PURE__ */ new Set();
+  const out = [];
+  for (const item of items) {
+    if (item.itemId) {
+      if (seen.has(item.itemId)) continue;
+      seen.add(item.itemId);
+    }
+    out.push(item);
+  }
+  return out;
+}
+function buildLi(document, item) {
+  const li = document.createElement("li");
+  li.setAttribute("data-cerveau-confidence", String(item.confidence));
+  li.setAttribute("data-cerveau-date", item.date);
+  if (item.superseded) {
+    li.setAttribute("data-cerveau-superseded", "true");
+    li.setAttribute("data-cerveau-valid-until", item.validUntil ?? "");
+  }
+  if (item.authorId) li.setAttribute("data-cerveau-author-id", item.authorId);
+  if (item.author) li.setAttribute("data-cerveau-author", item.author);
+  if (item.kind) li.setAttribute("data-cerveau-kind", item.kind);
+  if (item.itemId) li.setAttribute("data-cerveau-item-id", item.itemId);
+  if (item.about) li.setAttribute("data-cerveau-about", item.about);
+  if (item.project) li.setAttribute("data-cerveau-project", item.project);
+  li.textContent = normalizeItemText(item.text);
+  if (item.sourceConvLink) {
+    const a = document.createElement("a");
+    a.setAttribute("href", item.sourceConvLink);
+    a.setAttribute("class", "conv-source");
+    a.textContent = "[source]";
+    li.appendChild(document.createTextNode(" "));
+    li.appendChild(a);
+  }
+  return li;
+}
+function buildSection(document, meta, items) {
+  const section = document.createElement("section");
+  section.setAttribute("data-section", meta.sectionId);
+  const h3 = document.createElement("h3");
+  h3.textContent = meta.heading;
+  section.appendChild(h3);
+  const ul = document.createElement("ul");
+  for (const item of items) {
+    ul.appendChild(buildLi(document, item));
+  }
+  section.appendChild(ul);
+  return section;
+}
+function recomposeFileNeuronEnrichment(existingHtml, items) {
+  const { document } = parseHTML12(`<!doctype html><html><body>${existingHtml}</body></html>`);
+  const article = document.querySelector('article[data-cerveau-type="file-neuron"]');
+  if (!article) return existingHtml;
+  const grouped = /* @__PURE__ */ new Map();
+  for (const item of items) {
+    const list = grouped.get(item.kind) ?? [];
+    list.push(item);
+    grouped.set(item.kind, list);
+  }
+  for (const meta of SECTION_META) {
+    const raw = grouped.get(meta.kind) ?? [];
+    const processed = dedupByItemId(sortByDateDesc(raw));
+    const existing = article.querySelector(`section[data-section="${meta.sectionId}"]`);
+    if (existing) {
+      existing.remove();
+    }
+    if (processed.length === 0) continue;
+    const newSection = buildSection(document, meta, processed);
+    const seeAlso = article.querySelector('section[data-section="see-also"]');
+    if (seeAlso) {
+      article.insertBefore(newSection, seeAlso);
+    } else {
+      article.appendChild(newSection);
+    }
+  }
+  return article.outerHTML;
+}
+var SECTION_META;
+var init_recompose = __esm({
+  "src/annotator/blocks/composers/recompose.ts"() {
+    "use strict";
+    init_file_neuron();
+    SECTION_META = [
+      { kind: "decision", sectionId: "decisions", heading: "Decisions" },
+      { kind: "bug", sectionId: "bugs", heading: "Bugs" },
+      { kind: "idea", sectionId: "ideas", heading: "Ideas" },
+      { kind: "rule", sectionId: "rules", heading: "Rules" },
+      { kind: "qa", sectionId: "qa", heading: "Q & A" },
+      { kind: "warning", sectionId: "warnings", heading: "Warnings" },
+      { kind: "activity", sectionId: "activity", heading: "Touched in Conversations" }
+    ];
+  }
+});
+
+// src/commands/recompose-all.ts
+var recompose_all_exports = {};
+__export(recompose_all_exports, {
+  TAG_KIND_PRIORITY: () => TAG_KIND_PRIORITY,
+  deriveAuthoredKind: () => deriveAuthoredKind,
+  extractAuthoredItem: () => extractAuthoredItem,
+  runRecomposeAll: () => runRecomposeAll
+});
+function deriveAuthoredKind(html) {
+  const explicit = html.match(/data-cerveau-kind\s*=\s*["']([^"']+)["']/i)?.[1];
+  if (explicit) return explicit;
+  const type = html.match(/data-cerveau-type\s*=\s*["']([^"']+)["']/i)?.[1];
+  if (type === "decision") return "decision";
+  const tagsAttr = html.match(/data-cerveau-tags\s*=\s*["']([^"']*)["']/i)?.[1] ?? "";
+  const tagWords = new Set(tagsAttr.toLowerCase().split(/\s+/).filter(Boolean));
+  for (const candidate of TAG_KIND_PRIORITY) {
+    if (tagWords.has(candidate)) return candidate;
+  }
+  return void 0;
+}
+function extractAuthoredItem(html, noteId) {
+  const authorId = html.match(/data-cerveau-author-id\s*=\s*["']([^"']+)["']/i)?.[1];
+  if (!authorId) return null;
+  const about = html.match(/data-cerveau-about\s*=\s*["']([^"']+)["']/i)?.[1];
+  if (!about) return null;
+  const kind = deriveAuthoredKind(html);
+  if (!kind) return null;
+  const author = html.match(/data-cerveau-author\s*=\s*["']([^"']+)["']/i)?.[1];
+  const project = html.match(/data-cerveau-project\s*=\s*["']([^"']+)["']/i)?.[1];
+  const orgId = html.match(/data-cerveau-org-id\s*=\s*["']([^"']+)["']/i)?.[1];
+  const created = html.match(/data-cerveau-created\s*=\s*["']([^"']+)["']/i)?.[1] ?? "";
+  const date = created.slice(0, 10) || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const factMatch = html.match(/<p\s+data-cerveau-fact[^>]*>([\s\S]*?)<\/p>/i);
+  const rawText = factMatch ? factMatch[1].replace(/<[^>]+>/g, "").trim() : "";
+  if (!rawText) return null;
+  const confidenceMatch = html.match(/data-cerveau-confidence\s*=\s*["']([\d.]+)["']/i);
+  const confidence = confidenceMatch ? Number.parseFloat(confidenceMatch[1]) : 1;
+  return {
+    text: rawText,
+    confidence,
+    date,
+    sourceConvLink: `#${noteId}`,
+    kind,
+    about,
+    project,
+    authorId,
+    author,
+    itemId: noteId,
+    orgId
+  };
+}
+function filePathFromAbout(about) {
+  const match = about.match(/^file:(.+)$/i);
+  if (!match) return null;
+  return match[1].replace(/\\/g, "/").replace(/^\.\//, "");
+}
+async function runRecomposeAll() {
+  const log = getLogger();
+  const report = {
+    fileNeuronsRecomposed: 0,
+    authoredItemsFound: 0,
+    skipped: false,
+    errors: []
+  };
+  let allNotes;
+  try {
+    allNotes = readAllNotes();
+  } catch (err) {
+    report.errors.push(err.message);
+    return report;
+  }
+  const authoredItemsByPath = /* @__PURE__ */ new Map();
+  for (const note of allNotes) {
+    if (!note.html.includes("data-cerveau-author-id")) continue;
+    if (note.html.includes('data-cerveau-type="file-neuron"')) continue;
+    if (note.html.includes('data-cerveau-type="concept"')) continue;
+    const item = extractAuthoredItem(note.html, note.id);
+    if (!item) continue;
+    const filePath = filePathFromAbout(item.about ?? "");
+    if (!filePath) continue;
+    const list = authoredItemsByPath.get(filePath) ?? [];
+    list.push(item);
+    authoredItemsByPath.set(filePath, list);
+    report.authoredItemsFound += 1;
+  }
+  if (report.authoredItemsFound === 0) {
+    report.skipped = true;
+    return report;
+  }
+  for (const note of allNotes) {
+    if (!note.html.includes('data-cerveau-type="file-neuron"')) continue;
+    const fileMatch = note.html.match(/data-code-file\s*=\s*["']([^"']+)["']/i);
+    if (!fileMatch) continue;
+    const neuronFilePath = fileMatch[1].replace(/\\/g, "/").replace(/^\.\//, "");
+    const items = authoredItemsByPath.get(neuronFilePath);
+    if (!items || items.length === 0) continue;
+    try {
+      const file = readNote(note.path);
+      const patched = recomposeFileNeuronEnrichment(file.html, items);
+      if (patched === file.html) continue;
+      const written = writeNote(patched, { overwrite: true });
+      try {
+        indexNote(readNote(written.path));
+      } catch (err) {
+        log.warn(
+          { path: written.path, err: err.message },
+          "recompose-all: reindex failed"
+        );
+      }
+      report.fileNeuronsRecomposed += 1;
+    } catch (err) {
+      const msg = err.message;
+      report.errors.push(`${neuronFilePath}: ${msg}`);
+      log.warn({ filePath: neuronFilePath, err: msg }, "recompose-all: file-neuron patch failed");
+    }
+  }
+  log.debug(
+    {
+      authoredItemsFound: report.authoredItemsFound,
+      fileNeuronsRecomposed: report.fileNeuronsRecomposed,
+      errors: report.errors.length
+    },
+    "recompose-all: done"
+  );
+  return report;
+}
+var TAG_KIND_PRIORITY;
+var init_recompose_all = __esm({
+  "src/commands/recompose-all.ts"() {
+    "use strict";
+    init_recompose();
+    init_fts();
+    init_reader();
+    init_writer();
+    init_logger();
+    TAG_KIND_PRIORITY = ["bug", "warning", "idea", "rule", "qa", "activity"];
+  }
+});
+
 // src/retrieval/multi-query.ts
 function cacheGet2(key) {
   const e = paraphraseCache.get(key);
@@ -16134,8 +16642,8 @@ __export(build_clusters_exports, {
   runBuildClusters: () => runBuildClusters,
   slugifyCwd: () => slugifyCwd
 });
-import { existsSync as existsSync26, mkdirSync as mkdirSync14, writeFileSync as writeFileSync21 } from "node:fs";
-import { join as join28 } from "node:path";
+import { existsSync as existsSync27, mkdirSync as mkdirSync15, writeFileSync as writeFileSync22 } from "node:fs";
+import { join as join29 } from "node:path";
 function extractTopEntities(notes, limit = 10) {
   const entityCounts = /* @__PURE__ */ new Map();
   for (const note of notes) {
@@ -16290,30 +16798,30 @@ async function runBuildClusters(opts) {
       const source = dec.source || "unknown";
       activeDecsBySource.set(source, (activeDecsBySource.get(source) ?? 0) + 1);
     }
-    const clustersDir = join28(brainRoot(), "clusters");
-    if (!existsSync26(clustersDir)) {
-      mkdirSync14(clustersDir, { recursive: true });
+    const clustersDir = join29(brainRoot(), "clusters");
+    if (!existsSync27(clustersDir)) {
+      mkdirSync15(clustersDir, { recursive: true });
     }
     const paths = [];
     let clusterCount = 0;
     for (const [cwd, notes] of cwdGroups) {
       if (notes.length < 3) continue;
       const slug2 = slugifyCwd(cwd);
-      const clusterDir = join28(clustersDir, slug2);
-      if (!existsSync26(clusterDir)) {
-        mkdirSync14(clusterDir, { recursive: true });
+      const clusterDir = join29(clustersDir, slug2);
+      if (!existsSync27(clusterDir)) {
+        mkdirSync15(clusterDir, { recursive: true });
       }
       const entities = extractTopEntities(notes, 10);
       const hubs = backlinks ? extractHubs(notes, backlinks, 3) : [];
       const activeDecCount = activeDecsBySource.get(cwd) ?? 0;
       const edgesCount = Math.max(1, Math.floor(notes.length * 1.5));
       const htmlContent = buildClusterHtml(slug2, cwd, notes, hubs, entities, activeDecCount);
-      const htmlPath = join28(clusterDir, "_cluster.html");
-      writeFileSync21(htmlPath, htmlContent, "utf-8");
+      const htmlPath = join29(clusterDir, "_cluster.html");
+      writeFileSync22(htmlPath, htmlContent, "utf-8");
       paths.push(htmlPath);
       const topology = buildTopologyJson(slug2, cwd, notes, hubs, entities, edgesCount);
-      const jsonPath = join28(clusterDir, "_topology.json");
-      writeFileSync21(jsonPath, JSON.stringify(topology, null, opts.pretty ? 2 : 0), "utf-8");
+      const jsonPath = join29(clusterDir, "_topology.json");
+      writeFileSync22(jsonPath, JSON.stringify(topology, null, opts.pretty ? 2 : 0), "utf-8");
       paths.push(jsonPath);
       clusterCount++;
     }
@@ -16349,8 +16857,8 @@ var build_index_exports = {};
 __export(build_index_exports, {
   runBuildIndex: () => runBuildIndex
 });
-import { writeFileSync as writeFileSync22 } from "node:fs";
-import { join as join29 } from "node:path";
+import { writeFileSync as writeFileSync23 } from "node:fs";
+import { join as join30 } from "node:path";
 function extractTopTags(notes) {
   const tagCounts = /* @__PURE__ */ new Map();
   for (const note of notes) {
@@ -16631,8 +17139,8 @@ async function runBuildIndex(_opts) {
     const activeDecisionCount = notes.filter((n) => n.type === "decision").length;
     const content = buildContent(notes, topTags, entities);
     const html = buildHeader(notes.length, activeDecisionCount, entities.length, topTags, cwds) + content;
-    const indexPath2 = join29(cfg.brainPath, "_index.html");
-    writeFileSync22(indexPath2, html, "utf8");
+    const indexPath2 = join30(cfg.brainPath, "_index.html");
+    writeFileSync23(indexPath2, html, "utf8");
     const sizeKB = Math.ceil(Buffer.byteLength(html, "utf8") / 1024);
     return {
       status: "ok",
@@ -16821,26 +17329,26 @@ var init_symbol_excerpt = __esm({
 // src/graph/ast-parser.ts
 import { readFileSync as readFileSync29 } from "node:fs";
 import { createRequire as createRequire2 } from "node:module";
-import { extname, join as join30 } from "node:path";
+import { extname, join as join31 } from "node:path";
 import { fileURLToPath as fileURLToPath2 } from "node:url";
 function getWasmDir() {
   const require2 = createRequire2(import.meta.url);
   try {
     const pkg = require2.resolve("tree-sitter-wasms/package.json");
-    return join30(pkg, "..", "out");
+    return join31(pkg, "..", "out");
   } catch {
     const thisDir = fileURLToPath2(new URL(".", import.meta.url));
-    return join30(thisDir, "..", "..", "node_modules", "tree-sitter-wasms", "out");
+    return join31(thisDir, "..", "..", "node_modules", "tree-sitter-wasms", "out");
   }
 }
 function getTreeSitterWasm() {
   const require2 = createRequire2(import.meta.url);
   try {
     const pkg = require2.resolve("web-tree-sitter/package.json");
-    return join30(pkg, "..", "tree-sitter.wasm");
+    return join31(pkg, "..", "tree-sitter.wasm");
   } catch {
     const thisDir = fileURLToPath2(new URL(".", import.meta.url));
-    return join30(thisDir, "..", "..", "node_modules", "web-tree-sitter", "tree-sitter.wasm");
+    return join31(thisDir, "..", "..", "node_modules", "web-tree-sitter", "tree-sitter.wasm");
   }
 }
 async function ensureInit() {
@@ -16865,7 +17373,7 @@ async function getParser(language) {
   try {
     await ensureInit();
     if (ParserClass === null) return null;
-    const wasmFile = join30(getWasmDir(), LANGUAGE_TO_WASM[language]);
+    const wasmFile = join31(getWasmDir(), LANGUAGE_TO_WASM[language]);
     const wasmBinary = readFileSync29(wasmFile);
     const lang = await ParserClass.Language.load(wasmBinary);
     const parser = new ParserClass();
@@ -17678,8 +18186,8 @@ var init_ast_parser = __esm({
 });
 
 // src/graph/code-scanner.ts
-import { existsSync as existsSync27, readFileSync as readFileSync30, readdirSync as readdirSync7, statSync as statSync9 } from "node:fs";
-import { basename as basename2, extname as extname2, join as join31, relative } from "node:path";
+import { existsSync as existsSync28, readFileSync as readFileSync30, readdirSync as readdirSync7, statSync as statSync10 } from "node:fs";
+import { basename as basename2, extname as extname2, join as join32, relative } from "node:path";
 function classifyFile(ext, filePath) {
   if (filePath.includes("test") || filePath.includes("spec") || filePath.includes("__tests__"))
     return "test";
@@ -17769,7 +18277,7 @@ function guessTestedFile(testPath, nodes) {
   return null;
 }
 function scanProject(projectRoot) {
-  if (!existsSync27(projectRoot)) return null;
+  if (!existsSync28(projectRoot)) return null;
   const projectName = basename2(projectRoot).toLowerCase().replace(/[^a-z0-9-]/g, "-");
   const nodes = [];
   const edges = [];
@@ -17789,17 +18297,17 @@ function scanProject(projectRoot) {
       if (entry.isDirectory()) {
         if (entry.isSymbolicLink()) continue;
         if (!IGNORE_DIRS.has(entry.name) && !entry.name.startsWith(".")) {
-          walk2(join31(dir, entry.name), depth + 1);
+          walk2(join32(dir, entry.name), depth + 1);
         }
         continue;
       }
       if (!entry.isFile()) continue;
       const ext = extname2(entry.name).toLowerCase();
       if (!CODE_EXTENSIONS.has(ext) && !CONFIG_EXTENSIONS.has(ext)) continue;
-      const fullPath = join31(dir, entry.name);
+      const fullPath = join32(dir, entry.name);
       let stat;
       try {
-        stat = statSync9(fullPath);
+        stat = statSync10(fullPath);
       } catch {
         continue;
       }
@@ -18090,7 +18598,7 @@ async function scanProjectAsync(projectRoot) {
   if (!base) return null;
   const CONCURRENCY = 8;
   const enrichNode = async (node) => {
-    const fullPath = join31(node.projectRoot, node.filePath);
+    const fullPath = join32(node.projectRoot, node.filePath);
     try {
       const parsed = await parseFile(fullPath);
       if (!parsed) return node;
@@ -18446,8 +18954,8 @@ var init_entities2 = __esm({
 });
 
 // src/graph/global-graph.ts
-import { existsSync as existsSync28, mkdirSync as mkdirSync15, readFileSync as readFileSync31, writeFileSync as writeFileSync23 } from "node:fs";
-import { join as join32 } from "node:path";
+import { existsSync as existsSync29, mkdirSync as mkdirSync16, readFileSync as readFileSync31, writeFileSync as writeFileSync24 } from "node:fs";
+import { join as join33 } from "node:path";
 function projectOf(node) {
   return node.topic ?? node.topicPath.split("/")[0] ?? "unknown";
 }
@@ -18644,15 +19152,15 @@ function buildGlobalGraph(graph, hierarchy) {
 }
 function saveGlobalGraph(g) {
   const cfg = getConfig();
-  if (!existsSync28(cfg.cachePath)) mkdirSync15(cfg.cachePath, { recursive: true });
-  const path = join32(cfg.cachePath, GLOBAL_GRAPH_FILENAME);
-  writeFileSync23(path, JSON.stringify(g, null, 2), "utf8");
+  if (!existsSync29(cfg.cachePath)) mkdirSync16(cfg.cachePath, { recursive: true });
+  const path = join33(cfg.cachePath, GLOBAL_GRAPH_FILENAME);
+  writeFileSync24(path, JSON.stringify(g, null, 2), "utf8");
   return path;
 }
 function loadGlobalGraph() {
   const cfg = getConfig();
-  const path = join32(cfg.cachePath, GLOBAL_GRAPH_FILENAME);
-  if (!existsSync28(path)) return null;
+  const path = join33(cfg.cachePath, GLOBAL_GRAPH_FILENAME);
+  if (!existsSync29(path)) return null;
   try {
     const data = JSON.parse(readFileSync31(path, "utf8"));
     if (!data.version || !data.projects || !data.crossEdges) return null;
@@ -18757,14 +19265,14 @@ var init_hierarchy = __esm({
 
 // src/commands/graph.ts
 import {
-  existsSync as existsSync29,
-  mkdirSync as mkdirSync16,
+  existsSync as existsSync30,
+  mkdirSync as mkdirSync17,
   readFileSync as readFileSync32,
   realpathSync,
-  statSync as statSync10,
-  writeFileSync as writeFileSync24
+  statSync as statSync11,
+  writeFileSync as writeFileSync25
 } from "node:fs";
-import { join as join33 } from "node:path";
+import { join as join34 } from "node:path";
 async function runGraph(opts) {
   const log = getLogger();
   const startedAt = Date.now();
@@ -18786,7 +19294,7 @@ async function runGraph(opts) {
       const before = note.html;
       const { html: after, linksAdded: added } = applyAutoLinks(before, note.id, entityIndex);
       if (added > 0 && after !== before) {
-        writeFileSync24(note.path, after, "utf8");
+        writeFileSync25(note.path, after, "utf8");
         try {
           indexNote(readNote(note.path));
         } catch (err) {
@@ -18886,8 +19394,8 @@ async function runGraph(opts) {
       const subGraph = extractSubGraph(knowledgeGraph, topic);
       if (subGraph.nodes.length >= 3) {
         const safeTopic = topic.replace(/[^a-z0-9-_]/gi, "_");
-        const subPath = join33(cfg.cachePath, `brain-graph-${safeTopic}.json`);
-        writeFileSync24(subPath, JSON.stringify(subGraph, null, 2), "utf8");
+        const subPath = join34(cfg.cachePath, `brain-graph-${safeTopic}.json`);
+        writeFileSync25(subPath, JSON.stringify(subGraph, null, 2), "utf8");
         log.info(
           { topic, nodes: subGraph.nodes.length, edges: subGraph.edges.length },
           "sub-graph saved"
@@ -18990,9 +19498,9 @@ async function runCodeScan(notePaths, explicitCwd) {
     const srcMatch = html.match(/data-cerveau-source\s*=\s*["']([^"']+)["']/i);
     if (srcMatch?.[1]) {
       const src = srcMatch[1];
-      if ((src.startsWith("/") || /^[A-Z]:\\/i.test(src)) && existsSync29(src)) {
+      if ((src.startsWith("/") || /^[A-Z]:\\/i.test(src)) && existsSync30(src)) {
         try {
-          const s = statSync10(src);
+          const s = statSync11(src);
           if (s.isDirectory()) rawCandidates.add(src);
         } catch {
         }
@@ -19022,8 +19530,8 @@ async function runCodeScan(notePaths, explicitCwd) {
 }
 function normalizeCwd3(raw) {
   try {
-    if (!existsSync29(raw)) return null;
-    if (!statSync10(raw).isDirectory()) return null;
+    if (!existsSync30(raw)) return null;
+    if (!statSync11(raw).isDirectory()) return null;
     return realpathSync(raw);
   } catch {
     return null;
@@ -19031,8 +19539,8 @@ function normalizeCwd3(raw) {
 }
 function renderGraphText(backlinks) {
   const root = brainRoot();
-  if (!existsSync29(root)) mkdirSync16(root, { recursive: true });
-  const outPath = join33(root, "graph.txt");
+  if (!existsSync30(root)) mkdirSync17(root, { recursive: true });
+  const outPath = join34(root, "graph.txt");
   const nodeSet = /* @__PURE__ */ new Set([
     ...Object.keys(backlinks.outgoing),
     ...Object.keys(backlinks.incoming)
@@ -19072,14 +19580,14 @@ function renderGraphText(backlinks) {
     }
     lines.push("");
   }
-  writeFileSync24(outPath, lines.join("\n"), "utf8");
+  writeFileSync25(outPath, lines.join("\n"), "utf8");
   return outPath;
 }
 function renderGraphView(notes, backlinks, clusterCount) {
   void clusterCount;
   const root = brainRoot();
-  if (!existsSync29(root)) mkdirSync16(root, { recursive: true });
-  const outPath = join33(root, "graph.html");
+  if (!existsSync30(root)) mkdirSync17(root, { recursive: true });
+  const outPath = join34(root, "graph.html");
   const nodes = notes.map((n) => ({ id: n.id, label: n.title || n.id, tags: n.tags }));
   const seen = /* @__PURE__ */ new Set();
   const edges = [];
@@ -19093,7 +19601,7 @@ function renderGraphView(notes, backlinks, clusterCount) {
   }
   const dataJson = JSON.stringify({ nodes, edges });
   const html = buildGraphHtml(dataJson);
-  writeFileSync24(outPath, html, "utf8");
+  writeFileSync25(outPath, html, "utf8");
   return outPath;
 }
 function buildGraphHtml(dataJson) {
@@ -19214,7 +19722,7 @@ var interlink_exports = {};
 __export(interlink_exports, {
   runInterlink: () => runInterlink
 });
-import { writeFileSync as writeFileSync27 } from "node:fs";
+import { writeFileSync as writeFileSync28 } from "node:fs";
 import { parseHTML as parseHTML15 } from "linkedom";
 function noteToEmbedText(html) {
   const { document } = parseHTML15(`<!doctype html><body>${html}</body>`);
@@ -19446,7 +19954,7 @@ async function runInterlink(opts) {
         html = injectSuggestedLinks(html, mentions);
       }
       if (!dryRun) {
-        writeFileSync27(noteFile.path, html, "utf8");
+        writeFileSync28(noteFile.path, html, "utf8");
         try {
           indexNote({ ...noteFile, html });
         } catch (indexErr) {
@@ -19470,7 +19978,7 @@ async function runInterlink(opts) {
       if (mentions.length === 0) continue;
       const newHtml = injectSuggestedLinks(noteFile.html, mentions);
       if (!dryRun) {
-        writeFileSync27(noteFile.path, newHtml, "utf8");
+        writeFileSync28(noteFile.path, newHtml, "utf8");
         try {
           indexNote({ ...noteFile, html: newHtml });
         } catch {
@@ -19740,15 +20248,15 @@ var build_hierarchy_exports = {};
 __export(build_hierarchy_exports, {
   runBuildHierarchy: () => runBuildHierarchy
 });
-import { existsSync as existsSync40, mkdirSync as mkdirSync20, writeFileSync as writeFileSync30 } from "node:fs";
+import { existsSync as existsSync41, mkdirSync as mkdirSync21, writeFileSync as writeFileSync31 } from "node:fs";
 import { dirname as dirname12 } from "node:path";
 function nodeExists(nodeSlugId) {
-  return existsSync40(knowledgeNodePath(nodeSlugId));
+  return existsSync41(knowledgeNodePath(nodeSlugId));
 }
 function writeNode(nodeSlugId, html) {
   const targetPath = knowledgeNodePath(nodeSlugId);
-  mkdirSync20(dirname12(targetPath), { recursive: true });
-  writeFileSync30(targetPath, html, "utf8");
+  mkdirSync21(dirname12(targetPath), { recursive: true });
+  writeFileSync31(targetPath, html, "utf8");
 }
 function buildInput(node, tree, created) {
   return {
@@ -19838,7 +20346,7 @@ var enrich_hierarchy_exports = {};
 __export(enrich_hierarchy_exports, {
   runEnrichHierarchy: () => runEnrichHierarchy
 });
-import { existsSync as existsSync41, mkdirSync as mkdirSync21, writeFileSync as writeFileSync31 } from "node:fs";
+import { existsSync as existsSync42, mkdirSync as mkdirSync22, writeFileSync as writeFileSync32 } from "node:fs";
 import { dirname as dirname13 } from "node:path";
 function emptyBucket2() {
   return { decisions: [], bugs: [], ideas: [], rules: [], facts: [], qa: [] };
@@ -19961,7 +20469,7 @@ async function runEnrichHierarchy(opts) {
     }
     const nodeSlugId = slug(node.id);
     const targetPath = knowledgeNodePath(nodeSlugId);
-    if (!opts.force && existsSync41(targetPath)) {
+    if (!opts.force && existsSync42(targetPath)) {
       try {
         const { readFileSync: readFileSync46 } = await import("node:fs");
         const existingHtml = readFileSync46(targetPath, "utf8");
@@ -19997,8 +20505,8 @@ async function runEnrichHierarchy(opts) {
         codeFiles: [],
         created
       });
-      mkdirSync21(dirname13(targetPath), { recursive: true });
-      writeFileSync31(targetPath, html, "utf8");
+      mkdirSync22(dirname13(targetPath), { recursive: true });
+      writeFileSync32(targetPath, html, "utf8");
       const populated = countPopulatedSections(deduped);
       report.nodesEnriched += 1;
       report.sectionsPopulated += populated;
@@ -20076,14 +20584,14 @@ __export(export_agents_md_exports, {
   LB_END_MARKER: () => LB_END_MARKER,
   runExportAgentsMd: () => runExportAgentsMd
 });
-import { existsSync as existsSync42, readFileSync as readFileSync39, writeFileSync as writeFileSync32 } from "node:fs";
-import { join as join40, resolve as resolve3 } from "node:path";
+import { existsSync as existsSync43, readFileSync as readFileSync39, writeFileSync as writeFileSync33 } from "node:fs";
+import { join as join41, resolve as resolve3 } from "node:path";
 import { parseHTML as parseHTML19 } from "linkedom";
 async function runExportAgentsMd(opts) {
   const maxTokens = opts.maxTokens ?? 1200;
-  const outFile = opts.outFile ?? (opts.target === "user" ? join40(vibeHome(), "AGENTS.md") : join40(resolve3(opts.cwd ?? process.cwd()), "AGENTS.md"));
+  const outFile = opts.outFile ?? (opts.target === "user" ? join41(vibeHome(), "AGENTS.md") : join41(resolve3(opts.cwd ?? process.cwd()), "AGENTS.md"));
   const block = opts.target === "user" ? renderUserBlock() : renderProjectBlock(resolve3(opts.cwd ?? process.cwd()), maxTokens);
-  const existing = existsSync42(outFile) ? readFileSync39(outFile, "utf8") : "";
+  const existing = existsSync43(outFile) ? readFileSync39(outFile, "utf8") : "";
   const beginCount = countOccurrences(existing, LB_BEGIN_MARKER);
   const endCount = countOccurrences(existing, LB_END_MARKER);
   if (beginCount !== endCount || beginCount > 1) {
@@ -20121,7 +20629,7 @@ ${wrapped}
     next = `${wrapped}
 `;
   }
-  if (next !== existing) writeFileSync32(outFile, next, "utf8");
+  if (next !== existing) writeFileSync33(outFile, next, "utf8");
   return {
     written: true,
     outFile,
@@ -20232,10 +20740,10 @@ var capture_vibe_exports = {};
 __export(capture_vibe_exports, {
   runCaptureVibe: () => runCaptureVibe
 });
-import { existsSync as existsSync43, readFileSync as readFileSync40, writeFileSync as writeFileSync33 } from "node:fs";
-import { dirname as dirname14, join as join41 } from "node:path";
+import { existsSync as existsSync44, readFileSync as readFileSync40, writeFileSync as writeFileSync34 } from "node:fs";
+import { dirname as dirname14, join as join42 } from "node:path";
 function cursorPath() {
-  return join41(getConfig().cachePath, "vibe-cursors.json");
+  return join42(getConfig().cachePath, "vibe-cursors.json");
 }
 function loadCursors() {
   try {
@@ -20247,7 +20755,7 @@ function loadCursors() {
   }
 }
 function saveCursors(store) {
-  writeFileSync33(cursorPath(), JSON.stringify(store, null, 2), "utf8");
+  writeFileSync34(cursorPath(), JSON.stringify(store, null, 2), "utf8");
 }
 function safeReadSync(path) {
   try {
@@ -20259,7 +20767,7 @@ function safeReadSync(path) {
 async function runCaptureVibe(opts) {
   const log = getLogger();
   const start = Date.now();
-  if (!opts.transcriptPath || !existsSync43(opts.transcriptPath)) {
+  if (!opts.transcriptPath || !existsSync44(opts.transcriptPath)) {
     return JSON.stringify({ status: "noop", reason: "missing transcript" });
   }
   const messages = parseVibeMessages(readFileSync40(opts.transcriptPath, "utf8"));
@@ -20269,7 +20777,7 @@ async function runCaptureVibe(opts) {
   if (fresh.length === 0) {
     return JSON.stringify({ status: "noop", reason: "no new messages" });
   }
-  const meta = parseVibeMeta(safeReadSync(join41(dirname14(opts.transcriptPath), "meta.json")));
+  const meta = parseVibeMeta(safeReadSync(join42(dirname14(opts.transcriptPath), "meta.json")));
   const cwd = opts.cwd ?? meta?.environment?.working_directory ?? void 0;
   if (cwd && /cerveau|lazybrain/i.test(cwd)) {
     cursors[opts.transcriptPath] = { processedCount: messages.length };
@@ -20338,7 +20846,7 @@ function scheduleAgentsMdRefresh(cwd) {
   if (!cwd) return;
   try {
     const intervalS = Number(process.env.LAZYBRAIN_VIBE_REFRESH_SECONDS ?? "300");
-    const marker = join41(getConfig().cachePath, "vibe-agentsmd-refresh.txt");
+    const marker = join42(getConfig().cachePath, "vibe-agentsmd-refresh.txt");
     const nowEpoch = Math.floor(Date.now() / 1e3);
     let last = 0;
     try {
@@ -20346,7 +20854,7 @@ function scheduleAgentsMdRefresh(cwd) {
     } catch {
     }
     if (nowEpoch - last < intervalS) return;
-    writeFileSync33(marker, String(nowEpoch), "utf8");
+    writeFileSync34(marker, String(nowEpoch), "utf8");
     void Promise.resolve().then(() => (init_export_agents_md(), export_agents_md_exports)).then(({ runExportAgentsMd: runExportAgentsMd2 }) => runExportAgentsMd2({ target: "project", cwd })).catch(() => {
     });
   } catch {
@@ -20373,29 +20881,29 @@ var init_capture_vibe = __esm({
 // src/commands/daemon.ts
 import { createHash as createHash11 } from "node:crypto";
 import {
-  existsSync as existsSync44,
-  mkdirSync as mkdirSync22,
+  existsSync as existsSync45,
+  mkdirSync as mkdirSync23,
   readFileSync as readFileSync41,
   readdirSync as readdirSync10,
-  statSync as statSync12,
-  unlinkSync as unlinkSync4,
-  writeFileSync as writeFileSync34
+  statSync as statSync13,
+  unlinkSync as unlinkSync5,
+  writeFileSync as writeFileSync35
 } from "node:fs";
 import { createServer } from "node:http";
-import { join as join42 } from "node:path";
+import { join as join43 } from "node:path";
 function computeBrainMtime() {
   const now = Date.now();
   if (brainMtimeCache && now - brainMtimeCache.computedAt < BRAIN_MTIME_CACHE_MS) {
     return brainMtimeCache.value;
   }
-  const root = join42(getConfig().brainPath, "notes");
+  const root = join43(getConfig().brainPath, "notes");
   let maxMtime = 0;
-  if (existsSync44(root)) {
+  if (existsSync45(root)) {
     for (const month of readdirSync10(root)) {
-      const monthDir = join42(root, month);
+      const monthDir = join43(root, month);
       try {
         for (const f of readdirSync10(monthDir)) {
-          const s = statSync12(join42(monthDir, f));
+          const s = statSync13(join43(monthDir, f));
           if (s.mtimeMs > maxMtime) maxMtime = s.mtimeMs;
         }
       } catch {
@@ -20432,13 +20940,13 @@ function cacheKey(endpoint, parts) {
   return createHash11("sha1").update(raw).digest("hex");
 }
 function pidPath() {
-  return join42(getConfig().cachePath, "daemon.pid");
+  return join43(getConfig().cachePath, "daemon.pid");
 }
 function portPath() {
-  return join42(getConfig().cachePath, "daemon.port");
+  return join43(getConfig().cachePath, "daemon.port");
 }
 function lockPath() {
-  return join42(getConfig().cachePath, "daemon.lock");
+  return join43(getConfig().cachePath, "daemon.lock");
 }
 function readDaemonPort() {
   try {
@@ -20481,7 +20989,7 @@ async function pingDaemon(port, timeoutMs = 1500) {
 async function startDaemonForeground(opts) {
   const cfg = getConfig();
   const log = getLogger();
-  if (!existsSync44(cfg.cachePath)) mkdirSync22(cfg.cachePath, { recursive: true });
+  if (!existsSync45(cfg.cachePath)) mkdirSync23(cfg.cachePath, { recursive: true });
   const existingPort = readDaemonPort();
   const existingPid = readDaemonPid();
   if (existingPort && existingPid && isProcessAlive(existingPid)) {
@@ -20505,8 +21013,8 @@ async function startDaemonForeground(opts) {
   await new Promise((resolve9, reject) => {
     server.once("error", reject);
     server.listen(port, "127.0.0.1", () => {
-      writeFileSync34(pidPath(), String(process.pid), "utf8");
-      writeFileSync34(portPath(), String(port), "utf8");
+      writeFileSync35(pidPath(), String(process.pid), "utf8");
+      writeFileSync35(portPath(), String(port), "utf8");
       log.info({ port, pid: process.pid }, "lazybrain daemon listening");
       resolve9();
     });
@@ -20514,15 +21022,15 @@ async function startDaemonForeground(opts) {
   const cleanup = () => {
     server.close();
     try {
-      unlinkSync4(pidPath());
+      unlinkSync5(pidPath());
     } catch {
     }
     try {
-      unlinkSync4(portPath());
+      unlinkSync5(portPath());
     } catch {
     }
     try {
-      unlinkSync4(lockPath());
+      unlinkSync5(lockPath());
     } catch {
     }
     process.exit(0);
@@ -20547,12 +21055,12 @@ async function handleRequest(req, res, state) {
     const cacheTotal = state.cacheHits + state.cacheMisses;
     let brainStats = null;
     try {
-      const root = join42(getConfig().brainPath, "notes");
+      const root = join43(getConfig().brainPath, "notes");
       let count = 0;
-      if (existsSync44(root)) {
+      if (existsSync45(root)) {
         for (const month of readdirSync10(root)) {
           try {
-            for (const f of readdirSync10(join42(root, month))) {
+            for (const f of readdirSync10(join43(root, month))) {
               if (f.endsWith(".html")) count += 1;
             }
           } catch {
@@ -20766,18 +21274,18 @@ async function runCaptureInProcess(raw, session, opts) {
   if (!raw) {
     return JSON.stringify({ status: "noop", reason: "empty input" });
   }
-  const tmpDir = join42(getConfig().cachePath, "capture-queue");
-  if (!existsSync44(tmpDir)) mkdirSync22(tmpDir, { recursive: true });
-  const tmpFile = join42(
+  const tmpDir = join43(getConfig().cachePath, "capture-queue");
+  if (!existsSync45(tmpDir)) mkdirSync23(tmpDir, { recursive: true });
+  const tmpFile = join43(
     tmpDir,
     `inflight-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.txt`
   );
-  writeFileSync34(tmpFile, raw, "utf8");
+  writeFileSync35(tmpFile, raw, "utf8");
   try {
     return await runCapture({ fromFile: tmpFile, session, async: opts.async });
   } finally {
     try {
-      unlinkSync4(tmpFile);
+      unlinkSync5(tmpFile);
     } catch {
     }
   }
@@ -20857,11 +21365,11 @@ async function runDaemonStop(opts) {
   } catch {
   }
   try {
-    unlinkSync4(pidPath());
+    unlinkSync5(pidPath());
   } catch {
   }
   try {
-    unlinkSync4(portPath());
+    unlinkSync5(portPath());
   } catch {
   }
   return opts.pretty ? "daemon stopped" : JSON.stringify({ status: "stopped" });
@@ -20895,9 +21403,9 @@ var init_vibe_exports = {};
 __export(init_vibe_exports, {
   runInitVibe: () => runInitVibe
 });
-import { copyFileSync as copyFileSync3, existsSync as existsSync50, mkdirSync as mkdirSync25, readFileSync as readFileSync44, writeFileSync as writeFileSync36 } from "node:fs";
+import { copyFileSync as copyFileSync3, existsSync as existsSync51, mkdirSync as mkdirSync26, readFileSync as readFileSync44, writeFileSync as writeFileSync37 } from "node:fs";
 import { homedir as homedir5 } from "node:os";
-import { join as join47, resolve as resolve7 } from "node:path";
+import { join as join48, resolve as resolve7 } from "node:path";
 import { fileURLToPath as fileURLToPath5 } from "node:url";
 import { parse as parseToml2, stringify as stringifyToml } from "smol-toml";
 function pluginRoot() {
@@ -20906,10 +21414,10 @@ function pluginRoot() {
 async function runInitVibe(opts = {}) {
   const log = getLogger();
   const warnings = [];
-  const vibeHome2 = resolve7(opts.vibeHome ?? process.env.VIBE_HOME ?? join47(homedir5(), ".vibe"));
-  const agentsHome = resolve7(opts.agentsHome ?? join47(homedir5(), ".agents"));
-  const lazyBrainHome = resolve7(opts.lazyBrainHome ?? join47(homedir5(), ".lazybrain"));
-  if (!existsSync50(vibeHome2)) {
+  const vibeHome2 = resolve7(opts.vibeHome ?? process.env.VIBE_HOME ?? join48(homedir5(), ".vibe"));
+  const agentsHome = resolve7(opts.agentsHome ?? join48(homedir5(), ".agents"));
+  const lazyBrainHome = resolve7(opts.lazyBrainHome ?? join48(homedir5(), ".lazybrain"));
+  if (!existsSync51(vibeHome2)) {
     throw new Error(
       `Vibe home not found at ${vibeHome2}. Install mistral-vibe and run it once first (or set VIBE_HOME).`
     );
@@ -20936,13 +21444,13 @@ async function runInitVibe(opts = {}) {
   };
 }
 function installHook(vibeHome2, lazyBrainHome, warnings) {
-  const hooksPath = join47(vibeHome2, "hooks.toml");
-  const packageShimPath = join47(pluginRoot(), "vibe", "vibe-hook.mjs");
-  const stableHooksDir = join47(lazyBrainHome, "hooks");
-  const stableShimPath = join47(stableHooksDir, "vibe-hook.mjs");
+  const hooksPath = join48(vibeHome2, "hooks.toml");
+  const packageShimPath = join48(pluginRoot(), "vibe", "vibe-hook.mjs");
+  const stableHooksDir = join48(lazyBrainHome, "hooks");
+  const stableShimPath = join48(stableHooksDir, "vibe-hook.mjs");
   let shimPath = packageShimPath;
   try {
-    mkdirSync25(stableHooksDir, { recursive: true });
+    mkdirSync26(stableHooksDir, { recursive: true });
     copyFileSync3(packageShimPath, stableShimPath);
     shimPath = stableShimPath;
   } catch (err) {
@@ -20951,7 +21459,7 @@ function installHook(vibeHome2, lazyBrainHome, warnings) {
     );
   }
   let doc = {};
-  if (existsSync50(hooksPath)) {
+  if (existsSync51(hooksPath)) {
     try {
       doc = parseToml2(readFileSync44(hooksPath, "utf8"));
     } catch (err) {
@@ -20971,14 +21479,14 @@ function installHook(vibeHome2, lazyBrainHome, warnings) {
     description: "LazyBrain incremental memory capture (always exits 0)"
   });
   const next = { ...doc, hooks: kept };
-  writeFileSync36(hooksPath, `${stringifyToml(next)}
+  writeFileSync37(hooksPath, `${stringifyToml(next)}
 `, "utf8");
   return true;
 }
 function enableExperimentalHooks(vibeHome2, warnings) {
-  const configPath = join47(vibeHome2, "config.toml");
+  const configPath = join48(vibeHome2, "config.toml");
   let doc = {};
-  if (existsSync50(configPath)) {
+  if (existsSync51(configPath)) {
     try {
       doc = parseToml2(readFileSync44(configPath, "utf8"));
     } catch (err) {
@@ -20989,48 +21497,48 @@ function enableExperimentalHooks(vibeHome2, warnings) {
     }
   }
   const next = { ...doc, enable_experimental_hooks: true };
-  writeFileSync36(configPath, `${stringifyToml(next)}
+  writeFileSync37(configPath, `${stringifyToml(next)}
 `, "utf8");
   return true;
 }
 function installSkills(agentsHome, warnings) {
-  const sourceDir = join47(pluginRoot(), "skills");
+  const sourceDir = join48(pluginRoot(), "skills");
   const installed = [];
   for (const name of SKILLS_TO_PORT) {
-    const sourceFile = join47(sourceDir, `${name}.SKILL.md`);
-    if (!existsSync50(sourceFile)) {
+    const sourceFile = join48(sourceDir, `${name}.SKILL.md`);
+    if (!existsSync51(sourceFile)) {
       warnings.push(`skill source missing: ${sourceFile}`);
       continue;
     }
-    const targetDir = join47(agentsHome, "skills", name);
-    mkdirSync25(targetDir, { recursive: true });
-    copyFileSync3(sourceFile, join47(targetDir, "SKILL.md"));
+    const targetDir = join48(agentsHome, "skills", name);
+    mkdirSync26(targetDir, { recursive: true });
+    copyFileSync3(sourceFile, join48(targetDir, "SKILL.md"));
     installed.push(name);
   }
   return installed;
 }
 function installTool(vibeHome2, warnings) {
-  const source = join47(pluginRoot(), "vibe", "tools", "lazybrain_read.py");
-  if (!existsSync50(source)) {
+  const source = join48(pluginRoot(), "vibe", "tools", "lazybrain_read.py");
+  if (!existsSync51(source)) {
     warnings.push(`tool source missing: ${source} (ships in a later task)`);
     return false;
   }
-  const targetDir = join47(vibeHome2, "tools");
-  mkdirSync25(targetDir, { recursive: true });
-  copyFileSync3(source, join47(targetDir, "lazybrain_read.py"));
+  const targetDir = join48(vibeHome2, "tools");
+  mkdirSync26(targetDir, { recursive: true });
+  copyFileSync3(source, join48(targetDir, "lazybrain_read.py"));
   return true;
 }
 function installExplore(vibeHome2, warnings) {
-  const agentSource = join47(pluginRoot(), "vibe", "agents", "explore.toml");
-  const promptSource = join47(pluginRoot(), "vibe", "prompts", "explore.md");
-  if (!existsSync50(agentSource) || !existsSync50(promptSource)) {
+  const agentSource = join48(pluginRoot(), "vibe", "agents", "explore.toml");
+  const promptSource = join48(pluginRoot(), "vibe", "prompts", "explore.md");
+  if (!existsSync51(agentSource) || !existsSync51(promptSource)) {
     warnings.push("explore override sources missing (ships in a later task)");
     return false;
   }
-  mkdirSync25(join47(vibeHome2, "agents"), { recursive: true });
-  mkdirSync25(join47(vibeHome2, "prompts"), { recursive: true });
-  copyFileSync3(agentSource, join47(vibeHome2, "agents", "explore.toml"));
-  copyFileSync3(promptSource, join47(vibeHome2, "prompts", "explore.md"));
+  mkdirSync26(join48(vibeHome2, "agents"), { recursive: true });
+  mkdirSync26(join48(vibeHome2, "prompts"), { recursive: true });
+  copyFileSync3(agentSource, join48(vibeHome2, "agents", "explore.toml"));
+  copyFileSync3(promptSource, join48(vibeHome2, "prompts", "explore.md"));
   return true;
 }
 var HOOK_NAME, SKILLS_TO_PORT;
@@ -21054,22 +21562,22 @@ var init_exports = {};
 __export(init_exports, {
   runInit: () => runInit
 });
-import { existsSync as existsSync51, mkdirSync as mkdirSync26, writeFileSync as writeFileSync37 } from "node:fs";
-import { join as join48, resolve as resolve8 } from "node:path";
+import { existsSync as existsSync52, mkdirSync as mkdirSync27, writeFileSync as writeFileSync38 } from "node:fs";
+import { join as join49, resolve as resolve8 } from "node:path";
 function ensureDir(dirPath) {
-  if (!existsSync51(dirPath)) {
-    mkdirSync26(dirPath, { recursive: true });
+  if (!existsSync52(dirPath)) {
+    mkdirSync27(dirPath, { recursive: true });
   }
 }
 function resolveConfigPaths(brainPath) {
   return {
-    canonical: resolve8(join48(brainPath, CONFIG_FILENAME)),
-    legacy: resolve8(join48(brainPath, "..", CONFIG_FILENAME))
+    canonical: resolve8(join49(brainPath, CONFIG_FILENAME)),
+    legacy: resolve8(join49(brainPath, "..", CONFIG_FILENAME))
   };
 }
 function detectExistingInit(canonical2, legacy) {
-  if (existsSync51(canonical2)) return "canonical";
-  if (existsSync51(legacy)) return "legacy";
+  if (existsSync52(canonical2)) return "canonical";
+  if (existsSync52(legacy)) return "legacy";
   return null;
 }
 function resolveBrainTarget(opts) {
@@ -21099,10 +21607,10 @@ function resolveBrainTarget(opts) {
 async function runInit(opts) {
   const log = getLogger();
   const { brainPath, resolvedFrom } = resolveBrainTarget(opts);
-  const notesPath = join48(brainPath, "notes");
-  const knowledgeNodesPath = join48(brainPath, "knowledge-nodes");
-  const cachePath3 = join48(brainPath, "_cache");
-  const metaPath = join48(brainPath, "meta");
+  const notesPath = join49(brainPath, "notes");
+  const knowledgeNodesPath = join49(brainPath, "knowledge-nodes");
+  const cachePath3 = join49(brainPath, "_cache");
+  const metaPath = join49(brainPath, "meta");
   const { canonical: canonicalConfigPath, legacy: legacyConfigPath } = resolveConfigPaths(brainPath);
   const existingKind = detectExistingInit(canonicalConfigPath, legacyConfigPath);
   if (existingKind !== null && !opts.force) {
@@ -21123,7 +21631,7 @@ async function runInit(opts) {
     version: "1.0.0",
     createdAt: (/* @__PURE__ */ new Date()).toISOString()
   };
-  writeFileSync37(canonicalConfigPath, JSON.stringify(config, null, 2), "utf8");
+  writeFileSync38(canonicalConfigPath, JSON.stringify(config, null, 2), "utf8");
   const fromLabel = resolvedFrom === "flag" ? " (from --brain)" : resolvedFrom === "env" ? " (from LAZYBRAIN_BRAIN_PATH)" : "";
   log.info(
     { brainPath, resolvedFrom, force: !!opts.force },
@@ -21156,15 +21664,15 @@ __export(wipe_exports, {
   runWipe: () => runWipe
 });
 import {
-  existsSync as existsSync52,
-  mkdirSync as mkdirSync27,
+  existsSync as existsSync53,
+  mkdirSync as mkdirSync28,
   readdirSync as readdirSync11,
   rmSync as rmSync4,
-  statSync as statSync14,
-  unlinkSync as unlinkSync6,
-  writeFileSync as writeFileSync38
+  statSync as statSync15,
+  unlinkSync as unlinkSync7,
+  writeFileSync as writeFileSync39
 } from "node:fs";
-import { join as join49 } from "node:path";
+import { join as join50 } from "node:path";
 async function isDaemonRunning() {
   const port = readDaemonPort();
   const pid = readDaemonPid();
@@ -21175,17 +21683,17 @@ async function isDaemonRunning() {
 function buildDryRunSummary(cfg) {
   const notes = notesDir();
   let noteCount = 0;
-  if (existsSync52(notes)) {
+  if (existsSync53(notes)) {
     for (const partition of readdirSync11(notes)) {
-      const partPath = join49(notes, partition);
+      const partPath = join50(notes, partition);
       try {
         noteCount += readdirSync11(partPath).filter((f) => f.endsWith(".html")).length;
       } catch {
       }
     }
   }
-  const dirs = [batchesDir(), metaDir(), join49(brainRoot(), "clusters"), cfg.cachePath].filter(
-    (d) => existsSync52(d)
+  const dirs = [batchesDir(), metaDir(), join50(brainRoot(), "clusters"), cfg.cachePath].filter(
+    (d) => existsSync53(d)
   );
   return `Would delete: ${noteCount} notes, ${dirs.length} dirs (batches, meta, clusters, cache), cache at ${cfg.cachePath}.
 Re-run with --yes to confirm.`;
@@ -21193,10 +21701,10 @@ Re-run with --yes to confirm.`;
 function deleteWithRetry(filePath) {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      if (statSync14(filePath).isDirectory()) {
+      if (statSync15(filePath).isDirectory()) {
         rmSync4(filePath, { recursive: true, force: true });
       } else {
-        unlinkSync6(filePath);
+        unlinkSync7(filePath);
       }
       return true;
     } catch (err) {
@@ -21212,7 +21720,7 @@ function deleteWithRetry(filePath) {
     }
   }
   try {
-    writeFileSync38(filePath, "");
+    writeFileSync39(filePath, "");
     return true;
   } catch {
     return false;
@@ -21242,9 +21750,9 @@ async function runWipe(opts) {
     errors: []
   };
   const notesPath = notesDir();
-  if (existsSync52(notesPath)) {
+  if (existsSync53(notesPath)) {
     const partitions = readdirSync11(notesPath).filter((d) => {
-      const full = join49(notesPath, d);
+      const full = join50(notesPath, d);
       try {
         return readdirSync11(full).length >= 0;
       } catch {
@@ -21252,11 +21760,11 @@ async function runWipe(opts) {
       }
     });
     for (const partition of partitions) {
-      const partPath = join49(notesPath, partition);
+      const partPath = join50(notesPath, partition);
       try {
         const files = readdirSync11(partPath).filter((f) => f.endsWith(".html"));
         for (const file of files) {
-          unlinkSync6(join49(partPath, file));
+          unlinkSync7(join50(partPath, file));
           report.notesDeleted++;
         }
         try {
@@ -21269,12 +21777,12 @@ async function runWipe(opts) {
     }
   }
   const knDir = knowledgeNodesDir();
-  if (existsSync52(knDir)) {
+  if (existsSync53(knDir)) {
     try {
       const files = readdirSync11(knDir).filter((f) => f.endsWith(".html"));
       for (const file of files) {
         try {
-          unlinkSync6(join49(knDir, file));
+          unlinkSync7(join50(knDir, file));
           report.knowledgeNodesDeleted++;
         } catch (err) {
           report.errors.push(`knowledge-nodes/${file}: ${err.message}`);
@@ -21285,7 +21793,7 @@ async function runWipe(opts) {
     }
   }
   const batchesPath = batchesDir();
-  if (existsSync52(batchesPath)) {
+  if (existsSync53(batchesPath)) {
     try {
       rmSync4(batchesPath, { recursive: true, force: true });
       report.artifactsDeleted++;
@@ -21294,7 +21802,7 @@ async function runWipe(opts) {
     }
   }
   const metaPath = metaDir();
-  if (existsSync52(metaPath)) {
+  if (existsSync53(metaPath)) {
     try {
       rmSync4(metaPath, { recursive: true, force: true });
       report.artifactsDeleted++;
@@ -21303,8 +21811,8 @@ async function runWipe(opts) {
     }
   }
   const root = brainRoot();
-  const clustersPath = join49(root, "clusters");
-  if (existsSync52(clustersPath)) {
+  const clustersPath = join50(root, "clusters");
+  if (existsSync53(clustersPath)) {
     try {
       rmSync4(clustersPath, { recursive: true, force: true });
       report.artifactsDeleted++;
@@ -21314,29 +21822,29 @@ async function runWipe(opts) {
   }
   const brainArtifacts = ["_index.html", "_user-profile.html", "graph.html", "graph.txt"];
   for (const artifact of brainArtifacts) {
-    const artifactPath = join49(root, artifact);
-    if (existsSync52(artifactPath)) {
+    const artifactPath = join50(root, artifact);
+    if (existsSync53(artifactPath)) {
       try {
-        unlinkSync6(artifactPath);
+        unlinkSync7(artifactPath);
         report.artifactsDeleted++;
       } catch (err) {
         report.errors.push(`${artifact}: ${err.message}`);
       }
     }
   }
-  if (!existsSync52(notesPath)) {
+  if (!existsSync53(notesPath)) {
     try {
-      mkdirSync27(notesPath, { recursive: true });
+      mkdirSync28(notesPath, { recursive: true });
     } catch (err) {
       report.errors.push(`notes dir recreate: ${err.message}`);
     }
   }
   closeDb();
   const cacheDir = cfg.cachePath;
-  if (existsSync52(cacheDir)) {
+  if (existsSync53(cacheDir)) {
     const files = readdirSync11(cacheDir);
     for (const file of files) {
-      const filePath = join49(cacheDir, file);
+      const filePath = join50(cacheDir, file);
       try {
         const deleted = deleteWithRetry(filePath);
         if (deleted) {
@@ -21369,7 +21877,7 @@ var init_wipe = __esm({
 
 // bin/lazybrain.ts
 import { readFileSync as readFileSync45 } from "node:fs";
-import { dirname as dirname16, join as join50 } from "node:path";
+import { dirname as dirname16, join as join51 } from "node:path";
 import { fileURLToPath as fileURLToPath6 } from "node:url";
 import { Command } from "commander";
 
@@ -21498,7 +22006,6 @@ function relativeHref(fromPath, toPath) {
 init_neighbours();
 init_profile_update();
 init_prune();
-init_repair();
 
 // src/commands/query.ts
 init_structural();
@@ -21520,108 +22027,16 @@ function runQuery(opts) {
   return JSON.stringify({ count: hits.length, hits }, null, 2);
 }
 
-// src/commands/recompose.ts
-import { readFileSync as readFileSync26 } from "node:fs";
-
-// src/annotator/blocks/composers/recompose.ts
-init_file_neuron();
-import { parseHTML as parseHTML12 } from "linkedom";
-var SECTION_META = [
-  { kind: "decision", sectionId: "decisions", heading: "Decisions" },
-  { kind: "bug", sectionId: "bugs", heading: "Bugs" },
-  { kind: "idea", sectionId: "ideas", heading: "Ideas" },
-  { kind: "rule", sectionId: "rules", heading: "Rules" },
-  { kind: "qa", sectionId: "qa", heading: "Q & A" },
-  { kind: "warning", sectionId: "warnings", heading: "Warnings" },
-  { kind: "activity", sectionId: "activity", heading: "Touched in Conversations" }
-];
-function sortByDateDesc(items) {
-  return [...items].sort((a, b) => b.date.localeCompare(a.date));
-}
-function dedupByItemId(items) {
-  const seen = /* @__PURE__ */ new Set();
-  const out = [];
-  for (const item of items) {
-    if (item.itemId) {
-      if (seen.has(item.itemId)) continue;
-      seen.add(item.itemId);
-    }
-    out.push(item);
-  }
-  return out;
-}
-function buildLi(document, item) {
-  const li = document.createElement("li");
-  li.setAttribute("data-cerveau-confidence", String(item.confidence));
-  li.setAttribute("data-cerveau-date", item.date);
-  if (item.superseded) {
-    li.setAttribute("data-cerveau-superseded", "true");
-    li.setAttribute("data-cerveau-valid-until", item.validUntil ?? "");
-  }
-  if (item.authorId) li.setAttribute("data-cerveau-author-id", item.authorId);
-  if (item.author) li.setAttribute("data-cerveau-author", item.author);
-  if (item.kind) li.setAttribute("data-cerveau-kind", item.kind);
-  if (item.itemId) li.setAttribute("data-cerveau-item-id", item.itemId);
-  if (item.about) li.setAttribute("data-cerveau-about", item.about);
-  if (item.project) li.setAttribute("data-cerveau-project", item.project);
-  li.textContent = normalizeItemText(item.text);
-  if (item.sourceConvLink) {
-    const a = document.createElement("a");
-    a.setAttribute("href", item.sourceConvLink);
-    a.setAttribute("class", "conv-source");
-    a.textContent = "[source]";
-    li.appendChild(document.createTextNode(" "));
-    li.appendChild(a);
-  }
-  return li;
-}
-function buildSection(document, meta, items) {
-  const section = document.createElement("section");
-  section.setAttribute("data-section", meta.sectionId);
-  const h3 = document.createElement("h3");
-  h3.textContent = meta.heading;
-  section.appendChild(h3);
-  const ul = document.createElement("ul");
-  for (const item of items) {
-    ul.appendChild(buildLi(document, item));
-  }
-  section.appendChild(ul);
-  return section;
-}
-function recomposeFileNeuronEnrichment(existingHtml, items) {
-  const { document } = parseHTML12(`<!doctype html><html><body>${existingHtml}</body></html>`);
-  const article = document.querySelector('article[data-cerveau-type="file-neuron"]');
-  if (!article) return existingHtml;
-  const grouped = /* @__PURE__ */ new Map();
-  for (const item of items) {
-    const list = grouped.get(item.kind) ?? [];
-    list.push(item);
-    grouped.set(item.kind, list);
-  }
-  for (const meta of SECTION_META) {
-    const raw = grouped.get(meta.kind) ?? [];
-    const processed = dedupByItemId(sortByDateDesc(raw));
-    const existing = article.querySelector(`section[data-section="${meta.sectionId}"]`);
-    if (existing) {
-      existing.remove();
-    }
-    if (processed.length === 0) continue;
-    const newSection = buildSection(document, meta, processed);
-    const seeAlso = article.querySelector('section[data-section="see-also"]');
-    if (seeAlso) {
-      article.insertBefore(newSection, seeAlso);
-    } else {
-      article.appendChild(newSection);
-    }
-  }
-  return article.outerHTML;
-}
+// src/cli/register-core.ts
+init_recompose_all();
 
 // src/commands/recompose.ts
+init_recompose();
 init_fts();
 init_reader();
 init_writer();
 init_logger();
+import { readFileSync as readFileSync26 } from "node:fs";
 async function runRecompose(opts) {
   const log = getLogger();
   const indexed = getNoteById(opts.noteId);
@@ -21645,10 +22060,7 @@ async function runRecompose(opts) {
   try {
     indexNote(readNote(written.path));
   } catch (err) {
-    log.warn(
-      { path: written.path, err: err.message },
-      "recompose: reindex failed"
-    );
+    log.warn({ path: written.path, err: err.message }, "recompose: reindex failed");
   }
   return JSON.stringify({ noteId: written.id, itemsApplied: items.length, path: written.path });
 }
@@ -21662,138 +22074,14 @@ function readStdin2() {
   });
 }
 
-// src/commands/recompose-all.ts
-init_fts();
-init_reader();
-init_writer();
-init_logger();
-var TAG_KIND_PRIORITY = ["bug", "warning", "idea", "rule", "qa", "activity"];
-function deriveAuthoredKind(html) {
-  const explicit = html.match(/data-cerveau-kind\s*=\s*["']([^"']+)["']/i)?.[1];
-  if (explicit) return explicit;
-  const type = html.match(/data-cerveau-type\s*=\s*["']([^"']+)["']/i)?.[1];
-  if (type === "decision") return "decision";
-  const tagsAttr = html.match(/data-cerveau-tags\s*=\s*["']([^"']*)["']/i)?.[1] ?? "";
-  const tagWords = new Set(tagsAttr.toLowerCase().split(/\s+/).filter(Boolean));
-  for (const candidate of TAG_KIND_PRIORITY) {
-    if (tagWords.has(candidate)) return candidate;
-  }
-  return void 0;
-}
-function extractAuthoredItem(html, noteId) {
-  const authorId = html.match(/data-cerveau-author-id\s*=\s*["']([^"']+)["']/i)?.[1];
-  if (!authorId) return null;
-  const about = html.match(/data-cerveau-about\s*=\s*["']([^"']+)["']/i)?.[1];
-  if (!about) return null;
-  const kind = deriveAuthoredKind(html);
-  if (!kind) return null;
-  const author = html.match(/data-cerveau-author\s*=\s*["']([^"']+)["']/i)?.[1];
-  const project = html.match(/data-cerveau-project\s*=\s*["']([^"']+)["']/i)?.[1];
-  const orgId = html.match(/data-cerveau-org-id\s*=\s*["']([^"']+)["']/i)?.[1];
-  const created = html.match(/data-cerveau-created\s*=\s*["']([^"']+)["']/i)?.[1] ?? "";
-  const date = created.slice(0, 10) || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const factMatch = html.match(/<p\s+data-cerveau-fact[^>]*>([\s\S]*?)<\/p>/i);
-  const rawText = factMatch ? factMatch[1].replace(/<[^>]+>/g, "").trim() : "";
-  if (!rawText) return null;
-  const confidenceMatch = html.match(/data-cerveau-confidence\s*=\s*["']([\d.]+)["']/i);
-  const confidence = confidenceMatch ? Number.parseFloat(confidenceMatch[1]) : 1;
-  return {
-    text: rawText,
-    confidence,
-    date,
-    sourceConvLink: `#${noteId}`,
-    kind,
-    about,
-    project,
-    authorId,
-    author,
-    itemId: noteId,
-    orgId
-  };
-}
-function filePathFromAbout(about) {
-  const match = about.match(/^file:(.+)$/i);
-  if (!match) return null;
-  return match[1].replace(/\\/g, "/").replace(/^\.\//, "");
-}
-async function runRecomposeAll() {
-  const log = getLogger();
-  const report = {
-    fileNeuronsRecomposed: 0,
-    authoredItemsFound: 0,
-    skipped: false,
-    errors: []
-  };
-  let allNotes;
-  try {
-    allNotes = readAllNotes();
-  } catch (err) {
-    report.errors.push(err.message);
-    return report;
-  }
-  const authoredItemsByPath = /* @__PURE__ */ new Map();
-  for (const note of allNotes) {
-    if (!note.html.includes("data-cerveau-author-id")) continue;
-    if (note.html.includes('data-cerveau-type="file-neuron"')) continue;
-    if (note.html.includes('data-cerveau-type="concept"')) continue;
-    const item = extractAuthoredItem(note.html, note.id);
-    if (!item) continue;
-    const filePath = filePathFromAbout(item.about ?? "");
-    if (!filePath) continue;
-    const list = authoredItemsByPath.get(filePath) ?? [];
-    list.push(item);
-    authoredItemsByPath.set(filePath, list);
-    report.authoredItemsFound += 1;
-  }
-  if (report.authoredItemsFound === 0) {
-    report.skipped = true;
-    return report;
-  }
-  for (const note of allNotes) {
-    if (!note.html.includes('data-cerveau-type="file-neuron"')) continue;
-    const fileMatch = note.html.match(/data-code-file\s*=\s*["']([^"']+)["']/i);
-    if (!fileMatch) continue;
-    const neuronFilePath = fileMatch[1].replace(/\\/g, "/").replace(/^\.\//, "");
-    const items = authoredItemsByPath.get(neuronFilePath);
-    if (!items || items.length === 0) continue;
-    try {
-      const file = readNote(note.path);
-      const patched = recomposeFileNeuronEnrichment(file.html, items);
-      if (patched === file.html) continue;
-      const written = writeNote(patched, { overwrite: true });
-      try {
-        indexNote(readNote(written.path));
-      } catch (err) {
-        log.warn(
-          { path: written.path, err: err.message },
-          "recompose-all: reindex failed"
-        );
-      }
-      report.fileNeuronsRecomposed += 1;
-    } catch (err) {
-      const msg = err.message;
-      report.errors.push(`${neuronFilePath}: ${msg}`);
-      log.warn({ filePath: neuronFilePath, err: msg }, "recompose-all: file-neuron patch failed");
-    }
-  }
-  log.debug(
-    {
-      authoredItemsFound: report.authoredItemsFound,
-      fileNeuronsRecomposed: report.fileNeuronsRecomposed,
-      errors: report.errors.length
-    },
-    "recompose-all: done"
-  );
-  return report;
-}
-
 // src/cli/register-core.ts
+init_repair();
 init_search();
 
 // src/commands/stats.ts
 init_fts();
 init_config();
-import { existsSync as existsSync25, readFileSync as readFileSync27, statSync as statSync8 } from "node:fs";
+import { existsSync as existsSync25, readFileSync as readFileSync27, statSync as statSync9 } from "node:fs";
 import { join as join27 } from "node:path";
 function runStats(opts) {
   const cfg = getConfig();
@@ -21842,7 +22130,7 @@ function runStats(opts) {
 }
 function readRecentEvents(path, windowHours) {
   if (!existsSync25(path)) return [];
-  const stat = statSync8(path);
+  const stat = statSync9(path);
   if (stat.size === 0) return [];
   const raw = readFileSync27(path, "utf8");
   const cutoff = Date.now() - windowHours * 3600 * 1e3;
@@ -21898,11 +22186,38 @@ function formatPretty2(s) {
 init_wikilinks();
 init_contradictions();
 init_fts();
+import { readFileSync as readFileSync28 } from "node:fs";
+
+// src/store/pending-enrich.ts
+init_config();
+import { existsSync as existsSync26, mkdirSync as mkdirSync14, unlinkSync as unlinkSync4, writeFileSync as writeFileSync21 } from "node:fs";
+import { join as join28 } from "node:path";
+var MARKER_FILENAME = "pending-enrich.json";
+function pendingEnrichMarkerPath() {
+  return join28(getConfig().cachePath, MARKER_FILENAME);
+}
+function armPendingEnrich(noteId) {
+  const dir = getConfig().cachePath;
+  mkdirSync14(dir, { recursive: true });
+  writeFileSync21(
+    pendingEnrichMarkerPath(),
+    JSON.stringify({ armedAt: (/* @__PURE__ */ new Date()).toISOString(), noteId }),
+    "utf8"
+  );
+}
+function consumePendingEnrich() {
+  const p = pendingEnrichMarkerPath();
+  if (!existsSync26(p)) return false;
+  unlinkSync4(p);
+  return true;
+}
+
+// src/commands/store.ts
 init_reader();
 init_writer();
 init_logger();
 init_enrich();
-import { readFileSync as readFileSync28 } from "node:fs";
+init_recompose_all();
 async function runStore(opts) {
   const log = getLogger();
   let html = opts.html;
@@ -21950,13 +22265,37 @@ async function runStore(opts) {
         log.debug({ note: result.id, conflicts: hits.length }, "store: contradiction(s) flagged");
       }
     } catch (err) {
-      log.warn({ err: err.message }, "store: contradiction detection failed (non-fatal)");
+      log.warn(
+        { err: err.message },
+        "store: contradiction detection failed (non-fatal)"
+      );
     }
-    await runIncrementalEnrich();
-    try {
-      await runRecomposeAll();
-    } catch (err) {
-      log.warn({ err: err.message }, "store: recompose-all failed (non-fatal)");
+    if (opts.deferEnrich) {
+      let armed = false;
+      try {
+        armPendingEnrich(result.id);
+        armed = true;
+      } catch (err) {
+        log.warn(
+          { err: err.message },
+          "store: pending-enrich marker write failed \u2014 running enrichment inline"
+        );
+      }
+      if (!armed) {
+        await runIncrementalEnrich();
+        try {
+          await runRecomposeAll();
+        } catch (err) {
+          log.warn({ err: err.message }, "store: recompose-all failed (non-fatal)");
+        }
+      }
+    } else {
+      await runIncrementalEnrich();
+      try {
+        await runRecomposeAll();
+      } catch (err) {
+        log.warn({ err: err.message }, "store: recompose-all failed (non-fatal)");
+      }
     }
   }
   if (opts.pretty) {
@@ -22028,6 +22367,9 @@ function registerCore(program2) {
   program2.command("store").description("Store a new HTML note. Reads from stdin or --from-file.").option("--from-file <path>").option("--from-stdin", "read HTML from stdin (default)").option("--overwrite").option(
     "--upsert-if-richer",
     "if a note with the same id exists, replace it only when the new body is richer (preserves created, refreshes updated)"
+  ).option(
+    "--defer-enrich",
+    "defer conv enrichment/recompose to the serving sidecar (arms a pending-enrich marker instead)"
   ).option("--pretty").action(async (opts) => {
     try {
       const out = await runStore(opts);
@@ -22045,7 +22387,9 @@ function registerCore(program2) {
       handle(err);
     }
   });
-  program2.command("recompose <noteId>").description("Patch enrichment sections of a file-neuron from a JSON items list (no code rescan).").option("--items-file <path>", "read items JSON from file (default: stdin)").option("--items-stdin", "read items JSON from stdin").action(async (noteId, opts) => {
+  program2.command("recompose <noteId>").description(
+    "Patch enrichment sections of a file-neuron from a JSON items list (no code rescan)."
+  ).option("--items-file <path>", "read items JSON from file (default: stdin)").option("--items-stdin", "read items JSON from stdin").action(async (noteId, opts) => {
     try {
       const out = await runRecompose({ noteId, ...opts });
       process.stdout.write(`${out}
@@ -22178,23 +22522,25 @@ function registerCore(program2) {
   ).option(
     "--tags <tags>",
     "comma-separated tags to scope the repair (default: mission,agent,skill)"
-  ).option("--dry-run", "preview candidates without modifying anything").option("--pretty", "human-readable output").action((opts) => {
-    try {
-      if (!opts.unInvalidateNoise) {
-        throw new Error("repair: specify an action, e.g. --un-invalidate-noise");
-      }
-      const tags = opts.tags ? opts.tags.split(",").map((t) => t.trim()).filter(Boolean) : void 0;
-      const report = runRepairUnInvalidateNoise({ tags, dryRun: Boolean(opts.dryRun) });
-      if (opts.pretty) {
-        printRepairReport(report);
-      } else {
-        process.stdout.write(`${JSON.stringify(report, null, 2)}
+  ).option("--dry-run", "preview candidates without modifying anything").option("--pretty", "human-readable output").action(
+    (opts) => {
+      try {
+        if (!opts.unInvalidateNoise) {
+          throw new Error("repair: specify an action, e.g. --un-invalidate-noise");
+        }
+        const tags = opts.tags ? opts.tags.split(",").map((t) => t.trim()).filter(Boolean) : void 0;
+        const report = runRepairUnInvalidateNoise({ tags, dryRun: Boolean(opts.dryRun) });
+        if (opts.pretty) {
+          printRepairReport(report);
+        } else {
+          process.stdout.write(`${JSON.stringify(report, null, 2)}
 `);
+        }
+      } catch (err) {
+        handle(err);
       }
-    } catch (err) {
-      handle(err);
     }
-  });
+  );
 }
 function printRepairReport(report) {
   const w = (s) => process.stdout.write(s);
@@ -22363,8 +22709,8 @@ init_backlinks();
 init_pagerank();
 init_fts();
 init_logger();
-import { existsSync as existsSync30, readFileSync as readFileSync33, writeFileSync as writeFileSync25 } from "node:fs";
-import { join as join34 } from "node:path";
+import { existsSync as existsSync31, readFileSync as readFileSync33, writeFileSync as writeFileSync26 } from "node:fs";
+import { join as join35 } from "node:path";
 var DAY_MS3 = 864e5;
 var STALE_DAYS = 90;
 var STALE_PAGERANK_THRESHOLD = 0.01;
@@ -22375,8 +22721,8 @@ function daysSince(isoDate) {
   return Math.max(0, (Date.now() - t) / DAY_MS3);
 }
 function writeHealthMeta(brainPath, result) {
-  const indexPath2 = join34(brainPath, "_index.html");
-  if (!existsSync30(indexPath2)) return;
+  const indexPath2 = join35(brainPath, "_index.html");
+  if (!existsSync31(indexPath2)) return;
   try {
     let html = readFileSync33(indexPath2, "utf8");
     const escapedContent = JSON.stringify(result).replace(/"/g, "&quot;");
@@ -22387,7 +22733,7 @@ function writeHealthMeta(brainPath, result) {
       html = html.replace("</head>", `  ${metaTag}
 </head>`);
     }
-    writeFileSync25(indexPath2, html, "utf8");
+    writeFileSync26(indexPath2, html, "utf8");
   } catch (err) {
     getLogger().warn(
       { err: err.message },
@@ -22483,12 +22829,12 @@ async function computeHealthScore(brainPath) {
 // src/commands/import.ts
 init_heuristic();
 init_llm();
-import { existsSync as existsSync35, mkdirSync as mkdirSync17, readFileSync as readFileSync37, writeFileSync as writeFileSync26 } from "node:fs";
-import { dirname as dirname10, join as join37 } from "node:path";
+import { existsSync as existsSync36, mkdirSync as mkdirSync18, readFileSync as readFileSync37, writeFileSync as writeFileSync27 } from "node:fs";
+import { dirname as dirname10, join as join38 } from "node:path";
 
-// src/importers/adapter-claude-export.ts
+// src/importers/adapter-chatgpt-export.ts
 import { createHash as createHash6 } from "node:crypto";
-import { existsSync as existsSync31, readFileSync as readFileSync34 } from "node:fs";
+import { existsSync as existsSync32, readFileSync as readFileSync34 } from "node:fs";
 
 // src/importers/scrub.ts
 var SCRUB_PATTERNS = [
@@ -22551,79 +22897,7 @@ function scrubText(text) {
   return result;
 }
 
-// src/importers/adapter-claude-export.ts
-var ClaudeExportAdapter = class {
-  source = "claude-export";
-  inputPath;
-  constructor(inputPath) {
-    this.inputPath = inputPath;
-  }
-  isAvailable() {
-    return existsSync31(this.inputPath);
-  }
-  list(since) {
-    if (!existsSync31(this.inputPath)) return [];
-    const sinceMs = since ? new Date(since).getTime() : 0;
-    let rawData;
-    try {
-      rawData = JSON.parse(readFileSync34(this.inputPath, "utf-8"));
-    } catch {
-      return [];
-    }
-    const conversations = normalizeTopLevel(rawData);
-    const results = [];
-    for (const conv of conversations) {
-      const updatedMs = conv.updated_at ? new Date(conv.updated_at).getTime() : conv.created_at ? new Date(conv.created_at).getTime() : 0;
-      if (updatedMs > 0 && updatedMs < sinceMs) continue;
-      const text = extractConversationText(conv);
-      if (!text || text.length < 30) continue;
-      const scrubbed = scrubText(text);
-      const contentHash2 = createHash6("sha256").update(scrubbed).digest("hex");
-      const timestamp = conv.updated_at ?? conv.created_at ?? (/* @__PURE__ */ new Date()).toISOString();
-      const title = (conv.name ?? "Claude conversation").slice(0, 80);
-      results.push({
-        contentHash: contentHash2,
-        title,
-        text: scrubbed.slice(0, 4e3),
-        timestamp,
-        source: "import:claude-export",
-        topic: "import/claude"
-      });
-    }
-    return results;
-  }
-};
-function normalizeTopLevel(raw) {
-  if (Array.isArray(raw)) return raw;
-  if (raw && typeof raw === "object") {
-    const obj = raw;
-    if (Array.isArray(obj.conversations)) return obj.conversations;
-  }
-  return [];
-}
-function extractConversationText(conv) {
-  const messages = conv.chat_messages ?? [];
-  const texts = [];
-  for (const msg of messages) {
-    if (msg.sender !== "human" && msg.sender !== "assistant") continue;
-    const text = extractMessageText(msg);
-    if (text && text.length > 10) {
-      texts.push(text.slice(0, 600));
-    }
-  }
-  return texts.join("\n\n").slice(0, 4e3);
-}
-function extractMessageText(msg) {
-  if (typeof msg.text === "string" && msg.text.length > 0) return msg.text;
-  if (Array.isArray(msg.content)) {
-    return msg.content.filter((b) => b.type === "text" && typeof b.text === "string").map((b) => b.text ?? "").join(" ").trim();
-  }
-  return "";
-}
-
 // src/importers/adapter-chatgpt-export.ts
-import { createHash as createHash7 } from "node:crypto";
-import { existsSync as existsSync32, readFileSync as readFileSync35 } from "node:fs";
 var ChatGptExportAdapter = class {
   source = "chatgpt-export";
   inputPath;
@@ -22638,19 +22912,19 @@ var ChatGptExportAdapter = class {
     const sinceMs = since ? new Date(since).getTime() : 0;
     let rawData;
     try {
-      rawData = JSON.parse(readFileSync35(this.inputPath, "utf-8"));
+      rawData = JSON.parse(readFileSync34(this.inputPath, "utf-8"));
     } catch {
       return [];
     }
-    const conversations = normalizeTopLevel2(rawData);
+    const conversations = normalizeTopLevel(rawData);
     const results = [];
     for (const conv of conversations) {
       const updatedMs = (conv.update_time ?? conv.create_time ?? 0) * 1e3;
       if (updatedMs > 0 && updatedMs < sinceMs) continue;
-      const text = extractConversationText2(conv);
+      const text = extractConversationText(conv);
       if (!text || text.length < 30) continue;
       const scrubbed = scrubText(text);
-      const contentHash2 = createHash7("sha256").update(scrubbed).digest("hex");
+      const contentHash2 = createHash6("sha256").update(scrubbed).digest("hex");
       const timestamp = updatedMs > 0 ? new Date(updatedMs).toISOString() : (/* @__PURE__ */ new Date()).toISOString();
       const title = (conv.title ?? "ChatGPT conversation").slice(0, 80);
       results.push({
@@ -22665,7 +22939,7 @@ var ChatGptExportAdapter = class {
     return results;
   }
 };
-function normalizeTopLevel2(raw) {
+function normalizeTopLevel(raw) {
   if (Array.isArray(raw)) return raw;
   if (raw && typeof raw === "object") {
     const obj = raw;
@@ -22673,7 +22947,7 @@ function normalizeTopLevel2(raw) {
   }
   return [];
 }
-function extractConversationText2(conv) {
+function extractConversationText(conv) {
   const mapping = conv.mapping;
   if (!mapping) return conv.title ?? "";
   const nodes = Object.values(mapping);
@@ -22709,16 +22983,16 @@ function extractPartText(content) {
 
 // src/importers/adapter-claude-code.ts
 init_claude_code();
-import { createHash as createHash8 } from "node:crypto";
-import { existsSync as existsSync33, readdirSync as readdirSync8, statSync as statSync11 } from "node:fs";
-import { readFileSync as readFileSync36 } from "node:fs";
+import { createHash as createHash7 } from "node:crypto";
+import { existsSync as existsSync33, readdirSync as readdirSync8, statSync as statSync12 } from "node:fs";
+import { readFileSync as readFileSync35 } from "node:fs";
 import { homedir as homedir4 } from "node:os";
-import { join as join35 } from "node:path";
+import { join as join36 } from "node:path";
 var ClaudeCodeImportAdapter = class {
   source = "claude-code";
   claudeDir() {
     const profile = process.env.USERPROFILE ?? process.env.HOME ?? homedir4();
-    return join35(profile, ".claude", "projects");
+    return join36(profile, ".claude", "projects");
   }
   isAvailable() {
     return existsSync33(this.claudeDir());
@@ -22731,12 +23005,12 @@ var ClaudeCodeImportAdapter = class {
     for (const proj of readdirSync8(dir, { withFileTypes: true })) {
       if (!proj.isDirectory()) continue;
       const projectRoot = decodeProjectPath(proj.name);
-      const projPath = join35(dir, proj.name);
+      const projPath = join36(dir, proj.name);
       for (const filePath of findConversationFiles(projPath)) {
         try {
-          const stat = statSync11(filePath);
+          const stat = statSync12(filePath);
           if (stat.mtimeMs < sinceMs) continue;
-          const content = readFileSync36(filePath, "utf-8");
+          const content = readFileSync35(filePath, "utf-8");
           const { humanTurn, substantiveChars } = scanTranscriptSignal(content);
           if (!humanTurn || substantiveChars < MIN_SUBSTANTIVE_CHARS) continue;
           const chunks = extractConversationChunks(content, projectRoot, 25, 6e3);
@@ -22754,7 +23028,7 @@ var ClaudeCodeImportAdapter = class {
               title: i === 0 ? humanTitle : `${humanTitle} (part ${i + 1})`,
               text,
               timestamp,
-              source: `import:claude-code`,
+              source: "import:claude-code",
               topic,
               cwd: projectRoot,
               filesModified: chunk.filesModified,
@@ -22769,7 +23043,7 @@ var ClaudeCodeImportAdapter = class {
   }
 };
 function hashContent(text) {
-  return createHash8("sha256").update(text).digest("hex");
+  return createHash7("sha256").update(text).digest("hex");
 }
 var HARNESS_TAGS = [
   "command-name",
@@ -22832,11 +23106,83 @@ function deriveTopic(projectRoot) {
   return lastTwo ? `import/claude-code/${lastTwo}` : "import/claude-code";
 }
 
+// src/importers/adapter-claude-export.ts
+import { createHash as createHash8 } from "node:crypto";
+import { existsSync as existsSync34, readFileSync as readFileSync36 } from "node:fs";
+var ClaudeExportAdapter = class {
+  source = "claude-export";
+  inputPath;
+  constructor(inputPath) {
+    this.inputPath = inputPath;
+  }
+  isAvailable() {
+    return existsSync34(this.inputPath);
+  }
+  list(since) {
+    if (!existsSync34(this.inputPath)) return [];
+    const sinceMs = since ? new Date(since).getTime() : 0;
+    let rawData;
+    try {
+      rawData = JSON.parse(readFileSync36(this.inputPath, "utf-8"));
+    } catch {
+      return [];
+    }
+    const conversations = normalizeTopLevel2(rawData);
+    const results = [];
+    for (const conv of conversations) {
+      const updatedMs = conv.updated_at ? new Date(conv.updated_at).getTime() : conv.created_at ? new Date(conv.created_at).getTime() : 0;
+      if (updatedMs > 0 && updatedMs < sinceMs) continue;
+      const text = extractConversationText2(conv);
+      if (!text || text.length < 30) continue;
+      const scrubbed = scrubText(text);
+      const contentHash2 = createHash8("sha256").update(scrubbed).digest("hex");
+      const timestamp = conv.updated_at ?? conv.created_at ?? (/* @__PURE__ */ new Date()).toISOString();
+      const title = (conv.name ?? "Claude conversation").slice(0, 80);
+      results.push({
+        contentHash: contentHash2,
+        title,
+        text: scrubbed.slice(0, 4e3),
+        timestamp,
+        source: "import:claude-export",
+        topic: "import/claude"
+      });
+    }
+    return results;
+  }
+};
+function normalizeTopLevel2(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === "object") {
+    const obj = raw;
+    if (Array.isArray(obj.conversations)) return obj.conversations;
+  }
+  return [];
+}
+function extractConversationText2(conv) {
+  const messages = conv.chat_messages ?? [];
+  const texts = [];
+  for (const msg of messages) {
+    if (msg.sender !== "human" && msg.sender !== "assistant") continue;
+    const text = extractMessageText(msg);
+    if (text && text.length > 10) {
+      texts.push(text.slice(0, 600));
+    }
+  }
+  return texts.join("\n\n").slice(0, 4e3);
+}
+function extractMessageText(msg) {
+  if (typeof msg.text === "string" && msg.text.length > 0) return msg.text;
+  if (Array.isArray(msg.content)) {
+    return msg.content.filter((b) => b.type === "text" && typeof b.text === "string").map((b) => b.text ?? "").join(" ").trim();
+  }
+  return "";
+}
+
 // src/importers/adapter-cursor.ts
 import { createHash as createHash9 } from "node:crypto";
-import { existsSync as existsSync34 } from "node:fs";
+import { existsSync as existsSync35 } from "node:fs";
 import { createRequire as createRequire3 } from "node:module";
-import { join as join36 } from "node:path";
+import { join as join37 } from "node:path";
 var _require = createRequire3(import.meta.url);
 function loadSqlite() {
   try {
@@ -22850,8 +23196,8 @@ var CursorImportAdapter = class {
   dbPath() {
     const appdata = process.env.APPDATA;
     if (!appdata) return null;
-    const p = join36(appdata, "Cursor", "User", "globalStorage", "state.vscdb");
-    return existsSync34(p) ? p : null;
+    const p = join37(appdata, "Cursor", "User", "globalStorage", "state.vscdb");
+    return existsSync35(p) ? p : null;
   }
   isAvailable() {
     return this.dbPath() !== null;
@@ -22931,7 +23277,7 @@ function buildFallback(title, subtitle) {
   return parts.join("\n").trim();
 }
 function sanitizeTitle(raw) {
-  return raw.replace(/[\x00-\x1f]/g, " ").trim().slice(0, 80) || "Cursor conversation";
+  return raw.replace(new RegExp(`[${String.fromCharCode(0)}-${String.fromCharCode(31)}]`, "g"), " ").trim().slice(0, 80) || "Cursor conversation";
 }
 function extractTextsFromConversationMap(convMap) {
   const texts = [];
@@ -22964,7 +23310,6 @@ function extractMessageText2(msg) {
 
 // src/commands/import.ts
 init_writer();
-init_config();
 
 // src/util/concurrency.ts
 async function mapLimit(items, limit, fn) {
@@ -22984,6 +23329,7 @@ function resolveConcurrencyEnv(rawValue, fallback, min, max) {
 }
 
 // src/commands/import.ts
+init_config();
 init_tokenize();
 var IMPORT_CONCURRENCY_DEFAULT = 5;
 var IMPORT_CONCURRENCY_MIN = 1;
@@ -22998,15 +23344,15 @@ function resolveImportConcurrency() {
 }
 function dedupStorePath() {
   try {
-    return join37(getConfig().cachePath, ".import-hashes.json");
+    return join38(getConfig().cachePath, ".import-hashes.json");
   } catch {
     const home = process.env.USERPROFILE ?? process.env.HOME ?? ".";
-    return join37(home, ".lazybrain", ".import-hashes.json");
+    return join38(home, ".lazybrain", ".import-hashes.json");
   }
 }
 function loadDedupHashes() {
   const path = dedupStorePath();
-  if (!existsSync35(path)) return /* @__PURE__ */ new Set();
+  if (!existsSync36(path)) return /* @__PURE__ */ new Set();
   try {
     const raw = JSON.parse(readFileSync37(path, "utf-8"));
     if (Array.isArray(raw)) return new Set(raw);
@@ -23017,8 +23363,8 @@ function loadDedupHashes() {
 function saveDedupHashes(hashes) {
   try {
     const path = dedupStorePath();
-    mkdirSync17(dirname10(path), { recursive: true });
-    writeFileSync26(path, JSON.stringify([...hashes]), "utf-8");
+    mkdirSync18(dirname10(path), { recursive: true });
+    writeFileSync27(path, JSON.stringify([...hashes]), "utf-8");
   } catch {
   }
 }
@@ -23042,7 +23388,7 @@ function buildAdapter(source, input) {
 }
 function buildAutoAdapters(input) {
   const adapters = [new ClaudeCodeImportAdapter(), new CursorImportAdapter()];
-  if (input && existsSync35(input)) {
+  if (input && existsSync36(input)) {
     const peek = safeReadStart(input, 200);
     if (peek.includes("chat_messages")) {
       adapters.push(new ClaudeExportAdapter(input));
@@ -23161,14 +23507,36 @@ init_fts();
 init_reader();
 init_fingerprints();
 init_logger();
-import { existsSync as existsSync36 } from "node:fs";
+import { existsSync as existsSync37 } from "node:fs";
+var INDEXER_TEXT_VERSION = "2026-09-distilled-v1";
+function readIndexerTextVersion() {
+  try {
+    const row = getDb().prepare(`SELECT value FROM indexer_state WHERE key = 'indexer_text_version'`).get();
+    return row?.value ?? null;
+  } catch {
+    return null;
+  }
+}
+function writeIndexerTextVersion(version) {
+  getDb().prepare(
+    `INSERT INTO indexer_state (key, value) VALUES ('indexer_text_version', ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+  ).run(version);
+}
 async function runIncrementalUpdate() {
   const log = getLogger();
   let store = loadFingerprints();
   const allNotes = readAllNotes();
   const allPaths = allNotes.map((n) => n.path);
-  const changedPaths = new Set(getChangedFiles(allPaths, store));
-  const orphanedPaths = getOrphanedFingerprints(store).filter((p) => !existsSync36(p));
+  const textVersionStale = readIndexerTextVersion() !== INDEXER_TEXT_VERSION;
+  if (textVersionStale) {
+    log.info(
+      { stored: readIndexerTextVersion(), current: INDEXER_TEXT_VERSION },
+      "index-update: indexer_text_version changed \u2014 forcing one full re-index"
+    );
+  }
+  const changedPaths = new Set(textVersionStale ? allPaths : getChangedFiles(allPaths, store));
+  const orphanedPaths = getOrphanedFingerprints(store).filter((p) => !existsSync37(p));
   let indexed = 0;
   let deleted = 0;
   let skipped = 0;
@@ -23208,6 +23576,7 @@ async function runIncrementalUpdate() {
     }
   }
   saveFingerprints(store);
+  if (textVersionStale) writeIndexerTextVersion(INDEXER_TEXT_VERSION);
   log.info({ indexed, deleted, skipped, failed }, "incremental index update complete");
   await embedNotesForIndex(indexedNotes);
   return { indexed, deleted, skipped, failed, failures };
@@ -23271,8 +23640,8 @@ init_interlink();
 
 // src/commands/publish.ts
 init_fts();
-import { existsSync as existsSync38, mkdirSync as mkdirSync19, rmSync as rmSync3, writeFileSync as writeFileSync29 } from "node:fs";
-import { join as join39 } from "node:path";
+import { existsSync as existsSync39, mkdirSync as mkdirSync20, rmSync as rmSync3, writeFileSync as writeFileSync30 } from "node:fs";
+import { join as join40 } from "node:path";
 
 // src/publish/site.ts
 init_backlinks();
@@ -23280,14 +23649,14 @@ init_knowledge_graph();
 init_fts();
 import {
   copyFileSync as copyFileSync2,
-  existsSync as existsSync37,
-  mkdirSync as mkdirSync18,
+  existsSync as existsSync38,
+  mkdirSync as mkdirSync19,
   readFileSync as readFileSync38,
   readdirSync as readdirSync9,
   rmSync as rmSync2,
-  writeFileSync as writeFileSync28
+  writeFileSync as writeFileSync29
 } from "node:fs";
-import { dirname as dirname11, join as join38 } from "node:path";
+import { dirname as dirname11, join as join39 } from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
 
 // src/schema/scrubber.ts
@@ -23627,7 +23996,7 @@ function mapDbError(res, err) {
 
 // src/server/routes/graph.ts
 function buildGraphPayload() {
-  const allNotes = listAllReadonly({ includeExpired: false });
+  const allNotes = listGraphNotesReadonly();
   const backlinksIdx = loadBacklinks();
   const knowledgeGraph = loadKnowledgeGraph();
   const posMap = /* @__PURE__ */ new Map();
@@ -23906,8 +24275,7 @@ function handleGraphLayout(req, res) {
   try {
     const persistedGraph = loadKnowledgeGraph();
     if (persistedGraph) {
-      const liveNotes = listAllReadonly({ includeExpired: false });
-      const slim = buildSlimLayoutFromPersistedGraph(persistedGraph, liveNotes.length);
+      const slim = buildSlimLayoutFromPersistedGraph(persistedGraph, countAllNotesReadonly());
       sendJsonCached(req, res, 200, slim, { csp: CSP_API }).catch((err) => {
         log.error({ err }, "Compression error in /_api/graph-layout.json");
       });
@@ -24128,22 +24496,22 @@ var CSP_META_TAG = `<meta http-equiv="Content-Security-Policy" content="default-
 function brainUiRoot() {
   const base = dirname11(fileURLToPath3(import.meta.url));
   const candidates = [
-    join38(base, "..", "..", "examples", "brain-ui"),
-    join38(base, "..", "..", "..", "examples", "brain-ui"),
-    join38(base, "..", "..", "..", "..", "examples", "brain-ui")
+    join39(base, "..", "..", "examples", "brain-ui"),
+    join39(base, "..", "..", "..", "examples", "brain-ui"),
+    join39(base, "..", "..", "..", "..", "examples", "brain-ui")
   ];
   for (const candidate of candidates) {
-    if (existsSync37(candidate)) return candidate;
+    if (existsSync38(candidate)) return candidate;
   }
   throw new Error(`brain-ui directory not found. Looked in:
 ${candidates.join("\n")}`);
 }
 function copyDir(src, dest) {
-  mkdirSync18(dest, { recursive: true });
+  mkdirSync19(dest, { recursive: true });
   const entries = readdirSync9(src, { withFileTypes: true });
   for (const entry of entries) {
-    const srcPath = join38(src, entry.name);
-    const destPath = join38(dest, entry.name);
+    const srcPath = join39(src, entry.name);
+    const destPath = join39(dest, entry.name);
     if (entry.isDirectory()) {
       copyDir(srcPath, destPath);
     } else {
@@ -24281,8 +24649,8 @@ function buildTreePayload(allNotes, inScopeIds) {
   return { projects };
 }
 function writeJson(filePath, data) {
-  mkdirSync18(dirname11(filePath), { recursive: true });
-  writeFileSync28(filePath, JSON.stringify(data), "utf8");
+  mkdirSync19(dirname11(filePath), { recursive: true });
+  writeFileSync29(filePath, JSON.stringify(data), "utf8");
 }
 function scrubNotes(profile, excludeTier, topicPrefix) {
   const notes = readAllNotes();
@@ -24362,7 +24730,7 @@ function collectSynthesisData(profile, topicPrefix) {
 }
 function generateSite(opts = {}) {
   const root = brainRoot();
-  const target = opts.outDir ?? join38(root, "..", "public-site");
+  const target = opts.outDir ?? join39(root, "..", "public-site");
   const profile = opts.profile ?? "public-strict";
   const baseUrl = opts.baseUrl ?? "https://example.github.io/brain";
   const siteTitle = opts.siteTitle ?? "LazyBrain Wiki";
@@ -24402,7 +24770,7 @@ function generateSite(opts = {}) {
   const robots = buildRobotsTxt(baseUrl);
   const synthesis = collectSynthesisData(profile, opts.topic);
   const uiRoot = brainUiRoot();
-  const originalIndex = readFileSync38(join38(uiRoot, "index.html"), "utf8");
+  const originalIndex = readFileSync38(join39(uiRoot, "index.html"), "utf8");
   const patchedIndex = injectStaticMeta(originalIndex, { siteTitle, siteDescription, baseUrl });
   const scrubReport = {
     notesPublished: accepted.length,
@@ -24412,49 +24780,49 @@ function generateSite(opts = {}) {
     pathsScrubbed: totalPathsScrubbed,
     sensitivePatternsDetected: [...allDetectedPatterns]
   };
-  if (existsSync37(target)) rmSync2(target, { recursive: true, force: true });
-  mkdirSync18(target, { recursive: true });
+  if (existsSync38(target)) rmSync2(target, { recursive: true, force: true });
+  mkdirSync19(target, { recursive: true });
   const uiEntries = readdirSync9(uiRoot, { withFileTypes: true });
   for (const entry of uiEntries) {
     if (entry.name === "index.html") continue;
-    const srcPath = join38(uiRoot, entry.name);
-    const destPath = join38(target, entry.name);
+    const srcPath = join39(uiRoot, entry.name);
+    const destPath = join39(target, entry.name);
     if (entry.isDirectory()) {
       copyDir(srcPath, destPath);
     } else {
       copyFileSync2(srcPath, destPath);
     }
   }
-  writeFileSync28(join38(target, "index.html"), patchedIndex, "utf8");
-  const dataDir = join38(target, "data");
-  writeJson(join38(dataDir, "notes.json"), manifest);
-  writeJson(join38(dataDir, "graph.json"), graph);
-  writeJson(join38(dataDir, "graph-layout.json"), buildSlimLayout(graph));
-  writeJson(join38(dataDir, "tree.json"), tree);
-  writeJson(join38(dataDir, "search-index.json"), searchIndex);
+  writeFileSync29(join39(target, "index.html"), patchedIndex, "utf8");
+  const dataDir = join39(target, "data");
+  writeJson(join39(dataDir, "notes.json"), manifest);
+  writeJson(join39(dataDir, "graph.json"), graph);
+  writeJson(join39(dataDir, "graph-layout.json"), buildSlimLayout(graph));
+  writeJson(join39(dataDir, "tree.json"), tree);
+  writeJson(join39(dataDir, "search-index.json"), searchIndex);
   for (const { indexed, cleaned, paths } of accepted) {
-    const htmlPath = join38(dataDir, paths.html);
-    mkdirSync18(dirname11(htmlPath), { recursive: true });
-    writeFileSync28(htmlPath, cleaned, "utf8");
+    const htmlPath = join39(dataDir, paths.html);
+    mkdirSync19(dirname11(htmlPath), { recursive: true });
+    writeFileSync29(htmlPath, cleaned, "utf8");
     writeJson(
-      join38(dataDir, paths.backlinks),
+      join39(dataDir, paths.backlinks),
       buildBacklinksJson(indexed.id, backlinksIndex, inScopeIds)
     );
     writeJson(
-      join38(dataDir, paths.neighbors),
+      join39(dataDir, paths.neighbors),
       buildNeighborsJson(indexed.id, backlinksIndex, inScopeIds)
     );
-    writeJson(join38(dataDir, paths.meta), buildMetaJson(indexed, root));
+    writeJson(join39(dataDir, paths.meta), buildMetaJson(indexed, root));
   }
   if (synthesis.index !== null) {
-    writeFileSync28(join38(dataDir, "synthesis-index.html"), synthesis.index, "utf8");
+    writeFileSync29(join39(dataDir, "synthesis-index.html"), synthesis.index, "utf8");
   }
   for (const { topic, html } of synthesis.topics) {
     const safeTopicName = topic.replace(/[^a-z0-9_-]/gi, "-").slice(0, 60);
-    writeFileSync28(join38(dataDir, `synthesis-${safeTopicName}.html`), html, "utf8");
+    writeFileSync29(join39(dataDir, `synthesis-${safeTopicName}.html`), html, "utf8");
   }
-  writeFileSync28(join38(target, "sitemap.xml"), sitemap, "utf8");
-  writeFileSync28(join38(target, "robots.txt"), robots, "utf8");
+  writeFileSync29(join39(target, "sitemap.xml"), sitemap, "utf8");
+  writeFileSync29(join39(target, "robots.txt"), robots, "utf8");
   const scrubReportPath = `${target}.scrub-report.json`;
   writeJson(scrubReportPath, scrubReport);
   getLogger().info(`scrub report written to: ${scrubReportPath}`);
@@ -24537,7 +24905,7 @@ function buildSitePrettyReport(result) {
   return lines.join("\n");
 }
 function runPublishRaw(opts) {
-  const target = opts.outDir ?? join39(brainRoot(), "..", "public");
+  const target = opts.outDir ?? join40(brainRoot(), "..", "public");
   const profile = opts.profile ?? "public-strict";
   const notes = readAllNotes();
   const allIndex = listAll({ includeExpired: false });
@@ -24595,19 +24963,19 @@ function runPublishRaw(opts) {
       report
     });
   }
-  if (existsSync38(target)) rmSync3(target, { recursive: true, force: true });
-  mkdirSync19(target, { recursive: true });
+  if (existsSync39(target)) rmSync3(target, { recursive: true, force: true });
+  mkdirSync20(target, { recursive: true });
   const indexEntries = [];
   for (const a of accepted) {
     const relPath = resolveRelPath(a.path, a.id);
-    const outFile = join39(target, relPath);
-    mkdirSync19(join39(outFile, ".."), { recursive: true });
-    writeFileSync29(outFile, wrapPage(a.id, a.cleaned), "utf8");
+    const outFile = join40(target, relPath);
+    mkdirSync20(join40(outFile, ".."), { recursive: true });
+    writeFileSync30(outFile, wrapPage(a.id, a.cleaned), "utf8");
     indexEntries.push(`  <li><a href="${relPath.replace(/\\/g, "/")}">${a.id}</a></li>`);
   }
   const indexHtml = buildIndexHtml(indexEntries);
-  writeFileSync29(join39(target, "index.html"), indexHtml, "utf8");
-  writeFileSync29(join39(target, "style.css"), defaultCss(), "utf8");
+  writeFileSync30(join40(target, "index.html"), indexHtml, "utf8");
+  writeFileSync30(join40(target, "style.css"), defaultCss(), "utf8");
   if (opts.pretty) {
     return buildPrettyReport(accepted.length, target, report);
   }
@@ -24633,7 +25001,7 @@ function resolveRelPath(notePath2, id) {
     return notePath2.slice(notesDir().length + 1);
   }
   if (notePath2.startsWith(batchesDir())) {
-    return join39("batches", notePath2.slice(batchesDir().length + 1));
+    return join40("batches", notePath2.slice(batchesDir().length + 1));
   }
   return `${id}.html`;
 }
@@ -24699,10 +25067,12 @@ memory-batch { display: block; background: #fff; border: 1px solid #ddd; padding
 }
 
 // src/commands/reindex-missing.ts
+init_embed_index();
+init_embeddings();
 init_fts();
 init_reader();
 init_logger();
-import { existsSync as existsSync39 } from "node:fs";
+import { existsSync as existsSync40 } from "node:fs";
 var DEFAULT_BATCH_SIZE = 200;
 function readIndexedRows() {
   const db = getDb();
@@ -24801,22 +25171,31 @@ async function reconcileIndex(opts = {}) {
     }
   }
   const storedEmbeddingIds = loadAllStoredEmbeddings();
+  const embeddingCandidates = listAllWithText({ includeExpired: true }).filter((n) => {
+    const stored = storedEmbeddingIds.get(n.id);
+    if (!stored) return true;
+    if (stored.modelId !== MODEL_ID) return true;
+    return stored.embedTextHash !== hashKey(buildEmbedText(n) || "untitled");
+  });
+  const embeddingsStaleBefore = embeddingCandidates.filter(
+    (n) => storedEmbeddingIds.has(n.id)
+  ).length;
   let embeddingsBackfilled = 0;
   if (!dryRun) {
-    const candidates = listAllWithText({ includeExpired: true }).filter(
-      (n) => !storedEmbeddingIds.has(n.id)
-    );
-    for (let i = 0; i < candidates.length; i += batchSize) {
-      const batch = candidates.slice(i, i + batchSize);
+    for (let i = 0; i < embeddingCandidates.length; i += batchSize) {
+      const batch = embeddingCandidates.slice(i, i + batchSize);
       await embedNotesForIndex(batch);
       embeddingsBackfilled += batch.length;
       log.info(
-        { done: Math.min(i + batchSize, candidates.length), total: candidates.length },
+        {
+          done: Math.min(i + batchSize, embeddingCandidates.length),
+          total: embeddingCandidates.length
+        },
         "reindex --missing: embedding backfill progress"
       );
     }
   }
-  const ghostRows = indexedRowsBefore.filter((r) => !existsSync39(r.path));
+  const ghostRows = indexedRowsBefore.filter((r) => !existsSync40(r.path));
   let ghostRowsDeleted = 0;
   if (!dryRun && deleteGhosts) {
     for (const row of ghostRows) {
@@ -24824,7 +25203,10 @@ async function reconcileIndex(opts = {}) {
         deleteNote(row.id);
         ghostRowsDeleted += 1;
       } catch (err) {
-        log.warn({ id: row.id, err: err.message }, "reindex --missing: ghost delete failed");
+        log.warn(
+          { id: row.id, err: err.message },
+          "reindex --missing: ghost delete failed"
+        );
       }
     }
   }
@@ -24854,6 +25236,7 @@ async function reconcileIndex(opts = {}) {
     ghost_rows: ghostRows.length,
     ghost_rows_deleted: ghostRowsDeleted,
     embeddings_missing_before: embeddingsMissingBefore,
+    embeddings_stale_before: embeddingsStaleBefore,
     embeddings_backfilled: embeddingsBackfilled,
     indexed_notes_after: indexedNotesAfter,
     remaining_unindexed_after: remainingUnindexedAfter,
@@ -24907,19 +25290,22 @@ function formatReport(report) {
     w.push(`  Failed:                  ${report.failed}`);
   }
   w.push(`  Embeddings missing:      ${report.embeddings_missing_before}`);
+  w.push(`  Embeddings stale:        ${report.embeddings_stale_before}`);
   if (!report.dryRun) {
     w.push(`  Embeddings backfilled:   ${report.embeddings_backfilled}`);
   }
   w.push(`  Ghost rows:              ${report.ghost_rows}`);
   if (!report.dryRun) {
-    w.push(`  Ghost rows deleted:      ${report.ghost_rows_deleted}${report.ghost_rows_deleted === 0 && report.ghost_rows > 0 ? " (pass --delete-ghosts to remove)" : ""}`);
+    w.push(
+      `  Ghost rows deleted:      ${report.ghost_rows_deleted}${report.ghost_rows_deleted === 0 && report.ghost_rows > 0 ? " (pass --delete-ghosts to remove)" : ""}`
+    );
   }
   w.push(`  Indexed rows after:      ${report.indexed_notes_after}`);
   w.push(
     `  Remaining unindexed:     ${report.remaining_unindexed_after}${report.remaining_unindexed_after > 0 ? " (re-diffed post-run \u2014 see failures below)" : ""}`
   );
   w.push(
-    `  Reconciled:              ${report.reconciled ? "yes" : "NO \u2014 " + report.reconciliation_note}`
+    `  Reconciled:              ${report.reconciled ? "yes" : `NO \u2014 ${report.reconciliation_note}`}`
   );
   w.push(`  Duration:                ${report.duration_ms}ms`);
   w.push("  \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
@@ -24961,7 +25347,18 @@ function registerPipeline(program2) {
   });
   program2.command("reindex").description(
     "Diff-based reconciliation between note files on disk and the SQLite index (see commands/reindex-missing.ts). Dry-run by default."
-  ).option("--missing", "index disk files with no index row, backfill missing embeddings, report ghost rows").option("--dry-run", "preview counts without writing (default: true)", true).option("--no-dry-run", "actually apply the reconciliation").option("--delete-ghosts", "also delete index rows whose file no longer exists on disk (requires --no-dry-run)").option("--batch-size <n>", "notes indexed/embedded per batch", (v) => Number.parseInt(v, 10), 200).option("--pretty", "human-readable output").action(async (opts) => {
+  ).option(
+    "--missing",
+    "index disk files with no index row, backfill missing embeddings, report ghost rows"
+  ).option("--dry-run", "preview counts without writing (default: true)", true).option("--no-dry-run", "actually apply the reconciliation").option(
+    "--delete-ghosts",
+    "also delete index rows whose file no longer exists on disk (requires --no-dry-run)"
+  ).option(
+    "--batch-size <n>",
+    "notes indexed/embedded per batch",
+    (v) => Number.parseInt(v, 10),
+    200
+  ).option("--pretty", "human-readable output").action(async (opts) => {
     try {
       const out = await runReindex(opts);
       process.stdout.write(`${out}
@@ -25225,9 +25622,9 @@ init_daemon();
 // src/commands/serve.ts
 init_embeddings();
 init_fts();
-import { existsSync as existsSync49 } from "node:fs";
+import { existsSync as existsSync50 } from "node:fs";
 import { createServer as createServer2 } from "node:http";
-import { dirname as dirname15, join as join46, resolve as resolve6 } from "node:path";
+import { dirname as dirname15, join as join47, resolve as resolve6 } from "node:path";
 import { fileURLToPath as fileURLToPath4 } from "node:url";
 
 // src/server/auth.ts
@@ -25248,8 +25645,8 @@ init_paths();
 init_logger();
 init_brain_context();
 import { createHash as createHash12 } from "node:crypto";
-import { existsSync as existsSync45, mkdirSync as mkdirSync23 } from "node:fs";
-import { join as join43, resolve as resolve4 } from "node:path";
+import { existsSync as existsSync46, mkdirSync as mkdirSync24 } from "node:fs";
+import { join as join44, resolve as resolve4 } from "node:path";
 var MAX_HOT_BRAINS = 3;
 var VALID_BRAIN_LABELS = /* @__PURE__ */ new Set(["project", "team", "trunk"]);
 function normalizeBrainLabel(raw) {
@@ -25273,7 +25670,7 @@ function cachePathFor(absBrainPath) {
   return resolve4(absBrainPath, "_cache");
 }
 function ftsDbPathFor(cachePath3) {
-  return join43(cachePath3, FTS_DB_FILENAME);
+  return join44(cachePath3, FTS_DB_FILENAME);
 }
 function toContext(entry) {
   return { brainId: entry.brainId, brainPath: entry.brainPath, cachePath: entry.cachePath };
@@ -25326,8 +25723,8 @@ async function openBrain(brainPath, opts = {}) {
   }
   const brainId = computeBrainId(absPath);
   const cachePath3 = cachePathFor(absPath);
-  if (!existsSync45(absPath)) mkdirSync23(absPath, { recursive: true });
-  if (!existsSync45(cachePath3)) mkdirSync23(cachePath3, { recursive: true });
+  if (!existsSync46(absPath)) mkdirSync24(absPath, { recursive: true });
+  if (!existsSync46(cachePath3)) mkdirSync24(cachePath3, { recursive: true });
   const entry = {
     brainId,
     brainPath: absPath,
@@ -25381,24 +25778,24 @@ function applyCorsHeaders(req, res) {
 
 // src/server/pid.ts
 init_config();
-import { existsSync as existsSync46, mkdirSync as mkdirSync24, readFileSync as readFileSync42, unlinkSync as unlinkSync5, writeFileSync as writeFileSync35 } from "node:fs";
-import { join as join44 } from "node:path";
+import { existsSync as existsSync47, mkdirSync as mkdirSync25, readFileSync as readFileSync42, unlinkSync as unlinkSync6, writeFileSync as writeFileSync36 } from "node:fs";
+import { join as join45 } from "node:path";
 function servePidPath() {
-  return join44(getConfig().cachePath, "serve.pid");
+  return join45(getConfig().cachePath, "serve.pid");
 }
 function servePortPath() {
-  return join44(getConfig().cachePath, "serve.port");
+  return join45(getConfig().cachePath, "serve.port");
 }
 function writeServeFiles(port) {
   const cachePath3 = getConfig().cachePath;
-  if (!existsSync46(cachePath3)) mkdirSync24(cachePath3, { recursive: true });
-  writeFileSync35(servePidPath(), String(process.pid), "utf8");
-  writeFileSync35(servePortPath(), String(port), "utf8");
+  if (!existsSync47(cachePath3)) mkdirSync25(cachePath3, { recursive: true });
+  writeFileSync36(servePidPath(), String(process.pid), "utf8");
+  writeFileSync36(servePortPath(), String(port), "utf8");
 }
 function cleanServeFiles() {
   for (const path of [servePidPath(), servePortPath()]) {
     try {
-      unlinkSync5(path);
+      unlinkSync6(path);
     } catch {
     }
   }
@@ -25536,7 +25933,7 @@ init_backlinks();
 init_fts();
 init_paths();
 init_logger();
-import { existsSync as existsSync47, readFileSync as readFileSync43 } from "node:fs";
+import { existsSync as existsSync48, readFileSync as readFileSync43 } from "node:fs";
 function normPath2(raw) {
   return raw.replace(/\\/g, "/").replace(/^.*[/\\]brain[/\\]/, "");
 }
@@ -25638,7 +26035,7 @@ function handleNoteById(_req, res, noteId) {
   try {
     const allIndexed = listAllReadonly({ includeExpired: false });
     const indexed = allIndexed.find((n) => n.id === noteId);
-    if (indexed && existsSync47(indexed.path)) {
+    if (indexed && existsSync48(indexed.path)) {
       const html = readFileSync43(indexed.path, "utf-8");
       res.writeHead(200, {
         "content-type": "text/html; charset=utf-8",
@@ -25649,7 +26046,7 @@ function handleNoteById(_req, res, noteId) {
     }
     const sluggedId = slug(noteId);
     const slugMatch = allIndexed.find((n) => n.id === sluggedId || slug(n.id) === sluggedId);
-    if (slugMatch && existsSync47(slugMatch.path)) {
+    if (slugMatch && existsSync48(slugMatch.path)) {
       const html = readFileSync43(slugMatch.path, "utf-8");
       res.writeHead(200, {
         "content-type": "text/html; charset=utf-8",
@@ -25668,7 +26065,7 @@ function handleNodeById(_req, res, nodeId) {
   const log = getLogger();
   try {
     const nodePath = knowledgeNodePath(slug(nodeId));
-    if (!existsSync47(nodePath)) {
+    if (!existsSync48(nodePath)) {
       sendError(res, 404, `Knowledge node not found: ${nodeId}`);
       return;
     }
@@ -25896,8 +26293,8 @@ var handleSearch = (req, res, url) => {
 };
 
 // src/server/routes/static.ts
-import { createReadStream, existsSync as existsSync48, statSync as statSync13 } from "node:fs";
-import { extname as extname3, join as join45, normalize as normalize2, resolve as resolve5 } from "node:path";
+import { createReadStream, existsSync as existsSync49, statSync as statSync14 } from "node:fs";
+import { extname as extname3, join as join46, normalize as normalize2, resolve as resolve5 } from "node:path";
 var STATIC_CACHE_CONTROL = "public, max-age=60, must-revalidate";
 function fileETag(mtimeMs, size) {
   return `"${mtimeMs.toString(36)}-${size.toString(36)}"`;
@@ -25910,8 +26307,8 @@ function handleUiRoute(_req, res, rel, ui) {
     return true;
   }
   if (rel === "/graph.html") {
-    const graphPath = join45(ui.uiDir, "graph.html");
-    if (existsSync48(graphPath)) {
+    const graphPath = join46(ui.uiDir, "graph.html");
+    if (existsSync49(graphPath)) {
       res.writeHead(200, { "content-type": MIME[".html"], "content-security-policy": CSP_UI });
       createReadStream(graphPath).pipe(res);
       return true;
@@ -25919,9 +26316,9 @@ function handleUiRoute(_req, res, rel, ui) {
   }
   const ROOT_ASSETS = ["/favicon.svg", "/favicon.ico"];
   if (ROOT_ASSETS.includes(rel)) {
-    const assetPath = join45(ui.uiDir, rel.replace(/^\//, ""));
-    if (existsSync48(assetPath)) {
-      const assetStat = statSync13(assetPath);
+    const assetPath = join46(ui.uiDir, rel.replace(/^\//, ""));
+    if (existsSync49(assetPath)) {
+      const assetStat = statSync14(assetPath);
       const assetETag = fileETag(assetStat.mtimeMs, assetStat.size);
       if (handleConditionalGet(_req, res, assetETag)) return true;
       const assetMime = MIME[extname3(assetPath).toLowerCase()] ?? "image/svg+xml";
@@ -25948,12 +26345,12 @@ function handleUiRoute(_req, res, rel, ui) {
       res.end("Forbidden");
       return true;
     }
-    if (!existsSync48(assetPath)) {
+    if (!existsSync49(assetPath)) {
       res.writeHead(404);
       res.end("Not Found");
       return true;
     }
-    const assetStat = statSync13(assetPath);
+    const assetStat = statSync14(assetPath);
     const assetETag = fileETag(assetStat.mtimeMs, assetStat.size);
     if (handleConditionalGet(_req, res, assetETag)) return true;
     const assetMime = MIME[extname3(assetPath).toLowerCase()] ?? "application/octet-stream";
@@ -25977,15 +26374,15 @@ function handleBrainFile(_req, res, rel, root) {
     return;
   }
   let target = resolved;
-  if (existsSync48(resolved) && statSync13(resolved).isDirectory()) {
-    target = join45(resolved, "index.html");
+  if (existsSync49(resolved) && statSync14(resolved).isDirectory()) {
+    target = join46(resolved, "index.html");
   }
-  if (!existsSync48(target)) {
+  if (!existsSync49(target)) {
     res.writeHead(404);
     res.end("Not Found");
     return;
   }
-  const targetStat = statSync13(target);
+  const targetStat = statSync14(target);
   const etag = fileETag(targetStat.mtimeMs, targetStat.size);
   if (handleConditionalGet(_req, res, etag)) return;
   const mime = MIME[extname3(target).toLowerCase()] ?? "application/octet-stream";
@@ -26030,7 +26427,9 @@ function matchesTopLevelTopic(html, topic) {
 function handleSynthesisTopic(_req, res, topic) {
   const log = getLogger();
   try {
-    const overviews = readAllNotes().filter((n) => /data-cerveau-type="topic-overview"/.test(n.html));
+    const overviews = readAllNotes().filter(
+      (n) => /data-cerveau-type="topic-overview"/.test(n.html)
+    );
     const overview = overviews.find((n) => matchesExactTopic(n.html, topic)) ?? overviews.find((n) => matchesTopLevelTopic(n.html, topic));
     if (!overview) {
       sendError(res, 404, `No synthesis found for topic: ${topic}`);
@@ -26222,7 +26621,13 @@ function isKnowledgeNote(n) {
   return !KNOWLEDGE_EXCLUDED_TYPES.has(n.type ?? "") && (n.topic ?? "").trim() !== "";
 }
 function noteLeaf(note) {
-  return { id: note.id, label: note.title || note.id, noteId: note.id, type: note.type, children: [] };
+  return {
+    id: note.id,
+    label: note.title || note.id,
+    noteId: note.id,
+    type: note.type,
+    children: []
+  };
 }
 function nestKnowledgeNotes(notes, depth) {
   const direct = [];
@@ -26240,7 +26645,13 @@ function nestKnowledgeNotes(notes, depth) {
   }
   const branches = [...bySegment.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([seg, group]) => {
     const path = (group[0]?.topic ?? "").split("/").filter(Boolean).slice(0, depth + 1).join("/");
-    return { id: path, label: seg, noteId: null, type: "topic", children: nestKnowledgeNotes(group, depth + 1) };
+    return {
+      id: path,
+      label: seg,
+      noteId: null,
+      type: "topic",
+      children: nestKnowledgeNotes(group, depth + 1)
+    };
   });
   const leaves = direct.sort((a, b) => (a.title || a.id).localeCompare(b.title || b.id)).map(noteLeaf);
   return [...branches, ...leaves];
@@ -26280,7 +26691,13 @@ function buildProjectNode(codeEntry, knowledgeEntry, fallbackKey) {
     (a, b) => a.label.localeCompare(b.label)
   );
   const rootAgg = codeEntry?.rootAgg ?? null;
-  return { id: rootAgg?.id ?? label, label, noteId: rootAgg?.id ?? null, type: "project", children };
+  return {
+    id: rootAgg?.id ?? label,
+    label,
+    noteId: rootAgg?.id ?? null,
+    type: "project",
+    children
+  };
 }
 function isActive(note, nowIso2) {
   const until = note.valid_until;
@@ -26326,6 +26743,7 @@ init_brain_guard();
 init_logger();
 var __filename = fileURLToPath4(import.meta.url);
 var __dirname = dirname15(__filename);
+var ENRICH_DRAIN_INTERVAL_MS = 2e4;
 function runServe(opts) {
   return new Promise((resolveServer, reject) => {
     const port = opts.port ?? 4242;
@@ -26339,9 +26757,9 @@ function runServe(opts) {
       return;
     }
     const uiDir = resolve6(__dirname, "..", "..", "examples", "brain-ui");
-    const uiIndexPath = join46(uiDir, "index.html");
-    const uiIndexExists = existsSync49(uiIndexPath);
-    if (!existsSync49(uiDir)) {
+    const uiIndexPath = join47(uiDir, "index.html");
+    const uiIndexExists = existsSync50(uiIndexPath);
+    if (!existsSync50(uiDir)) {
       log.error(
         { uiDir },
         'brain-ui directory not found \u2014 the UI will be unavailable. If running from npm, ensure "examples/" is listed in package.json "files". If running from source, check that examples/brain-ui/ exists.'
@@ -26484,9 +26902,8 @@ function runServe(opts) {
       });
       setImmediate(() => {
         try {
-          const indexedNotes = listAllReadonly({ includeExpired: true });
-          if (indexedNotes.length === 0) {
-            const hasNoteFiles = existsSync49(notesDir()) || existsSync49(batchesDir());
+          if (countAllNotesReadonly({ includeExpired: true }) === 0) {
+            const hasNoteFiles = existsSync50(notesDir()) || existsSync50(batchesDir());
             if (hasNoteFiles) {
               log.info(
                 "serve: index is empty but note files exist \u2014 running incremental index update"
@@ -26522,8 +26939,31 @@ function runServe(opts) {
       process.on("SIGINT", onSigInt);
       process.on("SIGTERM", onSigTerm);
       const stopResourceMonitor = startResourceMonitor();
+      let enrichDrainInFlight = false;
+      const drainPendingEnrich = async () => {
+        if (enrichDrainInFlight) return;
+        if (!consumePendingEnrich()) return;
+        enrichDrainInFlight = true;
+        const t0 = Date.now();
+        try {
+          const { runIncrementalEnrich: runIncrementalEnrich2 } = await Promise.resolve().then(() => (init_enrich(), enrich_exports));
+          const { runRecomposeAll: runRecomposeAll2 } = await Promise.resolve().then(() => (init_recompose_all(), recompose_all_exports));
+          await runIncrementalEnrich2();
+          await runRecomposeAll2();
+          log.info({ ms: Date.now() - t0 }, "serve: pending-enrich drained");
+        } catch (err) {
+          log.warn({ err: err.message }, "serve: pending-enrich drain failed");
+        } finally {
+          enrichDrainInFlight = false;
+        }
+      };
+      const enrichDrainTimer = setInterval(() => {
+        void drainPendingEnrich();
+      }, ENRICH_DRAIN_INTERVAL_MS);
+      void drainPendingEnrich();
       server.once("close", () => {
         stopResourceMonitor();
+        clearInterval(enrichDrainTimer);
         process.removeListener("exit", onExit);
         process.removeListener("SIGINT", onSigInt);
         process.removeListener("SIGTERM", onSigTerm);
@@ -26690,18 +27130,18 @@ function registerServe(program2) {
 }
 async function printFingerprintStats(opts) {
   const { loadFingerprints: loadFingerprints2, getOrphanedFingerprints: getOrphanedFingerprints2 } = await Promise.resolve().then(() => (init_fingerprints(), fingerprints_exports));
-  const { statSync: statSync15, existsSync: existsSync53 } = await import("node:fs");
+  const { statSync: statSync16, existsSync: existsSync54 } = await import("node:fs");
   const store = loadFingerprints2();
   const tracked = Object.keys(store.files).length;
   const orphaned = getOrphanedFingerprints2(store).length;
   let storeSize = 0;
   try {
     const { getConfig: getConfig2 } = await Promise.resolve().then(() => (init_config(), config_exports));
-    const { join: join51 } = await import("node:path");
+    const { join: join52 } = await import("node:path");
     const { cachePath: cachePath3 } = getConfig2();
-    const storePath2 = join51(cachePath3, ".fingerprints.json");
-    if (existsSync53(storePath2)) {
-      storeSize = statSync15(storePath2).size;
+    const storePath2 = join52(cachePath3, ".fingerprints.json");
+    if (existsSync54(storePath2)) {
+      storeSize = statSync16(storePath2).size;
     }
   } catch {
   }
@@ -26758,7 +27198,7 @@ function _readPkgVersion() {
   const base = dirname16(fileURLToPath6(import.meta.url));
   for (const rel of ["../../package.json", "../package.json", "./package.json"]) {
     try {
-      const raw = readFileSync45(join50(base, rel), "utf8");
+      const raw = readFileSync45(join51(base, rel), "utf8");
       const parsed = JSON.parse(raw);
       if (parsed.name === "lazybrain" && typeof parsed.version === "string") {
         return parsed.version;

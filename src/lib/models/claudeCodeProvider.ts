@@ -253,6 +253,7 @@ async function* streamChatImpl(req: StreamChatRequest): AsyncIterable<string> {
   const settings = loadAccessSettings();
   const system = buildSystemPrompt(req.mode, req.brainRecall, {
     rulesContext: req.rulesContext,
+    basePromptOverride: req.basePromptOverride,
     startupContext: req.startupContext,
     skillContext: req.skillContext,
     tools: req.tools,

@@ -85,6 +85,10 @@ export interface BotRun {
   startedAt: string;
   completedAt?: string;
   summary?: string;
+  /** Presigned Solari replay URL, when the browser session was recorded. */
+  replayUrl?: string;
+  /** Local .lazy/replays/<id>.ndjson.gz path — CREDENTIAL material, never log. */
+  replayPath?: string;
 }
 
 /** The runtime state of a bot — tracked in-memory while the app is open. */

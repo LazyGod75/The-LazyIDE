@@ -11,7 +11,8 @@
    mounted on every desktop so file handoff keeps working.
 
    Persistence lives in sessionLedger.ts. A failed control-channel connect
-   NEVER wipes the ledger or creates a blank VM.
+   falls back to a FRESH VM (the volume survives — only the dead desktopId
+   is replaced); keeping the stale id would brick every future call.
 */
 
 import type { Desktop } from '@solarisdk/desktop';
@@ -132,9 +133,50 @@ async function openControlChannel(desktop: Desktop): Promise<void> {
   throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }
 
+/** Poll desktop.health() until ready (VM boot can lag the control connect).
+ *  Throws a clear error after ~30s so missions fail fast instead of clicking
+ *  into a half-booted desktop. */
+async function awaitDesktopReady(desktop: Desktop): Promise<void> {
+  const health = (desktop as Desktop & { health?: () => Promise<{ ready?: boolean }> }).health;
+  if (typeof health !== 'function') return; // older SDK — nothing to gate on
+  const deadline = Date.now() + 30_000;
+  let last: { ready?: boolean } | undefined;
+  while (Date.now() < deadline) {
+    try {
+      last = await health.call(desktop);
+      if (last?.ready !== false) return;
+    } catch {
+      // transient — keep polling until the deadline
+    }
+    await new Promise((r) => setTimeout(r, 1_000));
+  }
+  throw new Error('Agent Computer is not ready (health check still pending after 30s) — retry shortly');
+}
+
+/** A desktop record that can never serve a control channel again: past its
+ *  expiresAt, or reported in a terminal state by the API ("gone" is what
+ *  Solari returns for a reclaimed VM — expiresAt is null there, so the
+ *  status check is what catches it). */
+export function desktopRecordIsDead(info: unknown): boolean {
+  const rec = info as { expiresAt?: string | null; status?: string } | undefined;
+  const expiresAt = Date.parse(String(rec?.expiresAt ?? ''));
+  if (Number.isFinite(expiresAt) && expiresAt <= Date.now()) return true;
+  const status = String(rec?.status ?? '').toLowerCase();
+  return ['gone', 'destroyed', 'terminated', 'failed', 'stopped', 'expired'].includes(status);
+}
+
 async function reconnectDesktop(clients: SolariClients, desktopId: string): Promise<Desktop> {
+  // Cheap liveness gate first: `get` returns the record (incl. expiresAt +
+  // status) without touching the control channel. A dead session can never
+  // serve RPCs — skip straight to the caller's fresh-VM fallback instead of
+  // burning the connect timeout on a corpse.
+  const info = await clients.desktop.get(desktopId);
+  if (desktopRecordIsDead(info)) {
+    throw new Error(`desktop ${desktopId.slice(0, 16)}… is dead (status/expiry)`);
+  }
   const desktop = await clients.desktop.connect(desktopId);
   await openControlChannel(desktop);
+  await awaitDesktopReady(desktop);
   return desktop;
 }
 
@@ -160,20 +202,36 @@ async function createDesktop(
   volumeId: string,
   botId?: string,
 ): Promise<AgentComputerHandle> {
-  const desktop = await clients.desktop.create({
+  const base = {
     template: DESKTOP_TEMPLATE,
     timeoutMs: SESSION_TIMEOUT_MS,
-    lifecycle: { onTimeout: 'pause' },
-    volumes: [{ volumeId, path: WORKSPACE_MOUNT_PATH }],
-  });
+    lifecycle: { onTimeout: 'pause' as const },
+  };
+  // Same best-effort volume policy as openSandbox: some Solari backends
+  // reject `volumes` (501 "volumes not yet available on gcp") — retry bare.
+  let desktop;
+  try {
+    desktop = await clients.desktop.create({
+      ...base,
+      volumes: [{ volumeId, path: WORKSPACE_MOUNT_PATH }],
+    });
+  } catch {
+    desktop = await clients.desktop.create(base);
+  }
   await openControlChannel(desktop);
+  await awaitDesktopReady(desktop);
   const patch = { desktopId: desktop.id, volumeId };
   if (botId) await persistBot(botId, patch);
   else await persistShared(patch);
   return { desktop, desktopId: desktop.id, volumeId, botId };
 }
 
-/** Re-attach or create the Agent Computer. Pass botId for a dedicated VM (C50). */
+/** Re-attach or create the Agent Computer. Pass botId for a dedicated VM (C50).
+ *  A persisted desktopId that fails reconnect (expired/destroyed VM — the
+ *  ledger does not know it died, e.g. a hung brain turn burned past the
+ *  session's expiresAt) MUST fall through to createDesktop — otherwise one
+ *  stale ledger entry bricks every future cloud_desktop_* call forever
+ *  (real incident: connect() TimeoutError loop after the VM expired). */
 export async function ensureAgentComputer(botId?: string): Promise<AgentComputerHandle> {
   const clients = await getSolariClients();
   const volumeId = await ensureWorkspaceVolume();
@@ -183,18 +241,39 @@ export async function ensureAgentComputer(botId?: string): Promise<AgentComputer
     const entry = ledger.agentComputersByBotId[botId];
     const desktopId = entry?.desktopId;
     if (desktopId) {
-      const desktop = await reconnectDesktop(clients, desktopId);
-      return { desktop, desktopId, volumeId: entry?.volumeId ?? volumeId, botId };
+      try {
+        const desktop = await reconnectDesktop(clients, desktopId);
+        return { desktop, desktopId, volumeId: entry?.volumeId ?? volumeId, botId };
+      } catch {
+        // stale/dead desktop — free its concurrency slot, then fresh VM
+        await destroyQuietly(clients, desktopId);
+      }
     }
     return createDesktop(clients, volumeId, botId);
   }
 
   const desktopId = ledger.agentComputer?.desktopId;
   if (desktopId) {
-    const desktop = await reconnectDesktop(clients, desktopId);
-    return { desktop, desktopId, volumeId };
+    try {
+      const desktop = await reconnectDesktop(clients, desktopId);
+      return { desktop, desktopId, volumeId };
+    } catch {
+      await destroyQuietly(clients, desktopId);
+    }
   }
   return createDesktop(clients, volumeId);
+}
+
+/** Best-effort destroy of a desktop we just proved unreachable — a dead VM
+ *  still counts against the concurrency cap until deleted server-side, so
+ *  leaving it would make the very next create() hit 429/ConcurrencyLimit.
+ *  Never throws: the desktop may already be gone. */
+export async function destroyQuietly(clients: SolariClients, desktopId: string): Promise<void> {
+  try {
+    await clients.desktop.destroy(desktopId);
+  } catch {
+    // already gone / not ours — nothing to free
+  }
 }
 
 export async function snapshotAgentComputer(label?: string, botId?: string): Promise<string> {
@@ -203,6 +282,23 @@ export async function snapshotAgentComputer(label?: string, botId?: string): Pro
   if (botId) await persistBot(botId, { lastSnapshotId: snapshotId });
   else await persistShared({ lastSnapshotId: snapshotId });
   return snapshotId;
+}
+
+/** Revert the (bot's or shared) Agent Computer to a snapshot — defaults to
+ *  the ledger's lastSnapshotId (the post-run checkpoint). Recovery-ladder
+ *  step: "reset to durable snapshot". */
+export async function revertAgentComputer(botId?: string, snapshotId?: string): Promise<void> {
+  const clients = await getSolariClients();
+  const ledger = await readLedger();
+  const entry = botId ? ledger.agentComputersByBotId[botId] : ledger.agentComputer;
+  const target = snapshotId ?? entry?.lastSnapshotId;
+  if (!target) throw new Error('No snapshot recorded for this computer — run it once first');
+  const handle = await ensureAgentComputer(botId);
+  const revert = (handle.desktop as Desktop & { revert?: (id: string) => Promise<unknown> }).revert;
+  if (typeof revert !== 'function') throw new Error('Desktop SDK does not expose revert()');
+  await revert.call(handle.desktop, target);
+  await awaitDesktopReady(handle.desktop);
+  void clients;
 }
 
 /** Clear in-memory mutex state — tests and hot-reload only. */

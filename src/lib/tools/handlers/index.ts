@@ -65,6 +65,8 @@ import {
   cloudBrowserReplayUrl,
   cloudBrowserProfilesList,
   cloudBrowserProfileSave,
+  cloudBrowserPressKey,
+  cloudBrowserProfileCreate,
 } from './cloudBrowser.js';
 import {
   cloudDesktopOpen,
@@ -73,12 +75,20 @@ import {
   cloudDesktopStreamUrl,
   cloudDesktopMouseClick,
   cloudDesktopMouseMove,
+  cloudDesktopMouseScroll,
+  cloudDesktopAppOpen,
+  cloudDesktopProcessList,
   cloudDesktopKeyboardType,
   cloudDesktopKeyboardHotkey,
+  cloudDesktopKeyboardPress,
   cloudDesktopExec,
   cloudDesktopClipboardGet,
   cloudDesktopClipboardSet,
   cloudDesktopFileWrite,
+  cloudDesktopFileRead,
+  cloudDesktopFileList,
+  cloudDesktopSnapshot,
+  cloudDesktopRevert,
 } from './cloudDesktop.js';
 import {
   cloudSandboxOpen,
@@ -88,6 +98,12 @@ import {
   cloudSandboxWriteFile,
   cloudSandboxExec,
   cloudSandboxPreviewUrl,
+  cloudSandboxRunCode,
+  cloudSandboxFileSearch,
+  cloudSandboxDownload,
+  cloudSandboxUpload,
+  cloudSandboxCommandStart,
+  cloudSandboxCommandPoll,
 } from './cloudSandbox.js';
 
 export const toolHandlers: Record<string, ToolHandler> = {
@@ -160,6 +176,8 @@ export const toolHandlers: Record<string, ToolHandler> = {
   cloud_browser_replay_url: cloudBrowserReplayUrl,
   cloud_browser_profiles_list: cloudBrowserProfilesList,
   cloud_browser_profile_save: cloudBrowserProfileSave,
+  cloud_browser_press_key: cloudBrowserPressKey,
+  cloud_browser_profile_create: cloudBrowserProfileCreate,
 
   cloud_desktop_open: cloudDesktopOpen,
   cloud_desktop_close: cloudDesktopClose,
@@ -167,12 +185,20 @@ export const toolHandlers: Record<string, ToolHandler> = {
   cloud_desktop_stream_url: cloudDesktopStreamUrl,
   cloud_desktop_mouse_click: cloudDesktopMouseClick,
   cloud_desktop_mouse_move: cloudDesktopMouseMove,
+  cloud_desktop_mouse_scroll: cloudDesktopMouseScroll,
+  cloud_desktop_app_open: cloudDesktopAppOpen,
+  cloud_desktop_process_list: cloudDesktopProcessList,
   cloud_desktop_keyboard_type: cloudDesktopKeyboardType,
   cloud_desktop_keyboard_hotkey: cloudDesktopKeyboardHotkey,
+  cloud_desktop_keyboard_press: cloudDesktopKeyboardPress,
   cloud_desktop_exec: cloudDesktopExec,
   cloud_desktop_clipboard_get: cloudDesktopClipboardGet,
   cloud_desktop_clipboard_set: cloudDesktopClipboardSet,
   cloud_desktop_file_write: cloudDesktopFileWrite,
+  cloud_desktop_file_read: cloudDesktopFileRead,
+  cloud_desktop_file_list: cloudDesktopFileList,
+  cloud_desktop_snapshot: cloudDesktopSnapshot,
+  cloud_desktop_revert: cloudDesktopRevert,
 
   cloud_sandbox_open: cloudSandboxOpen,
   cloud_sandbox_close: cloudSandboxClose,
@@ -181,4 +207,10 @@ export const toolHandlers: Record<string, ToolHandler> = {
   cloud_sandbox_write_file: cloudSandboxWriteFile,
   cloud_sandbox_exec: cloudSandboxExec,
   cloud_sandbox_preview_url: cloudSandboxPreviewUrl,
+  cloud_sandbox_run_code: cloudSandboxRunCode,
+  cloud_sandbox_file_search: cloudSandboxFileSearch,
+  cloud_sandbox_download: cloudSandboxDownload,
+  cloud_sandbox_upload: cloudSandboxUpload,
+  cloud_sandbox_command_start: cloudSandboxCommandStart,
+  cloud_sandbox_command_poll: cloudSandboxCommandPoll,
 };

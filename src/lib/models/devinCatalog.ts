@@ -21,6 +21,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { ModelInfo } from './types.js';
 import { isTauri as isTauriRuntime } from '../platform/index.js';
+import { devinAuthBlockedAsync, noteDevinFailure } from './devinAuthGuard.js';
 
 /** Default model when the Devin backend is selected — SWE-2 Medium is the
  *  free-tier SWE-2 variant in the current catalog. */
@@ -99,6 +100,9 @@ export function findDevinModel(id: string | undefined | null): ModelInfo | undef
  *  initProviderMode's detection sweep, and refreshable on demand. */
 export async function refreshDevinCatalog(): Promise<readonly ModelInfo[]> {
   if (!isTauriRuntime()) return devinModelInfos();
+  // Breaker: a rejected credential makes each `devin acp` spawn open an
+  // OAuth tab — never invoke while a recent failure is on record.
+  if (await devinAuthBlockedAsync()) return devinModelInfos();
   try {
     const rows = await invoke<Array<{ id: string; label: string }>>('devin_list_models');
     if (Array.isArray(rows) && rows.length > 0) {
@@ -109,19 +113,22 @@ export async function refreshDevinCatalog(): Promise<readonly ModelInfo[]> {
         // localStorage unavailable — memory cache still updated
       }
     }
-  } catch {
+  } catch (err) {
+    noteDevinFailure(err);
     // keep previous catalog / fallback
   }
   return devinModelInfos();
 }
 
-/** True when the Devin CLI has a stored credential the ACP backend can
- *  authenticate with — drives the "not logged in" affordance in Settings. */
+/** True when the Devin CLI can actually authenticate — drives the "not
+ *  logged in" affordance in Settings. Prefers the live `devin auth status`
+ *  probe (catches stored-but-server-rejected keys); falls back to the
+ *  credentials-file check on backends without it. */
 export async function devinAuthStatus(): Promise<boolean> {
   if (!isTauriRuntime()) return false;
   try {
-    return await invoke<boolean>('devin_auth_status');
+    return await invoke<boolean>('devin_auth_probe');
   } catch {
-    return false;
+    return await invoke<boolean>('devin_auth_status').catch(() => false);
   }
 }

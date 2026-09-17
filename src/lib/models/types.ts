@@ -131,6 +131,15 @@ export interface StreamChatRequest {
   mode: ChatMode;
   brainRecall?: BrainRecallResult | null;
   rulesContext?: string | null;
+  /** Replaces the per-mode base persona in buildSystemPrompt when set.
+   *  Used by text-protocol backends whose contract lives in rulesContext —
+   *  e.g. LazyBot/Manager brains on a CLI rail: MODE_BASE_PROMPTS.ask says
+   *  "you cannot modify files" (model refuses to emit actions) and
+   *  MODE_BASE_PROMPTS.plan says "investigate the codebase" (model wanders
+   *  with its own tools for minutes instead of emitting ACTION blocks —
+   *  real incident: swe-2 plan-mode turns spiralled 6+ min, never
+   *  resolving). */
+  basePromptOverride?: string | null;
   signal?: AbortSignal;
   /** Startup context from the brain's highlights mode — injected only on the first user turn. */
   startupContext?: string;
@@ -176,6 +185,27 @@ export interface StreamChatRequest {
    * contract used throughout lib/models.
    */
   t?: Translate;
+  /**
+   * JS-side hook (never serialized — the IPC invoke in cliBackendProvider
+   * picks request fields explicitly) fired for every native model://action
+   * the CLI backend emits — i.e. a tool call the agent-shaped CLI
+   * (swe-2/claude/codex) executed ITSELF on the worktree, outside the text
+   * ReAct protocol. The managed agent loop counts these so a mission whose
+   * agent worked natively is not scored toolCount:0 / bounced at FINAL for
+   * "no tool calls" (real incident M142: swe-2 wrote the deliverable file
+   * with its own tools, then answered in unparseable prose).
+   */
+  onToolAction?: (action: { tool: string; file: string | null }) => void;
+  /**
+   * Devin ACP only — per-request session cwd override. A managed mission
+   * runs inside a git worktree: the agent's NATIVE tools (reads/writes it
+   * executes itself, outside the text protocol) must be anchored to that
+   * worktree, not the global active project root — otherwise relative-path
+   * writes bypass worktree isolation and land in the real project
+   * (incident M142). Undefined keeps the old behavior (active project
+   * root) for every non-mission caller.
+   */
+  sessionCwd?: string;
 }
 
 export interface ModelProvider {

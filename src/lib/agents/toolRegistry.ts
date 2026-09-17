@@ -728,9 +728,11 @@ const CLOUD_TOOLS: ToolDef[] = [
     category: 'cloud',
     blockedInPlan: false,
     description:
-      'Return the presigned replay URL for the current browser session (available ~1-3s after ' +
-      'the session is released and recording was enabled).',
-    schema: '{}',
+      'Return the presigned replay URL for a recorded browser session. The URL only exists ' +
+      'after the session is released: call cloud_browser_close first (the URL is also embedded ' +
+      'in its observation), or pass session_id of an already-released session. The NDJSON ' +
+      'transcript is also saved locally under .lazy/replays/.',
+    schema: '{"session_id": "optional — released session id when no session is open"}',
   },
   {
     name: 'cloud_browser_profiles_list',
@@ -891,6 +893,138 @@ const CLOUD_TOOLS: ToolDef[] = [
     description: 'Return the public HTTPS preview URL for a port serving inside the sandbox.',
     schema: '{"port": 3000}',
   },
+  {
+    name: 'cloud_browser_press_key',
+    category: 'cloud',
+    blockedInPlan: true,
+    description:
+      'Press a single key in the cloud browser (Enter, Tab, Escape, Backspace, arrows, ' +
+      'or a single character). Mutates page state; blocked in plan mode.',
+    schema: '{"key": "Enter"}',
+  },
+  {
+    name: 'cloud_browser_profile_create',
+    category: 'cloud',
+    blockedInPlan: true,
+    description:
+      'Create a named Solari browser profile (persistent cookies/localStorage persona). ' +
+      'Returns the profile id — pass it to cloud_browser_open as profile_id (or reuse ' +
+      'profile_name there to auto-create). Blocked in plan mode.',
+    schema: '{"name": "my-persona"}',
+  },
+  {
+    name: 'cloud_desktop_mouse_scroll',
+    category: 'cloud',
+    blockedInPlan: true,
+    description:
+      'Scroll the Agent Computer desktop by a pixel delta (dx, dy). Optional humanize ' +
+      'for natural wheel pacing. Blocked in plan mode.',
+    schema: '{"dx": 0, "dy": 400, "humanize": true}',
+  },
+  {
+    name: 'cloud_desktop_app_open',
+    category: 'cloud',
+    blockedInPlan: true,
+    description:
+      'Launch a GUI app on the desktop by name (browser, terminal, editor...). ' +
+      'Returns the process pid. Blocked in plan mode.',
+    schema: '{"name": "firefox", "args": ["optional"]}',
+  },
+  {
+    name: 'cloud_desktop_process_list',
+    category: 'cloud',
+    blockedInPlan: false,
+    description: 'List running processes on the Agent Computer (pid, name, cmd). Observation-only.',
+    schema: '{}',
+  },
+  {
+    name: 'cloud_desktop_keyboard_press',
+    category: 'cloud',
+    blockedInPlan: true,
+    description:
+      'Press a key or key sequence on the desktop — single keys ("enter", "tab", "f5") or ' +
+      'a chord array (["ctrl","alt","t"]). Blocked in plan mode.',
+    schema: '{"key": "enter"} or {"keys": ["ctrl", "alt", "t"]}',
+  },
+  {
+    name: 'cloud_desktop_file_read',
+    category: 'cloud',
+    blockedInPlan: false,
+    description: 'Read a text file from the Agent Computer filesystem (e.g. /workspace/out.txt). Output truncated to 2000 chars. Observation-only.',
+    schema: '{"path": "/workspace/file.txt"}',
+  },
+  {
+    name: 'cloud_desktop_file_list',
+    category: 'cloud',
+    blockedInPlan: false,
+    description: 'List files/directories at a desktop path (defaults to /workspace). Observation-only.',
+    schema: '{"path": "/workspace"}',
+  },
+  {
+    name: 'cloud_desktop_snapshot',
+    category: 'cloud',
+    blockedInPlan: true,
+    description:
+      'Checkpoint the Agent Computer (RAM+disk) — returns a snapshot id you can restore ' +
+      'later with cloud_desktop_revert. The session keeps running. Blocked in plan mode.',
+    schema: '{"label": "optional-name"}',
+  },
+  {
+    name: 'cloud_desktop_revert',
+    category: 'cloud',
+    blockedInPlan: true,
+    description:
+      'Restore the Agent Computer to a snapshot (defaults to the last checkpoint). ' +
+      'DESTRUCTIVE for current state — prefer after asking the user. Blocked in plan mode.',
+    schema: '{"snapshot_id": "optional — defaults to last snapshot"}',
+  },
+  {
+    name: 'cloud_sandbox_run_code',
+    category: 'cloud',
+    blockedInPlan: true,
+    description:
+      'Run code in the sandbox stateful kernel (python/javascript/typescript/bash/r). ' +
+      'Variables persist across calls in the same context (context_id to isolate). ' +
+      'Charts (png) are emitted to the VM surface. Blocked in plan mode.',
+    schema: '{"code": "print(1+1)", "language": "python", "context_id": "optional"}',
+  },
+  {
+    name: 'cloud_sandbox_file_search',
+    category: 'cloud',
+    blockedInPlan: false,
+    description: 'Search file contents inside the sandbox (ripgrep-style). Output truncated. Observation-only.',
+    schema: '{"query": "pattern", "path": "/workspace", "max_results": 50}',
+  },
+  {
+    name: 'cloud_sandbox_download',
+    category: 'cloud',
+    blockedInPlan: false,
+    description: 'Return a signed, time-limited URL to download a sandbox file. Observation-only.',
+    schema: '{"path": "/workspace/out.csv"}',
+  },
+  {
+    name: 'cloud_sandbox_upload',
+    category: 'cloud',
+    blockedInPlan: true,
+    description: 'Write utf-8 content to a sandbox path (upload). Blocked in plan mode.',
+    schema: '{"path": "/workspace/in.txt", "content": "data"}',
+  },
+  {
+    name: 'cloud_sandbox_command_start',
+    category: 'cloud',
+    blockedInPlan: true,
+    description:
+      'Start a long-running background command in the sandbox (dev server, watcher). ' +
+      'Returns a cmd_id — poll it with cloud_sandbox_command_poll. Blocked in plan mode.',
+    schema: '{"command": "npm", "args": ["run", "dev"], "cwd": "/workspace/app"}',
+  },
+  {
+    name: 'cloud_sandbox_command_poll',
+    category: 'cloud',
+    blockedInPlan: false,
+    description: 'Read buffered output + completion state of a command started by cloud_sandbox_command_start. Observation-only.',
+    schema: '{"cmd_id": "cmd_..."}',
+  },
 ];
 
 const BOT_TOOLS: ToolDef[] = [
@@ -905,6 +1039,19 @@ const BOT_TOOLS: ToolDef[] = [
       'Prefer this over ask_user when a live browser/desktop takeover is needed.',
     schema: '{"reason": "login|2fa|captcha|approval|ask_user", "detail": "url or short question"}',
     feedbackHint: 'Return that the human was notified and should take over the live session.',
+  },
+  {
+    name: 'bot_wait_for_human',
+    category: 'orchestration',
+    blockedInPlan: false,
+    description:
+      'BLOCK until the human clears a gate only they can complete (login, 2FA, captcha, ' +
+      'payment confirmation) — the canonical takeover pause. The request surfaces in the ' +
+      'manager header; the human resolves it by taking over the live session or clicking ' +
+      'resolve. Returns when the gate clears or after timeout_ms (default 5min, max 30min). ' +
+      'Use this instead of bot_request_intervention when the task cannot proceed without the human.',
+    schema: '{"reason": "login|2fa|captcha|payment", "detail": "what the human must do", "timeout_ms": 300000}',
+    feedbackHint: 'Return "Human gate cleared" or a TIMEOUT note — then resume or retry.',
   },
   {
     name: 'bot_handoff',

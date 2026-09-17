@@ -5,7 +5,7 @@
 */
 
 import { useEffect, useRef, useState } from 'react';
-import { subscribeBotVmState, openDesktopStream, openBrowserTakeover, getLastBotVmState, type BotVmState } from '../../../../lib/solari/botVmState';
+import { subscribeBotVmState, openDesktopStream, openBrowserTakeover, watchBrowserSession, getLastBotVmState, type BotVmState } from '../../../../lib/solari/botVmState';
 import { mountLiveDesktop, type LiveDesktopViewer } from '../../../../lib/solari/desktopViewer';
 import type { CdpPage } from '../../../../lib/solari/cdpBrowser';
 import {
@@ -31,8 +31,19 @@ export function BotVmSurface({ botId }: BotVmSurfaceProps) {
   const [streamError, setStreamError] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [teaching, setTeaching] = useState(false);
+  const [teachName, setTeachName] = useState('');
   const [skillDraft, setSkillDraft] = useState<string | null>(null);
+  const [skillDraftSaved, setSkillDraftSaved] = useState(false);
+  // Dedupe signature for teach journaling — a state tick re-emits the same
+  // url/lastAction on every frame, so without this the journal fills with
+  // dozens of identical navigate/note steps.
+  const lastTeachSigRef = useRef('');
   const [browserFrame, setBrowserFrame] = useState<string | null>(null);
+  // View-only CDP screencast — the "Watch live" feed. Distinct from
+  // browserFrame (interactive takeover): watch frames never forward clicks.
+  const [watchFrame, setWatchFrame] = useState<string | null>(null);
+  const [watching, setWatching] = useState(false);
+  const watchStopRef = useRef<(() => void) | null>(null);
   const takeoverPageRef = useRef<CdpPage | null>(null);
   const streamHostRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<LiveDesktopViewer | null>(null);
@@ -68,16 +79,52 @@ export function BotVmSurface({ botId }: BotVmSurfaceProps) {
   useEffect(() => {
     const off = subscribeBotVmState(botId, (s) => {
       setState(s);
-      // While teaching, journal every action as a demonstration step.
-      if (isTeachModeActive(botId) && s.lastAction) {
-        const url = s.url;
-        if (url) recordTeachStep(botId, { kind: 'navigate', target: url, selector: url });
-        if (s.screenshotDataUrl) recordTeachStep(botId, { kind: 'screenshot', target: 'page' });
-        if (s.lastAction) recordTeachStep(botId, { kind: 'note', target: s.lastAction, note: s.lastAction });
+      // While teaching, journal each NEW action as a demonstration step —
+      // deduped on (url, lastAction): a state tick re-emits the same pair on
+      // every frame and would otherwise flood the journal with duplicates.
+      if (isTeachModeActive(botId)) {
+        const sig = `${s.url ?? ''}|${s.lastAction ?? ''}`;
+        if (sig !== lastTeachSigRef.current && (s.url || s.lastAction)) {
+          lastTeachSigRef.current = sig;
+          if (s.url) recordTeachStep(botId, { kind: 'navigate', target: s.url, selector: s.url });
+          if (s.lastAction) recordTeachStep(botId, { kind: 'note', target: s.lastAction, note: s.lastAction });
+        }
+      }
+      // Auto-watch: as soon as the bot owns a live browser session, attach
+      // the view-only screencast so the surface feels live without a click.
+      // Errors (page not up yet) are silent — the next state retries.
+      if (s.mode === 'browser' && !watchStopRef.current && !takeoverPageRef.current) {
+        void watchBrowserSession(botId, (frame) => setWatchFrame(frame)).then((res) => {
+          if ('stop' in res) {
+            watchStopRef.current = res.stop;
+            setWatching(true);
+          }
+        });
       }
     });
-    return off;
+    return () => {
+      off();
+      watchStopRef.current?.();
+      watchStopRef.current = null;
+    };
   }, [botId]);
+
+  const handleWatchToggle = async () => {
+    if (watchStopRef.current) {
+      watchStopRef.current();
+      watchStopRef.current = null;
+      setWatching(false);
+      setWatchFrame(null);
+      return;
+    }
+    const res = await watchBrowserSession(botId, (frame) => setWatchFrame(frame));
+    if ('stop' in res) {
+      watchStopRef.current = res.stop;
+      setWatching(true);
+    } else {
+      setStreamError(res.error);
+    }
+  };
 
   const handleTeach = () => {
     if (teaching) {
@@ -86,21 +133,42 @@ export function BotVmSurface({ botId }: BotVmSurfaceProps) {
       if (journal && journal.steps.length > 0) {
         const overlay = compileSkillOverlay(journal);
         setSkillDraft(overlay);
+        setSkillDraftSaved(true);
         void applyTeachSkillToPersona(botId, overlay).then((saved) => {
           if (saved) emit('lazybots:changed', { botId });
         });
       } else {
-        setSkillDraft('No steps were recorded — perform the task while teaching is active, then stop.');
+        setSkillDraft(null);
+        setSkillDraftSaved(false);
+        setStreamError('Teach recorded 0 steps — perform the task in the live view while teaching is active, then Stop & Compile.');
       }
     } else {
-      startTeachSession(botId, `Skill ${new Date().toLocaleTimeString()}`);
+      startTeachSession(botId, teachName.trim() || `Skill ${new Date().toLocaleTimeString()}`);
+      lastTeachSigRef.current = '';
       setTeaching(true);
       setSkillDraft(null);
+      setSkillDraftSaved(false);
     }
+  };
+
+  // The draft textarea is genuinely editable: edits re-apply the overlay to
+  // the bot persona (replacing the previous teach block via the marker).
+  const handleSaveSkillEdits = (text: string) => {
+    void applyTeachSkillToPersona(botId, text).then((saved) => {
+      if (saved) {
+        setSkillDraftSaved(true);
+        emit('lazybots:changed', { botId });
+      }
+    });
   };
 
   const handleTakeover = async () => {
     setStreamError(null);
+    // Takeover supersedes the view-only watch feed — same page, one cast.
+    watchStopRef.current?.();
+    watchStopRef.current = null;
+    setWatching(false);
+    setWatchFrame(null);
     const browser = await openBrowserTakeover(botId);
     if (!('error' in browser)) {
       takeoverPageRef.current = browser.page;
@@ -133,9 +201,26 @@ export function BotVmSurface({ botId }: BotVmSurfaceProps) {
         <span style={S.mode}>{browserFrame ? 'Browser (CDP)' : state?.mode === 'desktop' || stream ? 'Desktop (noVNC)' : 'Browser'}</span>
         {state?.url && <span style={S.url} title={state.url}>{state.url}</span>}
         <span style={S.spacer} />
+        <button
+          data-testid="bot-vm-watch"
+          onClick={() => void handleWatchToggle()}
+          style={watching ? S.watchActive : S.watch}
+          title="View-only live feed of the bot's browser (no input)"
+        >
+          {watching ? '● Watching live' : 'Watch live'}
+        </button>
         <button data-testid="bot-vm-takeover" onClick={handleTakeover} style={S.takeover}>
           Takeover
         </button>
+        {!teaching && (
+          <input
+            data-testid="bot-vm-teach-name"
+            value={teachName}
+            onChange={(e) => setTeachName(e.target.value)}
+            placeholder="Skill name…"
+            style={S.teachName}
+          />
+        )}
         <button data-testid="bot-vm-teach" onClick={handleTeach} style={teaching ? S.teachActive : S.teach}>
           {teaching ? '● Stop & Compile' : 'Teach (record → skill)'}
         </button>
@@ -146,13 +231,26 @@ export function BotVmSurface({ botId }: BotVmSurfaceProps) {
 
       {skillDraft && (
         <div style={S.skillDraft}>
-          <div style={S.skillDraftTitle}>Skill saved into this bot's system prompt (editable below)</div>
+          <div style={S.skillDraftTitle}>
+            Skill merged into this bot's system prompt under "=== TEACH SKILL ===" — edits below re-apply on save.
+          </div>
           <textarea
             style={S.skillDraftTextarea}
             rows={8}
-            defaultValue={skillDraft}
+            value={skillDraft}
+            onChange={(e) => { setSkillDraft(e.target.value); setSkillDraftSaved(false); }}
             aria-label="Skill draft"
           />
+          <div style={S.skillDraftRow}>
+            <button
+              data-testid="bot-vm-skill-save"
+              onClick={() => handleSaveSkillEdits(skillDraft)}
+              style={S.takeover}
+            >
+              Save edits into persona
+            </button>
+            {skillDraftSaved && <span style={S.skillSavedNote}>Saved into system prompt</span>}
+          </div>
         </div>
       )}
 
@@ -164,6 +262,11 @@ export function BotVmSurface({ botId }: BotVmSurfaceProps) {
           data-testid="bot-vm-desktop"
           style={S.desktopHost}
         />
+      ) : watchFrame && !browserFrame ? (
+        <div style={S.shotWrap} data-testid="bot-vm-watch-feed">
+          <img src={watchFrame} alt="Bot browser live view" style={S.shot} />
+          {url && <div style={S.urlBar}>{url}</div>}
+        </div>
       ) : browserFrame ? (
         <div style={S.shotWrap} data-testid="bot-vm-cdp-takeover">
           <img src={browserFrame} alt="Bot browser takeover" style={S.shot} onClick={(e) => void handleBrowserClick(e)} />
@@ -220,6 +323,14 @@ const S = {
     padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600,
     background: 'rgba(124,92,255,0.15)', border: '1px solid rgba(124,92,255,0.4)', color: '#B8A9FF',
   },
+  watch: {
+    padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+    background: 'rgba(102,178,255,0.12)', border: '1px solid rgba(102,178,255,0.4)', color: '#66B2FF',
+  },
+  watchActive: {
+    padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 700,
+    background: 'rgba(102,178,255,0.22)', border: '1px solid rgba(102,178,255,0.6)', color: '#66B2FF',
+  },
   teach: {
     padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600,
     background: 'rgba(102,226,122,0.12)', border: '1px solid rgba(102,226,122,0.4)', color: '#66E27A',
@@ -230,6 +341,12 @@ const S = {
   },
   skillDraft: { padding: 8, borderTop: '1px solid rgba(124,92,255,0.2)' },
   skillDraftTitle: { fontSize: 11, color: '#B8A9FF', marginBottom: 6 },
+  skillDraftRow: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 },
+  skillSavedNote: { fontSize: 11, color: '#66E27A' },
+  teachName: {
+    fontSize: 11, padding: '3px 8px', borderRadius: 6, width: 110,
+    background: '#0E0E14', border: '1px solid rgba(102,226,122,0.35)', color: '#E2E2F0',
+  },
   skillDraftTextarea: {
     width: '100%', boxSizing: 'border-box' as const, minHeight: 140,
     background: '#0E0E14', border: '1px solid rgba(124,92,255,0.25)', borderRadius: 8,

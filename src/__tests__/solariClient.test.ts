@@ -164,11 +164,62 @@ describe('mapSolariError', () => {
     expect(err.userMessage.length).toBeGreaterThan(0);
   });
 
-  it('maps anything unrecognized to unknown', () => {
+  it('maps a 5xx to transient (retryable)', () => {
     const err = mapSolariError({ status: 503 });
+    expect(err.kind).toBe('transient');
+    expect(err.retryable).toBe(true);
+    expect(err.userMessage.length).toBeGreaterThan(0);
+  });
+
+  it('maps an SDK TimeoutError to transient, keeping the RPC method on code', () => {
+    const err = mapSolariError(
+      Object.assign(new Error('Action "code.context.create" timed out after 300000ms'), {
+        name: 'TimeoutError',
+        method: 'code.context.create',
+        timeoutMs: 300000,
+      }),
+    );
+    expect(err.kind).toBe('transient');
+    expect(err.retryable).toBe(true);
+    expect(err.code).toBe('code.context.create');
+  });
+
+  it('maps an SDK ConnectionError to transient', () => {
+    const err = mapSolariError(
+      Object.assign(new Error('Control channel is not connected'), { name: 'ConnectionError' }),
+    );
+    expect(err.kind).toBe('transient');
+    expect(err.retryable).toBe(true);
+  });
+
+  it('maps unrecognized 4xx to badRequest', () => {
+    const err = mapSolariError({ status: 418 });
+    expect(err.kind).toBe('badRequest');
+    expect(err.retryable).toBe(false);
+    expect(err.userMessage.length).toBeGreaterThan(0);
+  });
+
+  it('maps a 404 to badRequest', () => {
+    const err = mapSolariError({ status: 404 });
+    expect(err.kind).toBe('badRequest');
+    expect(err.status).toBe(404);
+  });
+
+  it('maps anything without a status to unknown', () => {
+    const err = mapSolariError(new Error('socket hangup'));
     expect(err.kind).toBe('unknown');
     expect(err.retryable).toBe(false);
     expect(err.userMessage.length).toBeGreaterThan(0);
+  });
+
+  it('passes an already-typed SolariApiError through unchanged', () => {
+    // CloudSolariBrowserClient.http() throws SolariApiError directly — the
+    // mapper must not re-derive and lose its kind (404 → badRequest used to
+    // degrade to 'unknown' via the status re-derivation path).
+    const typed = new SolariApiError('badRequest', 404, 'NotFound');
+    expect(mapSolariError(typed)).toBe(typed);
+    const conflict = new SolariApiError('conflict', 409);
+    expect(mapSolariError(conflict)).toBe(conflict);
   });
 
   it('accepts a numeric string status for safety', () => {

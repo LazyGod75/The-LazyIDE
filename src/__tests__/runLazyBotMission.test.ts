@@ -55,6 +55,12 @@ vi.mock('../lib/bots/botLearning', () => ({
   finalizeBotRunLearning: vi.fn().mockResolvedValue(undefined),
 }));
 
+// The Solari gate is exercised separately — every other test assumes a
+// configured key so the mission reaches the brain/loop under test.
+vi.mock('../lib/solari/solariClient', () => ({
+  isSolariConfigured: vi.fn(async () => true),
+}));
+
 // The worktree bridge must never be touched by a bot run.
 const createMissionWorktree = vi.fn();
 vi.mock('../lib/agents/runMissionWorktree', () => ({
@@ -65,6 +71,7 @@ vi.mock('../lib/agents/runMissionWorktree', () => ({
 
 import { isManagedModelReady, isNativeModelReady, runMission } from '../lib/agents/runtime';
 import { hasByokKey, resolveByokAgentTurnStreamer } from '../lib/models/byokProviders';
+import { isSolariConfigured } from '../lib/solari/solariClient';
 import { captureOutcome } from '../lib/agents/captureOutcome';
 import { emitEvent } from '../lib/journal/journal';
 import { runLazyBotMission, resolveBotBrain, resolveFallbackBrain, isBrainFailure } from '../lib/bots/runLazyBotMission';
@@ -92,6 +99,7 @@ const managedReady = isManagedModelReady as unknown as ReturnType<typeof vi.fn>;
 const nativeReady = isNativeModelReady as unknown as ReturnType<typeof vi.fn>;
 const byokKey = hasByokKey as unknown as ReturnType<typeof vi.fn>;
 const byokStreamer = resolveByokAgentTurnStreamer as unknown as ReturnType<typeof vi.fn>;
+const solariConfigured = isSolariConfigured as unknown as ReturnType<typeof vi.fn>;
 const mockedCapture = captureOutcome as unknown as ReturnType<typeof vi.fn>;
 const mockedEmit = emitEvent as unknown as ReturnType<typeof vi.fn>;
 
@@ -240,6 +248,17 @@ describe('runLazyBotMission', () => {
     const failed = patches(onUpdate).find((p) => p.status === 'failed')!;
     expect(failed.statusReason).toMatch(/CLI/);
     expect(mockedCapture).toHaveBeenCalledWith(expect.anything(), expect.any(String), 'failed', expect.any(Number), undefined, undefined, expect.objectContaining({ category: 'bot_rail_unavailable' }));
+  });
+
+  it('fails fast as solari_not_configured before any spawn when the Solari key is absent', async () => {
+    solariConfigured.mockResolvedValueOnce(false);
+    const onUpdate = vi.fn();
+    await runLazyBotMission(botMission(), 'C:\\repo', { onUpdate });
+    expect(planAndActManaged).not.toHaveBeenCalled();
+    expect(lastStatus(onUpdate)).toBe('failed');
+    const failed = patches(onUpdate).find((p) => p.status === 'failed')!;
+    expect(failed.statusReason).toMatch(/Solari/i);
+    expect(mockedCapture).toHaveBeenCalledWith(expect.anything(), expect.any(String), 'failed', expect.any(Number), undefined, undefined, expect.objectContaining({ category: 'solari_not_configured' }));
   });
 
   it('fails when the bot persona is missing instead of falling back to a local agent persona', async () => {

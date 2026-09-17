@@ -27,6 +27,13 @@ import { ALL_MODELS } from '../models/registry.js';
 import { OPENROUTER_MODELS, DEFAULT_OPENROUTER_MODEL_ID, findOpenRouterModel, isOpenRouterFreeModel, migrateRetiredOpenRouterId, nextFreeOpenRouterModelId } from '../models/openrouterCatalog.js';
 import { isDevinModel } from '../models/devinCatalog.js';
 import { RECALL_TEACHING } from '../models/systemPrompts.js';
+import {
+  fallbackModeRails,
+  railAttemptLabel,
+  railFailoverNotice,
+  runWithRailFailover,
+} from './managerRailFailover.js';
+import type { ManagerRailAttempt } from './managerRailFailover.js';
 import type { ManagerMessage } from './types.js';
 
 const TIER_WORD = /haiku|sonnet|opus/;
@@ -497,8 +504,25 @@ async function streamDevinRail(
   await drainChunks(cliBackendProvider('devin').streamChat({
     messages: devinMessages,
     model: devinModel,
-    mode: 'ask',
+    // 'plan', NOT 'ask': the Devin ACP session literally switches modes
+    // (session/set_mode injects "The session mode has changed to Ask" into
+    // the transcript) and swe-2 then honestly obeys it — refuses to emit
+    // any action block, in prose only (real incident: reject_mission
+    // request answered "je m'y conforme: aucune action"). 'plan' keeps the
+    // session non-writing (the manager must never edit files itself) while
+    // making the model emit its planned actions as text — exactly what the
+    // <lazy_actions> contract needs. Same reason cliAgentTurnStreamer's
+    // Devin rail picks 'plan' for bot brains.
+    mode: 'plan',
     rulesContext: systemFinal,
+    // The ACP session personas ("ask" says read-only, "plan" says produce
+    // a plan) both contradict the lazy_actions contract — emit lazy_actions
+    // is plain text, never a file edit — so the base persona states that
+    // explicitly.
+    basePromptOverride:
+      'You are the LazyManager orchestrator. You never modify files or run commands yourself — ' +
+      'the app executes the <lazy_actions> JSON block you emit as plain text, which is always allowed. ' +
+      'Reply with your answer/prose plus a <lazy_actions> block when the request calls for action.',
     signal,
   }), ingest);
 }
@@ -586,19 +610,45 @@ export async function streamManagerCompletion(opts: StreamManagerCompletionOpts)
   // forwarded to whatever rail the ambient mode happened to resolve to,
   // e.g. the Claude CLI, which rejects an id it has never heard of).
   const modelByokDef = resolveByokDefForModel(model);
-  if (modelByokDef) {
-    await streamKeyedByokRail(modelByokDef, model, systemFinal, apiMessages, signal, ingest);
-  } else if (isDevinModel(model)) {
-    // Devin-catalog id picked explicitly — same model-driven short-circuit
-    // as the BYOK check above: rides the devin ACP rail no matter which
-    // ambient mode resolved (getProvider()'s isDevinModel check is the
-    // provider-level twin of this branch).
-    await streamDevinRail(model, codexSystemFinal, apiMessages, signal, ingest);
-  } else {
-    await dispatchAmbientRail(
-      mode, model, systemFinal, codexSystemFinal, cacheableSystemFinal, apiMessages, signal, ingest,
+  const primary: ManagerRailAttempt = modelByokDef
+    ? { kind: 'keyed-byok', def: modelByokDef, model }
+    : isDevinModel(model)
+      // Devin-catalog id picked explicitly — same model-driven short-circuit
+      // as the BYOK check above: rides the devin ACP rail no matter which
+      // ambient mode resolved (getProvider()'s isDevinModel check is the
+      // provider-level twin of this branch).
+      ? { kind: 'devin-model', model }
+      : { kind: 'mode', mode, model };
+
+  const dispatchAttempt = (attempt: ManagerRailAttempt): Promise<void> => {
+    if (attempt.kind === 'keyed-byok') {
+      return streamKeyedByokRail(attempt.def, attempt.model, systemFinal, apiMessages, signal, ingest);
+    }
+    if (attempt.kind === 'devin-model') {
+      return streamDevinRail(attempt.model, codexSystemFinal, apiMessages, signal, ingest);
+    }
+    return dispatchAmbientRail(
+      attempt.mode, attempt.model, systemFinal, codexSystemFinal, cacheableSystemFinal, apiMessages, signal, ingest,
     );
-  }
+  };
+
+  // Cross-rail failover (managerRailFailover.ts): a dead rail used to strand
+  // the whole turn on `LazyManager error`. Now the next AVAILABLE rail serves
+  // the same request — accumulator reset + honest notice via onFallback so no
+  // partial output from the dead rail contaminates the fallback reply.
+  const attempts: ManagerRailAttempt[] = [primary, ...fallbackModeRails(primary)];
+  const failoverTrail: Array<{ label: string; reason: string }> = [];
+  await runWithRailFailover(attempts, dispatchAttempt, {
+    signal,
+    onFallback: (failed, next, err) => {
+      failoverTrail.push({
+        label: railAttemptLabel(failed),
+        reason: err instanceof Error ? err.message : String(err),
+      });
+      acc = EMPTY_CHUNK_ACCUMULATOR;
+      ingest(railFailoverNotice(next, failoverTrail));
+    },
+  });
 
   warnIfImbalancedCodeSpans(acc.text);
   return acc.text;

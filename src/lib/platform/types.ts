@@ -123,6 +123,36 @@ export interface HistorySource {
  * Cost/time estimate for seeding from a list of sources.
  * Produced by `lazybrain import --dry-run`.
  */
+/**
+ * Caller-picked LLM backend for a seed run — serialized straight into the
+ * Rust `brain_seed`/`brain_seed_estimate` `extractor` arg
+ * (SeedExtractorArg in commands/brain/history_import.rs). Built by
+ * src/lib/brain/seedExtractor.ts from the user's entitlements; when absent,
+ * Rust falls back to its fixed auto-detection (claude CLI → ANTHROPIC_API_KEY
+ * env → heuristic).
+ *
+ * SECURITY: `apiKey`/`anonKey` travel over Tauri IPC into the child
+ * process's environment — never logged, never persisted.
+ */
+export interface SeedExtractorSpec {
+  /** 'claude-cli' | 'anthropic' | 'openai' | 'lazy-proxy' */
+  kind: string;
+  /** OpenAI-compatible base URL ('openai') or ai-proxy endpoint ('lazy-proxy'). */
+  baseUrl?: string;
+  /** Model id resolved from the live catalog — never a hardcoded constant. */
+  model?: string;
+  /** BYOK/Anthropic key ('openai'/'anthropic') or Supabase session JWT ('lazy-proxy'). */
+  apiKey?: string;
+  /** Supabase anon key for the `apikey` header ('lazy-proxy' only). */
+  anonKey?: string;
+  /** Alternate managed catalog ids tried after `model` on upstream errors
+   *  ('lazy-proxy' only) — the free routes are individually flaky, so the
+   *  other free entries ride along as backups. */
+  fallbackModels?: string[];
+  /** Human-readable label surfaced in progress events ("backend" phase). */
+  label?: string;
+}
+
 export interface SeedEstimate {
   items: number;
   estTokens: number;
@@ -622,14 +652,18 @@ export interface Brain {
   /**
    * Estimate the cost/time of seeding from the given source keys.
    * Runs `lazybrain import --dry-run` — no writes, no LLM calls.
-   * Tauri: invoke('brain_seed_estimate', { sources }).
+   * Tauri: invoke('brain_seed_estimate', { sources, extractor }).
+   *        `extractor` (optional) is the caller-picked rail — when given,
+   *        the returned `backend` label reflects it instead of auto-detection.
    * Web: resolves to { items: 0, estTokens: 0, estMinutes: 0 }.
    */
-  seedEstimate(sources: string[]): Promise<SeedEstimate>;
+  seedEstimate(sources: string[], extractor?: SeedExtractorSpec): Promise<SeedEstimate>;
 
   /**
    * Start a background brain-seed from the given sources.
-   * Tauri: invoke('brain_seed', { sources, useLlm, since, projectRoot }).
+   * Tauri: invoke('brain_seed', { sources, useLlm, since, projectRoot, extractor }).
+   *        `extractor` (optional) selects the LLM backend explicitly
+   *        (see SeedExtractorSpec) instead of Rust's auto-detection.
    *        Emits 'brain://seed-progress' events during the run.
    * Web: rejects with 'not available in the browser'.
    */
@@ -638,6 +672,7 @@ export interface Brain {
     useLlm: boolean;
     since?: string;
     projectRoot?: string;
+    extractor?: SeedExtractorSpec;
   }): Promise<{ imported: number; skipped: number }>;
 
   /**

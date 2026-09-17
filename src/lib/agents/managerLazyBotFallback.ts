@@ -121,6 +121,7 @@ export function formatLazyBotFallbackNotice(locale: string | undefined, botName:
 
 const STOP_MISSION_RE = /(?:arr[êe]te|stoppe|stop|annule|cancel|kill)\s+(?:la\s+)?(?:mission\s+)?(M\d+)\b/i;
 const STOP_BOT_VERB_RE = /(?:arr[êe]te|stoppe|stop|annule|cancel)\s+(?:le\s+|la\s+)?(?:bot|lazybot)\b/i;
+const DELETE_BOT_VERB_RE = /(?:supprime|supprimer|efface|effacer|d[ée]truis|enl[èe]ve|retire|delete|remove|destroy)\s+(?:le\s+|la\s+|ce\s+|mon\s+)?(?:bot|lazybot)\b/i;
 const CREATE_BOT_RE = /(?:cr[ée]e|create|ajoute|add)\s+(?:un\s+|le\s+|a\s+)?(?:nouveau\s+|new\s+)?(?:bot|lazybot)\s+(?:named\s+|nomm[ée]e?\s+|appel[ée]e?\s+)?["']?([A-Za-z][\w-]{2,30})/i;
 const LAUNCH_MISSION_RE = /(?:lance|lancer|launch|start|d[ée]marre)\s+(?:une\s+|la\s+|a\s+)?mission\b/i;
 
@@ -160,6 +161,13 @@ export function detectDeterministicManagerAction(
     if (GENERIC_BOT_RE.test(user) && enabled.length === 1) {
       return { type: 'stop_lazybot', botId: enabled[0].id };
     }
+  }
+
+  // delete_lazybot — destructive, so NEVER fall back to a generic "le bot":
+  // only a bot named unambiguously in the user's own words may be deleted.
+  if (DELETE_BOT_VERB_RE.test(user) && bots && bots.length > 0) {
+    const named = uniquelyNamedBot(user, bots);
+    if (named) return { type: 'delete_lazybot', botId: named.id };
   }
 
   const created = user.match(CREATE_BOT_RE);

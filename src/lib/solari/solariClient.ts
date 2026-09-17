@@ -199,6 +199,10 @@ export function mapSolariError(err: unknown): SolariApiError {
   // explicitly — otherwise it maps to 'unknown' and hides the actionable
   // "set your key" guidance behind a generic "unexpected error" message.
   if (err instanceof SolariNotConfiguredError) return new SolariApiError('auth');
+  // Already-typed errors (thrown by CloudSolariBrowserClient.http) carry a
+  // computed kind — re-deriving from status would downgrade statuses outside
+  // the switch below (e.g. 404 → 'badRequest' became 'unknown').
+  if (err instanceof SolariApiError) return err;
   const status = numericField(err, 'status');
   const code = stringField(err, 'code');
   if (status === 401) return new SolariApiError('auth', status, code);
@@ -214,6 +218,28 @@ export function mapSolariError(err: unknown): SolariApiError {
     return new SolariApiError('concurrency', status, code);
   }
   if (status === 400) return new SolariApiError('badRequest', status, code);
+  // 501 "not implemented" is a definitive feature-gap, not a transient
+  // failure — retrying the identical request can never succeed.
+  if (status === 501) return new SolariApiError('badRequest', status, code);
+  // Other 5xx and request timeouts are infrastructure problems — retryable.
+  if ((status !== undefined && status >= 500) || status === 408) {
+    return new SolariApiError('transient', status, code);
+  }
+  // Remaining 4xx (403, 404, 405, 410, 422…) are request-level rejections —
+  // 'badRequest' is more actionable than the opaque 'unknown'.
+  if (status !== undefined && status >= 400) {
+    return new SolariApiError('badRequest', status, code);
+  }
+  // SDK transport errors carry no status/code: TimeoutError (a control-channel
+  // RPC exceeded its deadline — e.g. a sandbox template that does not serve
+  // the `code.*` family lets code.context.create hang until the SDK's 300s
+  // cap, real incident M121) and ConnectionError (channel down) are
+  // infrastructure problems too — 'transient', never the opaque 'unknown'.
+  // The failed RPC method is kept on `code` for diagnostics.
+  const errName = stringField(err, 'name');
+  if (errName === 'TimeoutError' || errName === 'ConnectionError') {
+    return new SolariApiError('transient', status, code ?? stringField(err, 'method'));
+  }
   if (asRecord(err).retryable === true) return new SolariApiError('transient', status, code);
   return new SolariApiError('unknown', status, code);
 }
@@ -283,7 +309,17 @@ export class CloudSolariBrowserClient {
         // ignore
       }
       throw new SolariApiError(
-        res.status === 401 ? 'auth' : res.status === 402 ? 'credit' : res.status === 429 ? 'concurrency' : 'badRequest',
+        res.status === 401
+          ? 'auth'
+          : res.status === 402
+            ? 'credit'
+            : res.status === 409
+              ? 'conflict'
+              : res.status === 429
+                ? 'concurrency'
+                : res.status >= 500
+                  ? 'transient'
+                  : 'badRequest',
         res.status,
         code,
       );
@@ -333,6 +369,25 @@ export class CloudSolariBrowserClient {
     return { url: data.url };
   }
 
+  /** Download the NDJSON replay transcript for a released session.
+   *  CREDENTIAL MATERIAL: the replay can embed page content and secrets —
+   *  callers must store it under .lazy/ and never log or surface it raw.
+   *  Returns raw BYTES (the object is .ndjson.gz) — text-decoding them
+   *  would corrupt the archive. In dev the fetch goes through the Vite
+   *  /solari-replay proxy: a direct webview fetch to storage.googleapis.com
+   *  is CORS-blocked (verified live). Packaged Tauri callers should prefer
+   *  the Rust solari_replay_download command instead of this path. */
+  async downloadReplay(id: string): Promise<ArrayBuffer> {
+    const { url } = await this.getReplayUrl(id);
+    const parsed = new URL(url);
+    const fetchUrl = import.meta.env.DEV
+      ? `/solari-replay${parsed.pathname}${parsed.search}`
+      : url;
+    const res = await window.fetch(fetchUrl);
+    if (!res.ok) throw new Error(`Solari: replay download failed (${res.status})`);
+    return res.arrayBuffer();
+  }
+
   async listProfiles(): Promise<Array<{ id: string; name: string }>> {
     const res = await this.http('GET', '/profiles');
     const data = (await res.json()) as { profiles?: Array<{ id: string; name: string }> };
@@ -359,6 +414,7 @@ export class CloudSolariBrowserClient {
     },
     releaseAndWait: (id: string): Promise<void> => this.release(id),
     getReplayUrl: (id: string): Promise<{ url: string }> => this.getReplayUrl(id),
+    downloadReplay: (id: string): Promise<ArrayBuffer> => this.downloadReplay(id),
   };
 
   readonly profiles = {

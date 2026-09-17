@@ -18,6 +18,35 @@ export function nextConsecutiveFailures(observation: string, prev: number): numb
   return observation.startsWith('ERROR:') ? prev + 1 : 0;
 }
 
+/** Detects the tail of `history` being ≥2 consecutive failures of the SAME
+ *  action — the soft mid-tier between maybeReflect (1 failure) and the V4
+ *  hard stop / detectStuckPattern abort (3). Returns null when the tool was
+ *  already nudged: an earlier ≥2 same-action error streak in history means
+ *  the nudge fired then (a 3rd consecutive failure never reaches history —
+ *  escalateAndStop runs first). */
+export function repeatedToolFailure(
+  history: readonly AgentStepRecord[],
+): { action: string; count: number } | null {
+  const last = history[history.length - 1];
+  if (!last?.isError) return null;
+  let streakStart = history.length;
+  while (streakStart > 0) {
+    const rec = history[streakStart - 1];
+    if (!rec.isError || rec.action !== last.action) break;
+    streakStart--;
+  }
+  const count = history.length - streakStart;
+  if (count < 2) return null;
+  for (let i = 0; i < streakStart - 1; i++) {
+    const a = history[i];
+    const b = history[i + 1];
+    if (a.isError && b.isError && a.action === b.action && a.action === last.action) {
+      return null;
+    }
+  }
+  return { action: last.action, count };
+}
+
 export function toolHasTestFailure(observation: string): boolean {
   const failedMatch = /(\d+) failed/.exec(observation);
   return failedMatch !== null && parseInt(failedMatch[1], 10) > 0;
@@ -191,7 +220,21 @@ export async function applyManagedAftermath(opts: {
     return { flow: 'stop' };
   }
   const reflected = await maybeReflect(opts);
-  const prm = await maybePrm({ ...opts, messages: reflected.messages });
+  const repeated = repeatedToolFailure(opts.stepHistory);
+  const nudgedMessages = repeated
+    ? [
+        ...reflected.messages,
+        {
+          role: 'user',
+          content:
+            `[Lazy] ${repeated.action} has failed ${repeated.count} times in a row — ` +
+            'one more consecutive error stops the run. Stop retrying the same call: ' +
+            'work around the failure and report it in your FINAL report; if it ' +
+            'blocks the task, escalate to the user first.',
+        },
+      ]
+    : reflected.messages;
+  const prm = await maybePrm({ ...opts, messages: nudgedMessages });
   const handoff = await maybeHandoff({
     ...opts,
     messages: prm.messages,

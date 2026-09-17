@@ -33,6 +33,7 @@ import { StartupRecoveryCheck } from './startup/StartupRecoveryCheck';
 import { MemoryPressureIndicator } from './MemoryPressureIndicator';
 import { useMemoryPressureReservedHeight } from './memoryPressureReservedHeight';
 import { OnboardingModal } from './onboarding/OnboardingModal';
+import { BrainEnrichmentPrompt } from './onboarding/BrainEnrichmentPrompt';
 import { useOnboarding } from './onboarding/useOnboarding';
 import { Spinner, useToast } from './ui';
 import { useAuth } from '../lib/auth';
@@ -521,6 +522,7 @@ export function AppShell() {
                 <BotsStoreProvider>
                   <AssistantStoreProvider>
                     <AppShellInner />
+                    <BrainEnrichmentPrompt />
                     {showOnboarding && (
                       <OnboardingModal
                         onComplete={completeOnboarding}

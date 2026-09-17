@@ -14,6 +14,7 @@ import { addUsage } from './costStore.js';
 import { buildSystemPrompt } from './systemPrompts.js';
 import { loadAccessSettings } from './accessSettings.js';
 import { emit } from '../bus.js';
+import { devinAuthBlockedAsync, noteDevinFailure } from './devinAuthGuard.js';
 import { withAssistantToolLoop as withBrainSearchLoop, withAssistantToolLoopEvents as withBrainSearchLoopEvents } from './assistantToolLoop.js';
 
 // ── Async queue (identical pattern to claudeCodeProvider) ─────────
@@ -171,6 +172,12 @@ function buildRunTurn(
   return async function* runTurn(
     turnMessages: Array<{ role: string; content: string }>,
   ): AsyncGenerator<string> {
+    // Devin auth breaker: refuse BEFORE any `devin acp` spawn while a recent
+    // credential rejection is on record — each spawn can pop an OAuth tab.
+    if (tool === 'devin') {
+      const blocked = await devinAuthBlockedAsync();
+      if (blocked) throw new Error(blocked);
+    }
     const id = generateId(tool);
     const queue = createQueue();
     const unlisteners: Array<() => void> = [];
@@ -194,6 +201,7 @@ function buildRunTurn(
     unlisteners.push(doneUnsub);
 
     const errorUnsub = await listen<string>(`model://error/${id}`, event => {
+      if (tool === 'devin') noteDevinFailure(event.payload ?? '');
       queue.reject(new Error(event.payload ?? `${tool} CLI stream error`));
     });
     unlisteners.push(errorUnsub);
@@ -240,8 +248,10 @@ function buildRunTurn(
         system,
         messages: turnMessages,
         mode: req.mode,
+        session_cwd: req.sessionCwd,
       },
     }).catch((err: unknown) => {
+      if (tool === 'devin') noteDevinFailure(err);
       const msg = err instanceof Error ? err.message : String(err);
       queue.reject(new Error(msg));
     });
@@ -263,6 +273,7 @@ async function* streamChatImpl(tool: string, req: StreamChatRequest): AsyncItera
   const settings = loadAccessSettings();
   const system = buildSystemPrompt(req.mode, req.brainRecall, {
     rulesContext: req.rulesContext,
+    basePromptOverride: req.basePromptOverride,
     startupContext: req.startupContext,
     skillContext: req.skillContext,
     tools: req.tools,
@@ -270,7 +281,7 @@ async function* streamChatImpl(tool: string, req: StreamChatRequest): AsyncItera
     outputStyles: settings.outputStyles,
   });
 
-  yield* withBrainSearchLoop(req, buildRunTurn(tool, req, system));
+  yield* withBrainSearchLoop(req, buildRunTurn(tool, req, system, req.onToolAction));
 }
 
 /** Structured-event counterpart to streamChatImpl — see

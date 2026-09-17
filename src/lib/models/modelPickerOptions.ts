@@ -165,9 +165,12 @@ export interface ModelPickerOptions {
 export const CLAUDE_SUB_LABEL = 'Abonnement Claude';
 export const PRO_LABEL = 'LazyPro / Managé';
 export const DEVIN_LABEL = 'Devin CLI';
-/** Header of the always-present FREE group (GLM 5.2). No entitlement of any
-    kind is required — see openrouterCatalog.ts's free tier block. */
-export const FREE_GROUP_LABEL = 'Gratuit · GLM 5.2';
+/** Header of the always-present FREE group (served by Lazy's ai-proxy).
+    No entitlement of any kind is required — see openrouterCatalog.ts's free
+    tier block. Model-agnostic by design: the rail's entries rotate as
+    upstream `:free` routes come and go, so the label names the SPONSOR,
+    never a model id. */
+export const FREE_GROUP_LABEL = 'Gratuit · Offert par LazyIDE';
 const byokGroupLabel = (def: ByokProviderDef) => `BYOK · ${def.label}`;
 
 /** @deprecated kept verbatim (name/type/value) only for NewMissionModal.tsx's

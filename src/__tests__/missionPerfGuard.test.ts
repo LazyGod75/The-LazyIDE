@@ -51,7 +51,13 @@ const MISSION_SYSTEM_PROMPT_BUDGET_CHARS = 26_500;
 // Bumped 2026-09-01 (LazyBot/Solari cloud tools): the cloud tool index lines
 // grew the lazy mission tool block (one `- name: shortHint` line per tool).
 // New measured size: 13338 chars. +10% headroom, rounded up.
-const MISSION_TOOL_BLOCK_BUDGET_CHARS = 14_700;
+// Bumped 2026-09-12 (Solari depth pack): +12 cloud tools indexed —
+// sandbox run_code/file_search/download/upload/command_start/poll, desktop
+// file_read/file_list/mouse_scroll/app_open/process_list/snapshot/revert,
+// browser replay_url/profiles/profile_save/press_key/profile_create,
+// bot_wait_for_human. Deliberate additions, not silent growth.
+// New measured size: 15049 chars. +10% headroom, rounded up.
+const MISSION_TOOL_BLOCK_BUDGET_CHARS = 16_600;
 
 // The lazy split must keep saving at least this much vs. the unabridged
 // "every tool in full" block, or the core/index split has effectively

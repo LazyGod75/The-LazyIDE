@@ -26,6 +26,8 @@ import { persistActiveRuns, setBotRuntimeRoot } from '../lib/bots/botRuntimeStor
 
 vi.mock('../lib/solari/solariSessions', () => ({
   releaseAll: vi.fn().mockResolvedValue(undefined),
+  takeBrowserArtifacts: vi.fn(() => undefined),
+  registerRunArtifactStamper: vi.fn(),
 }));
 
 const runtimeFiles = new Map<string, string>();
@@ -111,7 +113,9 @@ describe('buildBotSystemPrompt', () => {
     const bot = makeBot({ capabilities: { browser: false, desktop: false, sandbox: true, maxConcurrentSessions: 1 } });
     const prompt = buildBotSystemPrompt(bot);
     expect(prompt).toContain('ACTION: cloud_sandbox_exec');
-    expect(prompt).not.toContain('cloud_sandbox_run');
+    // cloud_sandbox_run_code is a real tool now — the guard is against the
+    // hallucinated bare `cloud_sandbox_run`, so assert on the exact word.
+    expect(prompt).not.toMatch(/\bcloud_sandbox_run\b/);
   });
 
   it('mentions profiles when profileIds is non-empty', () => {
@@ -119,6 +123,13 @@ describe('buildBotSystemPrompt', () => {
     const prompt = buildBotSystemPrompt(bot);
     expect(prompt).toContain('prof_1');
     expect(prompt).toContain('prof_2');
+  });
+
+  it('tells the bot to stop retrying and surface repeated service-side failures', () => {
+    const bot = makeBot();
+    const prompt = buildBotSystemPrompt(bot);
+    expect(prompt).toContain('fails twice with a service-side error');
+    expect(prompt).toContain('bot_request_intervention');
   });
 });
 

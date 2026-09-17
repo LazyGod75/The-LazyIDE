@@ -389,6 +389,47 @@ describe('validateManagerAction', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toContain('refs');
   });
+
+  // ── LazyBot lifecycle actions (delete / resolve / sweep / runs / vm) ──
+  it('accepts delete_lazybot with a botId', () => {
+    expect(validateManagerAction({ type: 'delete_lazybot', botId: 'bot_1' }).ok).toBe(true);
+  });
+
+  it('rejects delete_lazybot missing botId', () => {
+    const result = validateManagerAction({ type: 'delete_lazybot' });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toContain('botId');
+  });
+
+  it('accepts resolve_bot_intervention with a botId, rejects it without', () => {
+    expect(validateManagerAction({ type: 'resolve_bot_intervention', botId: 'bot_1' }).ok).toBe(true);
+    expect(validateManagerAction({ type: 'resolve_bot_intervention' }).ok).toBe(false);
+  });
+
+  it('accepts sweep_solari with no fields', () => {
+    expect(validateManagerAction({ type: 'sweep_solari' }).ok).toBe(true);
+  });
+
+  it('accepts lazybot_runs with botId and optional limit, rejects non-number limit', () => {
+    expect(validateManagerAction({ type: 'lazybot_runs', botId: 'bot_1' }).ok).toBe(true);
+    expect(validateManagerAction({ type: 'lazybot_runs', botId: 'bot_1', limit: 5 }).ok).toBe(true);
+    expect(validateManagerAction({ type: 'lazybot_runs', botId: 'bot_1', limit: 'five' }).ok).toBe(false);
+    expect(validateManagerAction({ type: 'lazybot_runs' }).ok).toBe(false);
+  });
+
+  it('accepts toggle_bot_vm with botId and optional open, rejects non-boolean open', () => {
+    expect(validateManagerAction({ type: 'toggle_bot_vm', botId: 'bot_1' }).ok).toBe(true);
+    expect(validateManagerAction({ type: 'toggle_bot_vm', botId: 'bot_1', open: true }).ok).toBe(true);
+    expect(validateManagerAction({ type: 'toggle_bot_vm', botId: 'bot_1', open: 'yes' }).ok).toBe(false);
+    expect(validateManagerAction({ type: 'toggle_bot_vm' }).ok).toBe(false);
+  });
+
+  it('accepts teach_lazybot with botId + mode, optional skillName; rejects missing fields', () => {
+    expect(validateManagerAction({ type: 'teach_lazybot', botId: 'bot_1', mode: 'start' }).ok).toBe(true);
+    expect(validateManagerAction({ type: 'teach_lazybot', botId: 'bot_1', mode: 'stop', skillName: 'x' }).ok).toBe(true);
+    expect(validateManagerAction({ type: 'teach_lazybot', botId: 'bot_1' }).ok).toBe(false);
+    expect(validateManagerAction({ type: 'teach_lazybot', mode: 'start' }).ok).toBe(false);
+  });
 });
 
 // ── parseManagerActions integration with validator ──────────────────

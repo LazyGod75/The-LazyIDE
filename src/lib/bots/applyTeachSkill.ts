@@ -4,12 +4,16 @@ import { getBot, saveBot } from './botStorage.js';
 import type { BotConfig } from './botTypes.js';
 
 export const TEACH_SKILL_MARKER = '=== TEACH SKILL ===';
+/** The overlay's own banner emitted by compileSkillOverlay — stripped on
+ *  merge so the persisted persona carries exactly ONE section header
+ *  (TEACH_SKILL_MARKER) instead of two stacked banners. */
+const OVERLAY_BANNER_RE = /^===\s*LEARNED SKILL\s*===\s*\n?/;
 
 /** Merge a compiled skill overlay into the bot's systemPrompt and save. */
 export async function applyTeachSkillToPersona(botId: string, overlay: string): Promise<BotConfig | null> {
   const bot = await getBot(botId);
   if (!bot) return null;
-  const trimmed = overlay.trim();
+  const trimmed = overlay.trim().replace(OVERLAY_BANNER_RE, '').trim();
   if (!trimmed) return bot;
   const idx = bot.systemPrompt.indexOf(TEACH_SKILL_MARKER);
   const base = (idx >= 0 ? bot.systemPrompt.slice(0, idx) : bot.systemPrompt).trimEnd();

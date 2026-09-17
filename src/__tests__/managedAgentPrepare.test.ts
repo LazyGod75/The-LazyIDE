@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { composeManagedTaskPrompt, buildProofPolicyBlock } from '../lib/agents/managedAgentPrepare';
-import { missingRequiredProofKinds, shouldBounceFinal, missingProofNudgeContent } from '../lib/agents/managedAgentFinal';
+import { missingRequiredProofKinds, shouldBounceFinal, missingProofNudgeContent, noToolCallsNudgeContent, finishManagedFinal } from '../lib/agents/managedAgentFinal';
 import { extractToolFiles } from '../lib/agents/managedAgentExecute';
 import { fastTrackUnparseable, parseReActActionWithRetry } from '../lib/agents/managedAgentParse';
 import { classifyManagedTurnError, applyManagedTurnError } from '../lib/agents/managedAgentTurnError';
-import { nextConsecutiveFailures, toolHasTestFailure } from '../lib/agents/managedAgentAftermath';
+import { nextConsecutiveFailures, repeatedToolFailure, toolHasTestFailure } from '../lib/agents/managedAgentAftermath';
+import type { AgentStepRecord } from '../lib/agents/stuckDetector';
 import { ManagedUnavailableError } from '../lib/models/managedProvider';
 import { guardManagedLoopStep, workingMessagesWithReflections, advanceManagedMilestones } from '../lib/agents/managedAgentLoopGuard';
 import { applyMissionCaps } from '../lib/agents/managedAgentCaps';
@@ -90,6 +91,57 @@ describe('shouldBounceFinal', () => {
   it('keeps the original bounce prompt wording', () => {
     expect(missingProofNudgeContent('test_run')).toContain('ACTION: attach_proof');
     expect(missingProofNudgeContent('test_run')).toContain('test_run');
+  });
+});
+
+// M141 regression: the agent emitted a confident FINAL ("Created
+// AGENT_NOTES.md…") having executed ZERO tool calls — the mission parked in
+// review with an empty diff while the summary claimed the file existed.
+// finishManagedFinal must bounce that FINAL (bounded by proofNudges).
+describe('finishManagedFinal — zero-tool FINAL bounce (M141)', () => {
+  const base = {
+    attachedProofs: [] as never[],
+    args: { summary: 'done' },
+    nowTime: () => '00:00',
+    onAction: () => {},
+    onStep: () => {},
+    onProgress: () => {},
+    emitMetrics: () => {},
+    capture: async () => {},
+  };
+
+  it('bounces a FINAL that ran no tools', async () => {
+    const res = await finishManagedFinal({
+      ...base,
+      proofNudges: 0, maxProofNudges: 2, toolCallCount: 0,
+    });
+    expect(res.flow).toBe('continue');
+    if (res.flow === 'continue') {
+      expect(res.bounceContent).toContain('single tool call');
+      expect(res.proofNudges).toBe(1);
+    }
+  });
+
+  it('lets the FINAL through once the nudge budget is spent (bounded)', async () => {
+    const res = await finishManagedFinal({
+      ...base,
+      proofNudges: 2, maxProofNudges: 2, toolCallCount: 0,
+    });
+    expect(res.flow).toBe('done');
+  });
+
+  it('does NOT bounce a FINAL that actually ran tools', async () => {
+    const res = await finishManagedFinal({
+      ...base,
+      proofNudges: 0, maxProofNudges: 2, toolCallCount: 3,
+    });
+    expect(res.flow).toBe('done');
+  });
+
+  it('nudge text tells the model to act or to say explicitly that no tools were needed', () => {
+    const txt = noToolCallsNudgeContent();
+    expect(txt).toContain('ACTION');
+    expect(txt).toContain('no file/tool work');
   });
 });
 
@@ -179,6 +231,53 @@ describe('nextConsecutiveFailures', () => {
   it('does not count a test-failure observation as a V4 error', () => {
     expect(toolHasTestFailure('3 failed')).toBe(true);
     expect(nextConsecutiveFailures('3 failed', 2)).toBe(0);
+  });
+});
+
+describe('repeatedToolFailure', () => {
+  const rec = (action: string, isError: boolean): AgentStepRecord => ({
+    action,
+    argsSignature: '{}',
+    observation: isError ? 'ERROR: boom' : 'ok',
+    isError,
+  });
+
+  it('returns null on empty history and on a single trailing error', () => {
+    expect(repeatedToolFailure([])).toBeNull();
+    expect(repeatedToolFailure([rec('read_file', true)])).toBeNull();
+  });
+
+  it('fires on two consecutive failures of the same action', () => {
+    const history = [rec('read_file', false), rec('cloud_browser_replay_url', true), rec('cloud_browser_replay_url', true)];
+    expect(repeatedToolFailure(history)).toEqual({ action: 'cloud_browser_replay_url', count: 2 });
+  });
+
+  it('does not fire when the two trailing errors come from different actions', () => {
+    const history = [rec('read_file', true), rec('write_file', true)];
+    expect(repeatedToolFailure(history)).toBeNull();
+  });
+
+  it('does not fire when the same action failed earlier but not consecutively', () => {
+    const history = [rec('run_command', true), rec('read_file', false), rec('run_command', true)];
+    expect(repeatedToolFailure(history)).toBeNull();
+  });
+
+  it('does not fire twice for the same action — an earlier streak already nudged it', () => {
+    const history = [
+      rec('run_tests', true), rec('run_tests', true),
+      rec('read_file', false),
+      rec('run_tests', true), rec('run_tests', true),
+    ];
+    expect(repeatedToolFailure(history)).toBeNull();
+  });
+
+  it('still fires for a different action after another action was nudged', () => {
+    const history = [
+      rec('run_tests', true), rec('run_tests', true),
+      rec('read_file', false),
+      rec('run_command', true), rec('run_command', true),
+    ];
+    expect(repeatedToolFailure(history)).toEqual({ action: 'run_command', count: 2 });
   });
 });
 

@@ -124,6 +124,9 @@ const MODE_BASE_PROMPTS: Record<ChatMode, string> = {
 export interface BuildSystemPromptOpts {
   /** Raw rules text from a .lazyrules file, if present. */
   rulesContext?: string | null;
+  /** When set, replaces the per-mode base persona — see
+   *  StreamChatRequest.basePromptOverride for why (text-protocol brains). */
+  basePromptOverride?: string | null;
   /** Startup context from the brain's highlights mode — injected only on the first user turn. */
   startupContext?: string;
   /** Semantic skill injection — skills relevant to the user's message, loaded from the brain. */
@@ -182,8 +185,10 @@ export function buildSystemPrompt(
 ): string {
   const parts: string[] = [];
 
-  // (a) base prompt
-  parts.push(MODE_BASE_PROMPTS[mode] ?? MODE_BASE_PROMPTS.ask);
+  // (a) base prompt — a non-empty override wins (text-protocol brains carry
+  // their whole contract in rulesContext; the chat personas would fight it).
+  const base = opts.basePromptOverride?.trim();
+  parts.push(base ? base : (MODE_BASE_PROMPTS[mode] ?? MODE_BASE_PROMPTS.ask));
 
   // (b) project rules
   const rulesBlock = buildRulesSystemPrompt(opts.rulesContext ?? null);

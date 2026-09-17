@@ -37,8 +37,17 @@ export interface CdpPageHandle {
   mouse: { wheel(dx: number, dy: number): Promise<void> };
   waitForTimeout(ms: number): Promise<void>;
   waitForSelector(selector: string, opts?: { timeout?: number }): Promise<unknown>;
-  context(): { storageState(): Promise<{ cookies: never[]; origins: never[] }> };
+  evaluate(expression: string): Promise<unknown>;
+  pressKey(key: string): Promise<void>;
+  sendBrowser<T = unknown>(method: string, params?: Record<string, unknown>): Promise<T>;
+  context(): { storageState(): Promise<StorageState> };
   close(): Promise<void>;
+}
+
+/** Playwright-compatible storageState shape (subset Solari profiles accept). */
+export interface StorageState {
+  cookies: Array<Record<string, unknown>>;
+  origins: Array<{ origin: string; localStorage: Array<{ name: string; value: string }> }>;
 }
 
 // ── JSON-RPC socket ────────────────────────────────────────────────
@@ -184,6 +193,11 @@ export class CdpSocket {
     return () => this.listeners.get(method)?.delete(cb);
   }
 
+  /** True once the socket has been closed (locally or by the peer). */
+  get isClosed(): boolean {
+    return this.closed;
+  }
+
   close(): void {
     if (this.closed) return;
     this.closed = true;
@@ -239,12 +253,30 @@ export class CdpPage implements CdpPageHandle {
     return this.pageSessionId;
   }
 
+  /** Wait for Page.loadEventFired on this page's session (bounded), then a
+   *  short settle for SPA hydration. Never rejects — navigation legality is
+   *  reported via Page.navigate's errorText, not the load event. */
+  private async waitForLoad(timeoutMs: number): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    await new Promise<void>((resolve) => {
+      const off = this.socket.on('Page.loadEventFired', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      const timer = setTimeout(() => {
+        off();
+        resolve();
+      }, timeoutMs);
+    });
+    const remaining = Math.min(600, Math.max(0, deadline - Date.now()));
+    await sleep(Math.max(150, remaining));
+  }
+
   async goto(url: string, opts: { timeout?: number } = {}): Promise<{ status: number; url: () => Promise<string> }> {
-    void opts.timeout; // settle window below; kept for interface parity
     const sid = await this.session();
     const status = (await this.socket.send('Page.navigate', { url }, sid)) as { errorText?: string };
     const code = status.errorText ? 500 : 200;
-    await sleep(400); // small settle for SPA navigations before title/content reads
+    await this.waitForLoad(Math.min(opts.timeout ?? 15_000, 15_000));
     const [title, href] = await Promise.all([this.title(), this.url()]);
     notifyPageView({ sessionId: this.sessionId, url: href, title });
     return { status: code, url: () => this.url() };
@@ -353,10 +385,108 @@ export class CdpPage implements CdpPageHandle {
     throw new Error(`Timeout waiting for selector: ${selector}`);
   }
 
+  /** Send a CDP command to the BROWSER target (no sessionId) — used for
+   *  browser-wide domains such as Storage.getCookies. */
+  async sendBrowser<T = unknown>(method: string, params: Record<string, unknown> = {}): Promise<T> {
+    return (await this.socket.send(method, params)) as T;
+  }
+
+  /** Evaluate a JS expression in the page; returns the JSON-serializable value. */
+  async evaluate(expression: string): Promise<unknown> {
+    const sid = await this.session();
+    const res = (await this.socket.send(
+      'Runtime.evaluate',
+      { expression, returnByValue: true, awaitPromise: true },
+      sid,
+    )) as { result?: { value?: unknown } };
+    return res.result?.value;
+  }
+
+  /** Map a DOM-ish key name to the CDP windowsVirtualKeyCode/key/text. */
+  private static keyParams(key: string): { windowsVirtualKeyCode: number; key: string; text?: string } {
+    const named: Record<string, { code: number; key: string }> = {
+      enter: { code: 13, key: 'Enter' },
+      tab: { code: 9, key: 'Tab' },
+      escape: { code: 27, key: 'Escape' },
+      backspace: { code: 8, key: 'Backspace' },
+      delete: { code: 46, key: 'Delete' },
+      arrowup: { code: 38, key: 'ArrowUp' },
+      arrowdown: { code: 40, key: 'ArrowDown' },
+      arrowleft: { code: 37, key: 'ArrowLeft' },
+      arrowright: { code: 39, key: 'ArrowRight' },
+      home: { code: 36, key: 'Home' },
+      end: { code: 35, key: 'End' },
+      pageup: { code: 33, key: 'PageUp' },
+      pagedown: { code: 34, key: 'PageDown' },
+    };
+    const found = named[key.toLowerCase()];
+    if (found) return { windowsVirtualKeyCode: found.code, key: found.key };
+    if (key.length === 1) {
+      return { windowsVirtualKeyCode: key.toUpperCase().charCodeAt(0), key, text: key };
+    }
+    return { windowsVirtualKeyCode: 0, key };
+  }
+
+  /** Press a single key (Enter, Tab, Escape, arrows, single chars...). */
+  async pressKey(key: string): Promise<void> {
+    const sid = await this.session();
+    const params = CdpPage.keyParams(key);
+    const type = params.text ? 'keyDown' : 'rawKeyDown';
+    await this.socket.send('Input.dispatchKeyEvent', { type, ...params }, sid);
+    if (params.text) {
+      await this.socket.send('Input.dispatchKeyEvent', { type: 'char', text: params.text, key: params.key }, sid);
+    }
+    await this.socket.send('Input.dispatchKeyEvent', { type: 'keyUp', ...params }, sid);
+  }
+
+  /** Wait until document.readyState reaches complete (bounded). */
+  async waitForReady(timeoutMs = 10_000): Promise<boolean> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const state = await this.evaluate('document.readyState').catch(() => undefined);
+      if (state === 'complete') return true;
+      await sleep(150);
+    }
+    return false;
+  }
+
   context() {
     return {
-      storageState: async () => ({ cookies: [] as never[], origins: [] as never[] }),
+      /** Capture a Playwright-shaped storageState: browser-level cookies via
+       *  Storage.getCookies plus localStorage of the current origin. */
+      storageState: async (): Promise<StorageState> => {
+        const cookies = await this.readCookies();
+        const origin = await this.readOriginStorage();
+        return { cookies, origins: origin ? [origin] : [] };
+      },
     };
+  }
+
+  /** All cookies for the browser context — Storage.getCookies is
+   *  browser-scoped so it covers every origin, not just the current page. */
+  private async readCookies(): Promise<Array<Record<string, unknown>>> {
+    try {
+      const res = await this.sendBrowser<{ cookies?: Array<Record<string, unknown>> }>('Storage.getCookies');
+      return res.cookies ?? [];
+    } catch {
+      return [];
+    }
+  }
+
+  /** localStorage entries of the page's current origin (null when the page
+   *  is about:blank or evaluation fails). */
+  private async readOriginStorage(): Promise<StorageState['origins'][number] | null> {
+    try {
+      const raw = await this.evaluate(
+        'JSON.stringify({ origin: location.origin, entries: Object.entries(localStorage).map(([name, value]) => ({ name, value })) })',
+      );
+      if (typeof raw !== 'string') return null;
+      const parsed = JSON.parse(raw) as { origin?: string; entries?: Array<{ name: string; value: string }> };
+      if (!parsed.origin || parsed.origin === 'null' || !Array.isArray(parsed.entries)) return null;
+      return { origin: parsed.origin, localStorage: parsed.entries };
+    } catch {
+      return null;
+    }
   }
 
   async clickAt(x: number, y: number): Promise<void> {
@@ -464,7 +594,7 @@ export class CloudCdpBrowser {
   }
 
   isConnected(): boolean {
-    return this.socket !== null && !this.socket['closed'];
+    return this.socket !== null && !this.socket.isClosed;
   }
 
   async close(): Promise<void> {

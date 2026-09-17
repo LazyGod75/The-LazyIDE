@@ -1,10 +1,11 @@
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { type ExtractorBackend, resolveExtractorBackend } from '../annotator/llm.js';
+import { type ExtractorBackend, lazyProxyModels, resolveExtractorBackend } from '../annotator/llm.js';
 import { listAll } from '../indexer/fts.js';
 import { indexNote } from '../indexer/fts.js';
 import { stripNote } from '../retrieval/strip.js';
 import { readNote } from '../store/reader.js';
+import { parseJsonArrayLoose } from '../util/json-loose.js';
 import { logTelemetry, nowIso } from '../util/telemetry.js';
 
 export interface ExtractCliOptions {
@@ -54,6 +55,7 @@ export async function runExtract(opts: ExtractCliOptions): Promise<string> {
   //   'anthropic'  — Anthropic direct API via ANTHROPIC_API_KEY
   //   'claude-cli' — Claude Code CLI, reuses active subscription (LAZYBRAIN_EXTRACTOR=claude-cli only)
   //   'vibe'       — Mistral Vibe CLI, reuses the user's Vibe Mistral subscription
+  //   'lazy-proxy' — LazyIDE's managed ai-proxy rail (LAZYBRAIN_PROXY_* env)
   const backend = resolveExtractorBackend();
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -89,7 +91,9 @@ export async function runExtract(opts: ExtractCliOptions): Promise<string> {
           ? await callOpenAiBatch(pending)
           : backend === 'vibe'
             ? await callVibeBatch(pending)
-            : await callClaudeCli(pending); // claude-cli
+            : backend === 'lazy-proxy'
+              ? await callLazyProxyBatch(pending)
+              : await callClaudeCli(pending); // claude-cli
     if (facts.length === 0) {
       return JSON.stringify({ status: 'ok', upgraded: 0, processed: pending.length });
     }
@@ -109,7 +113,9 @@ export async function runExtract(opts: ExtractCliOptions): Promise<string> {
             ? `llm:${openAiModelName()}`
             : backend === 'vibe'
               ? 'llm:vibe'
-              : 'llm:claude-haiku-4-5';
+              : backend === 'lazy-proxy'
+                ? `llm:${lazyProxyModels()[0] ?? 'lazy-proxy'}`
+                : 'llm:claude-haiku-4-5';
         patchNoteWithFacts(note.path, noteFacts, extractedBy);
         indexNote(readNote(note.path));
         upgraded += 1;
@@ -181,7 +187,9 @@ async function callHaikuBatch(notes: PendingNote[], apiKey: string): Promise<Llm
   const userBlocks = notes.map((n) => `--- note id: ${n.id}\n${n.text}`).join('\n\n');
 
   const body = {
-    model: 'claude-haiku-4-5-20251001',
+    // Env-overridable — model ids rotate; LazyIDE passes the current cheap
+    // extractor model from its catalog instead of baking an id in here.
+    model: process.env.LAZYBRAIN_ANTHROPIC_MODEL ?? 'claude-haiku-4-5-20251001',
     max_tokens: 2048,
     system: [
       {
@@ -297,6 +305,73 @@ async function callVibeBatch(notes: PendingNote[]): Promise<LlmFact[]> {
 }
 
 /**
+ * Batch variant of the annotator's `callLazyProxyEnrich` — same wire format
+ * (custom body + JWT + `\x1b[reasoning]`/`\x1b[usage]` control lines), same
+ * env vars. See that function's header comment for the protocol details.
+ */
+async function callLazyProxyBatch(notes: PendingNote[]): Promise<LlmFact[]> {
+  const url = process.env.LAZYBRAIN_PROXY_URL;
+  const token = process.env.LAZYBRAIN_PROXY_TOKEN;
+  const models = lazyProxyModels();
+  if (!url || !token || models.length === 0) return [];
+
+  const userBlocks = notes.map((n) => `--- note id: ${n.id}\n${n.text}`).join('\n\n');
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    authorization: `Bearer ${token}`,
+  };
+  const anon = process.env.LAZYBRAIN_PROXY_ANON;
+  if (anon) headers['apikey'] = anon;
+
+  for (const model of models) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        // A hung proxy connection must not stall the whole batch.
+        signal: AbortSignal.timeout(30_000),
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'user',
+              content: `INPUT:\n${userBlocks}\n\nReturn ONLY the JSON array, no prose.`,
+            },
+          ],
+          system: SYSTEM_PROMPT,
+          model,
+          request_id: `brain-extract-${Date.now().toString(36)}`,
+          feature: 'assistant',
+        }),
+      });
+      if (!res.ok) continue;
+      const raw = await res.text();
+      const text = raw
+        .split('\n')
+        .filter((line) => !line.startsWith('\x1B[reasoning]') && !line.startsWith('\x1B[usage]'))
+        .join('')
+        .trim();
+      if (!text) continue;
+      const parsed = parseJsonArrayLoose(text) as LlmFact[] | null;
+      if (!Array.isArray(parsed)) continue;
+
+      logTelemetry({
+        event: 'capture',
+        ts: nowIso(),
+        tokens_in: Math.ceil((SYSTEM_PROMPT.length + userBlocks.length) / 4),
+        tokens_out_html: 0,
+        duration_ms: 0,
+      });
+      return parsed.filter(
+        (f) => typeof f.for === 'string' && typeof f.text === 'string' && f.text.length >= 4,
+      );
+    } catch {
+      // try the next candidate
+    }
+  }
+  return [];
+}
+
+/**
  * Spawn `claude --print --output-format json` to reuse the active Claude Code
  * subscription instead of consuming a separate API key. Quota comes from the
  * user's existing session; no second key needed.
@@ -362,7 +437,7 @@ function runClaudeCli(prompt: string): Promise<string> {
       '--output-format',
       'json',
       '--model',
-      'haiku',
+      process.env.LAZYBRAIN_CLAUDE_CLI_MODEL ?? 'haiku',
       '--permission-mode',
       'plan',
     ];
