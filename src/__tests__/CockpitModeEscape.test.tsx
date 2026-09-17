@@ -14,7 +14,7 @@
  * The fix moved the real toggle into CockpitLeftRail (Cockpit.tsx renders it
  * UNCONDITIONALLY in both modes) and added a "take me home" gesture on
  * TopNav's Cockpit pill (`cockpit:resetMode` bus event). This file pins the
- * INVARIANT David asked for — not his exact keystrokes — plus the two
+ * INVARIANT user asked for — not his exact keystrokes — plus the two
  * related defects spotted in the same screenshots (rail-over-panel-text
  * overlap, duplicate Fleet Map).
  */
@@ -108,7 +108,7 @@ describe('Cockpit mode escape hatch — the pinned invariant', () => {
     // Flip into Command mode via the ONLY affordance that must always work.
     fireEvent.click(screen.getByTestId('cockpit-rail-icon-mode'));
 
-    // Reproduces David's exact measurement: the canvas (and its toolbar)
+    // Reproduces the owner's exact measurement: the canvas (and its toolbar)
     // are genuinely gone in Command mode.
     expect(screen.queryByTestId('canvas-view')).toBeNull();
     expect(document.querySelectorAll('[data-testid="canvas-toolbar"]').length).toBe(0);

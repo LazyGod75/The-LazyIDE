@@ -1,6 +1,6 @@
 /**
  * canvasProjectRegistrySync.test.tsx — regression coverage for the
- * 2026-08-12 live repro (David, real app): the manager's `open_project`
+ * 2026-08-12 live repro (user, real app): the manager's `open_project`
  * action registered + activated a new project (localStorage and the FLUX
  * journal both confirmed it), but the Agent Canvas kept showing only the
  * project that was open at boot — the new zone never appeared, and a later,
@@ -161,15 +161,15 @@ afterEach(() => {
 
 describe('Cockpit canvas — live project-registry sync (defect A regression, 2026-08-12)', () => {
   it('a project opened via the manager appears on the canvas immediately, and the project already open at boot is never dropped', async () => {
-    const existingRoot = 'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet';
-    const newRoot = 'C:\\Users\\user\\Documents\\cerveau\\scratchpad\\uc-smoke-2026-08-12';
+    const existingRoot = 'C:\\Users\\user\\Documents\\projects\\LazySite-internet';
+    const newRoot = 'C:\\Users\\user\\Documents\\projects\\scratchpad\\uc-smoke-2026-08-12';
     installProjectRegistryFake([{ id: 'reg-existing', root: existingRoot, active: true }]);
 
     const { getStore } = renderCockpitLive();
 
     // Boot hydration: the project already open (registry non-empty) renders
     // its zone with NO extra action needed.
-    expect(await screen.findByTestId('project-node-c:\\Users\\user\\Documents\\cerveau\\LazySite-internet')).toBeInTheDocument();
+    expect(await screen.findByTestId('project-node-c:\\Users\\user\\Documents\\projects\\LazySite-internet')).toBeInTheDocument();
 
     // Real open_project action, exactly the manager's own executor path
     // (AppContext.registerProject, mocked Rust commands only).
@@ -179,10 +179,10 @@ describe('Cockpit canvas — live project-registry sync (defect A regression, 20
     // this must resolve without any further, unrelated action (no mission
     // launch, no tab switch) forcing a refresh.
     await waitFor(() => {
-      expect(screen.getByTestId('project-node-c:\\Users\\user\\Documents\\cerveau\\scratchpad\\uc-smoke-2026-08-12')).toBeInTheDocument();
+      expect(screen.getByTestId('project-node-c:\\Users\\user\\Documents\\projects\\scratchpad\\uc-smoke-2026-08-12')).toBeInTheDocument();
     });
     // THE OTHER HALF OF THE BUG: once it did catch up, the project that was
     // open before must still be there — never silently dropped.
-    expect(screen.getByTestId('project-node-c:\\Users\\user\\Documents\\cerveau\\LazySite-internet')).toBeInTheDocument();
+    expect(screen.getByTestId('project-node-c:\\Users\\user\\Documents\\projects\\LazySite-internet')).toBeInTheDocument();
   });
 });

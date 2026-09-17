@@ -322,7 +322,7 @@ const LABEL_COLLISION_PAD = 6;
  * (`LAZY-E2E-CANVAS-SCRATCH-1784851889129`) produces a caption pill wide
  * enough to sprawl across a third of the canvas and starve every
  * neighboring cluster's collision budget. Middle-ellipsis (not end-ellipsis)
- * because David's real cluster/project names are disambiguated by their
+ * because the owner's real cluster/project names are disambiguated by their
  * SUFFIX (`-b`/`-c`/dates) — see `lib/truncateMiddle.ts`'s own header.
  */
 const MAX_CLUSTER_LABEL_CHARS = 22;

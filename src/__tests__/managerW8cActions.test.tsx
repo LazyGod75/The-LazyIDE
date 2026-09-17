@@ -387,7 +387,7 @@ describe('executeManagerAction â€” reject_mission (gate v2, reject-with-fee
   });
 
   // â”€â”€ Brain-integration wave: reject-with-feedback â†’ decision neuron â”€â”€â”€â”€â”€â”€
-  // "the brain learns David's review standards" â€” the feedback must be
+  // "the brain learns the owner's review standards" â€” the feedback must be
   // recorded the same way answer_question's answers are (a decision neuron),
   // not just baked into the retry clone's task and a mission.rejected event.
 

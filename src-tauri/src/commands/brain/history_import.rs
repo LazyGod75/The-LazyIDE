@@ -1687,7 +1687,7 @@ mod tests {
         // faithful stand-in for what `lazybrain import` would have just
         // written, without re-running the (slower) import itself.
         let archive_partition = std::path::Path::new(
-            r"C:\Users\user\Documents\Lazy-Brain-David\brain-heuristic-20260708-0310\notes\2026-07",
+            r"C:\Users\user\Documents\Lazy-Brain-user\brain-heuristic-20260708-0310\notes\2026-07",
         );
         if !archive_partition.is_dir() {
             eprintln!(

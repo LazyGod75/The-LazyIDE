@@ -3,7 +3,7 @@
  * est bug"): LeadBudgetPanel/MemberView used `flex: 1; minHeight: 0` (a
  * fixed-height dashboard layout) inside the Team space's SCROLLING column,
  * so the flex algorithm squeezed them to the leftover viewport space and
- * their unclipped content painted OVER the sections below (David's own
+ * their unclipped content painted OVER the sections below (the owner's own
  * capture: invitations inside the budget card, « Gérer les sièges »
  * colliding with the Brain section title).
  *

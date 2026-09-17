@@ -38,6 +38,9 @@ export const SAFE_ACTIONS = new Set<string>([
   'brain_neighbours',
   'web_search',
   'web_fetch',
+  // TypeSafe Jev judgment primitive — read-only external call, self-gated
+  // by Jev mode at execution (src/lib/jev/); never mutates anything.
+  'ask_jev',
   'focus_canvas',
   'canvas_note',
   'canvas_overview',

@@ -434,6 +434,19 @@ export interface ManagerWakeupDeps {
    *  this module so it stays i18n-free (agentsStore.tsx owns the real
    *  `t()` call). Never called with an empty array. */
   formatWakeupText: (candidates: WakeupCandidate[]) => string;
+  /**
+   * OPTIONAL Jev second opinion (src/lib/jev/jevEnhancements.ts —
+   * jevJudgeWakeupBatch), consulted ONCE per debounced batch right before
+   * it would burn a manager turn. The dep itself internally re-checks
+   * Jev mode, so callers wire it unconditionally; absent/undefined/
+   * throwing → the batch proceeds exactly as without Jev (fail-open).
+   * A verdict may drop the whole batch (nothing worth a turn — critical
+   * kinds still survive), or return a `keep` kind-list the batch is
+   * filtered to (critical kinds are always kept regardless).
+   */
+  judgeWakeupBatch?: (
+    batch: readonly WakeupCandidate[],
+  ) => Promise<{ proceed: boolean; keep?: readonly WakeupEventKind[] } | undefined>;
   /** Reads the live config — re-read at every decision point so a toggle
    *  takes effect immediately, no restart required. */
   getConfig: () => ManagerWakeupConfig;
@@ -516,9 +529,51 @@ export function startManagerWakeupScheduler(deps: ManagerWakeupDeps): ManagerWak
 
     const batch = pending;
     pending = [];
+    if (deps.judgeWakeupBatch) {
+      // Jev-mode consult path — the hourly-cap timestamp is only burned
+      // when a batch ACTUALLY sends (a vetoed batch costs nothing).
+      void judgeThenSend(batch);
+    } else {
+      sendBatch(batch);
+    }
+  }
+
+  /** The actual send — one place so the plain path and the judged path
+   *  share timestamp accounting. */
+  function sendBatch(batch: WakeupCandidate[]): void {
+    if (stopped || batch.length === 0) return;
     turnTimestamps = [...turnTimestamps, now()];
     const text = deps.formatWakeupText(batch);
     void deps.sendWakeupTurn(text, batch);
+  }
+
+  /** Optional Jev consult (see ManagerWakeupDeps.judgeWakeupBatch): a
+   *  rejected batch is dropped (critical kinds still fire), a `keep` list
+   *  filters it (criticals always kept), any error fails open. */
+  async function judgeThenSend(batch: WakeupCandidate[]): Promise<void> {
+    let verdict: { proceed: boolean; keep?: readonly WakeupEventKind[] } | undefined;
+    try {
+      verdict = await deps.judgeWakeupBatch!(batch);
+    } catch (err: unknown) {
+      console.warn('[managerWakeup] judgeWakeupBatch failed — proceeding without it:', err);
+      verdict = undefined;
+    }
+    if (stopped || !verdict) {
+      sendBatch(batch);
+      return;
+    }
+    if (!verdict.proceed) {
+      sendBatch(batch.filter((c) => isCriticalWakeupKind(c.kind)));
+      return;
+    }
+    if (verdict.keep) {
+      const kept = batch.filter(
+        (c) => verdict.keep!.includes(c.kind) || isCriticalWakeupKind(c.kind),
+      );
+      sendBatch(kept);
+      return;
+    }
+    sendBatch(batch);
   }
 
   function scheduleFire(): void {

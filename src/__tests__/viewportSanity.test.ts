@@ -17,7 +17,7 @@ import { FULL_CARD_MAX_HEIGHT, FULL_CARD_WIDTH } from '../components/agents/canv
 
 const SCREEN = { width: 1280, height: 800 };
 
-describe('isViewportSane — zoom-range check (David repro: persisted 188%)', () => {
+describe('isViewportSane — zoom-range check (user repro: persisted 188%)', () => {
   it('rejects a zoom above MAX_SANE_ZOOM (the exact 188% repro)', () => {
     expect(isViewportSane({ x: 0, y: 0, zoom: 1.88 }, undefined, SCREEN)).toBe(false);
   });

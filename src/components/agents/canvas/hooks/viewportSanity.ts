@@ -2,7 +2,7 @@
 
    A persisted canvas viewport (`canvas/layout.json`'s `viewport` field) can
    be corrupted by an abnormal prior session — an e2e/harness run that
-   saved mid-zoom (David's own repro: "my e2e runs saved 188% etc."), or a
+   saved mid-zoom (the owner's own repro: "my e2e runs saved 188% etc."), or a
    panned-to-empty-space viewport left over after nodes moved/were
    deleted. Blindly restoring it on the NEXT real boot opens the canvas
    "ultra-zoomed" with nothing useful on screen — this module is the guard

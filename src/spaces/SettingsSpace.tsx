@@ -29,6 +29,7 @@ import { HealthPanel } from '../components/settings/HealthPanel';
 import { MemoryPanel } from '../components/settings/MemoryPanel';
 import { AgentsPanel } from '../components/settings/AgentsPanel';
 import { SolariPanel } from '../components/settings/SolariPanel';
+import { JevPanel } from '../components/settings/JevPanel';
 import { useAgentsStoreMissionsOptional } from '../components/agents/agentsStore';
 import { ModelsAssistantPanel } from '../components/settings/ModelsAssistantPanel';
 import { ProvidersPanel } from '../components/settings/ProvidersPanel';
@@ -38,7 +39,7 @@ import { ACCENT_PRESETS, loadStoredAccent, setAccent } from '../lib/theme/accent
 
 // ── Types ──────────────────────────────────────────────────────────
 
-export type SettingsTab = 'models' | 'account' | 'appearance' | 'general' | 'memory' | 'agents' | 'health' | 'solari';
+export type SettingsTab = 'models' | 'account' | 'appearance' | 'general' | 'memory' | 'agents' | 'health' | 'solari' | 'jev';
 
 interface SettingsSpaceProps {
   initialTab?: SettingsTab;
@@ -90,6 +91,7 @@ function TabBar({ active, onChange }: { active: SettingsTab; onChange: (t: Setti
     { id: 'general',    labelKey: 'settings.tab.general' },
     { id: 'health',     labelKey: 'settings.tab.health' },
     { id: 'solari',     labelKey: 'settings.tab.solari' },
+    { id: 'jev',        labelKey: 'settings.tab.jev' },
   ];
   return (
     <div style={{
@@ -1546,6 +1548,7 @@ export function SettingsSpace({ initialTab = 'general', initialAuthMode }: Setti
       case 'general':    return <GeneralTab />;
       case 'health':     return <HealthPanel />;
       case 'solari':     return <SolariPanel />;
+      case 'jev':        return <JevPanel />;
     }
   }
 

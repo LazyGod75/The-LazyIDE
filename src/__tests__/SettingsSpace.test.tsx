@@ -49,7 +49,7 @@ vi.mock('../i18n', () => ({
 // ── auth mock — always a signed-in user (AccountTab's !user branch,
 // AuthScreen, is a separate concern not under test here) ────────────────
 
-const mockUser = { id: 'user-1', email: 'david@example.com' };
+const mockUser = { id: 'user-1', email: 'user@example.com' };
 
 vi.mock('../lib/auth', () => ({
   useAuth: () => ({ user: mockUser, loading: false, signOut: vi.fn() }),

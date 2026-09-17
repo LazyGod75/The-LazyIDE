@@ -897,7 +897,7 @@ export function computeZoneLayout(zone: ZoneInput, ctx: ZoneBuildContext): ZoneL
   // (non-pinned) child — `tetheredRefs` is only used at the very end of this
   // function, to persist the FINAL (post-collision) position.
   const { children: tetheredChildren, tetheredRefs } = tetherFreshSurfacesToOwner(rawPlacedChildren, ctx);
-  // fix/canvas-ux R4a — PASS 1 of the no-overlap invariant (David's rule:
+  // fix/canvas-ux R4a — PASS 1 of the no-overlap invariant (the owner's rule:
   // zones are unbounded, so two rendered siblings overlapping is never
   // acceptable). `assignChildPositions`' own grid-slot COUNTER only counts
   // HOW MANY siblings are pinned, never checks WHERE those pinned positions
@@ -915,7 +915,7 @@ export function computeZoneLayout(zone: ZoneInput, ctx: ZoneBuildContext): ZoneL
   // against what the child ACTUALLY renders at, never the smaller default.
   const sizeOfChild = (child: ChildCandidate): { width: number; height: number } => effectiveChildSize(child, ctx);
 
-  // fix/canvas-ux R10 — PASS 0: declutter PINNED x PINNED overlaps (David's
+  // fix/canvas-ux R10 — PASS 0: declutter PINNED x PINNED overlaps (the owner's
   // rule extended — see placementCollision.ts's declutterPinnedOverlaps
   // header). Runs BEFORE PASS 1 below, which never checks a pinned child
   // against another pinned one — two persisted positions from different
@@ -1141,7 +1141,7 @@ function assignRowPositions(rows: readonly PackRow[], pinnedRects: readonly Rect
 }
 
 /**
- * fix/canvas-auto-pack-avoid-pinned (David's round-6 real-profile finding,
+ * fix/canvas-auto-pack-avoid-pinned (the owner's round-6 real-profile finding,
  * same live click that surfaced the row-gap migration bug: even after that
  * fix, his real 8-zone profile still measured ~3771px — barely moved from
  * the original 3767.52 — because the 3 freshly-packed zones ALWAYS start
@@ -1273,7 +1273,7 @@ const LEGACY_ROW_Y_TOLERANCE = 8;
 const LEGACY_ROW_GAP_BLOAT_FACTOR = 3;
 
 /**
- * fix/canvas-legacy-row-migration-envelope (David's round-6 report, read
+ * fix/canvas-legacy-row-migration-envelope (the owner's round-6 report, read
  * DIRECTLY from his own profile's `canvas/layout.json` rather than
  * inferred — his own instruction: "read the real persisted data ... the
  * mismatch will be obvious once both are in front of you"): this migration
@@ -1291,7 +1291,7 @@ const LEGACY_ROW_GAP_BLOAT_FACTOR = 3;
  * intermediate formula generation in between. A hardcoded floor tuned to
  * one known-bad generation's output range can never be trusted to bound
  * every OTHER generation a multi-month-old profile might carry — exactly
- * David's own framing: "if a persisted zone position would place a zone
+ * the owner's own framing: "if a persisted zone position would place a zone
  * outside a sane envelope relative to a freshly packed layout, it should
  * be re-packed rather than trusted."
  *
@@ -1309,7 +1309,7 @@ const LEGACY_ROW_GAP_BLOAT_FACTOR = 3;
  * neighbour" — the opposite of scratch/_canvas-label-design.md's own explicit
  * direction ("Aucune migration silencieuse de positions: « Ranger » remplace
  * la stratégie des migrations"). Raised so this migration keeps catching the
- * SAME real, documented bloat it was built for (David's own profile: a
+ * SAME real, documented bloat it was built for (the owner's own profile: a
  * ~1543.6px "Lazy" -> "lazy-backoffice" gap, comfortably above 900) while no
  * longer silently recompacting an ordinary ~400-800px manual arrangement
  * that was never actually broken — that residual is what "Ranger" (the
@@ -1360,7 +1360,7 @@ function groupPinnedZonesIntoRows(entries: readonly PinnedZoneRowEntry[]): Pinne
  * and it never touches an already-OVERLAPPING pair (a negative "gap") either
  * — that case stays `declutterPinnedZones`'s job, run separately.
  *
- * fix/canvas-legacy-row-migration-envelope (David's round-6 report, root-
+ * fix/canvas-legacy-row-migration-envelope (the owner's round-6 report, root-
  * caused against his own real `canvas/layout.json`, not a synthesised
  * fixture — see {@link LEGACY_ROW_GAP_ABSOLUTE_FLOOR}'s own doc comment for
  * the exact real gap this migration was silently missing) — self-healing:
@@ -1428,7 +1428,7 @@ export function migrateBloatedZoneRowPositions(
     for (let i = 1; i < sorted.length; i += 1) {
       const entry = sorted[i]!;
       const practicalGap = zoneSameRowPackGap(entry.name);
-      // fix/canvas-legacy-row-migration-envelope (David's round-6 real-profile
+      // fix/canvas-legacy-row-migration-envelope (the owner's round-6 real-profile
       // finding: a row can carry bloat in only ONE internal gap — "Lazy" ->
       // "lazy-backoffice" was ~4.5x over, but "lazy-backoffice" ->
       // "LazySite-internet" was already tight) — `actualGap` is always
@@ -1523,7 +1523,7 @@ export function migrateBloatedZoneRowPositions(
  * idiom, same as every other placement in this codebase), same one
  * documented exception (two session-dragged zones colliding with each other
  * are left overlapping — both are the user's own doing this session, see
- * placementCollision.ts's module header). David's invariant, extended one
+ * placementCollision.ts's module header). the owner's invariant, extended one
  * more level: never leave two cards overlapped, even pinned ones, even
  * across a project boundary — a project zone is not a suspension of the
  * no-overlap rule, just a different granularity of it. A no-op (empty

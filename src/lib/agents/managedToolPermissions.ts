@@ -104,6 +104,10 @@ const TOOL_PATTERN_NAME: Record<string, string> = {
   // Orchestration
   delegate: 'Read',
   ask_user: 'Read',
+  // ask_jev (TypeSafe Jev) — read-only external judgment call, same
+  // pattern lane as web_search; additionally self-gated by Jev mode
+  // inside the handler (src/lib/jev/jevMode.ts).
+  ask_jev: 'Search',
 };
 
 /**

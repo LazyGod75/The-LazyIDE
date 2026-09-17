@@ -67,7 +67,7 @@ const EXTRA_SKIP = [
   /^src-tauri\/target(\/|$)/,
   /^dist(\/|$)/,
   // Accidental path-collapse junk sometimes lands in the index on Windows
-  /^UsersDavid/,
+  /^Users.*Documents/,
   // Ad-hoc QA scratch (scripts, state dumps, debug output)
   /^scratch(\/|$)/,
   // E2E screenshots (test artifacts, not source)
@@ -270,11 +270,18 @@ for (const rel of new Set(scanList.map(norm))) {
 // repo. We compare against the real `os.homedir()` of whoever runs the export.
 function scanPersonalHome(content) {
   const homeBack = os.homedir(); // e.g. C:\Users\user
-  const homeFwd = homeBack.replace(/\\/g, '/'); // C:/Users/user
+  // Compare in "squashed" form (lowercase, no separators) so every mangled
+  // copy of the home dir trips the scan: C:\Users\x, C:\\Users\\x (escaped),
+  // C--Users-x (claude temp), c-users-x (slug), UsersX (collapsed), /Users/x.
+  const squash = (s) => s.toLowerCase().replace(/[:\\\/_\-. ]/g, '');
+  const homeFull = squash(homeBack); // cusersx
+  const homeTail = squash(homeBack.replace(/^[A-Za-z]:/, '')); // usersx
+  const needles = [homeFull, homeTail].filter((v) => v.length > 4);
   const lines = content.split(/\r?\n/);
   const hits = [];
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes(homeBack) || lines[i].includes(homeFwd)) hits.push(i + 1);
+    const sq = squash(lines[i]);
+    if (needles.some((n) => sq.includes(n))) hits.push(i + 1);
   }
   return hits;
 }

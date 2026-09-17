@@ -258,7 +258,7 @@ describe('useCanvasKeyboard — W8d Replay transport (R / Space / arrows) + edit
 // proves the KEYBOARD WIRING: direction mapping, Shift = nudge instead of
 // nav, the editable-target guard, and replay gating (also covered from the
 // replay describe block above).
-// David's repro (2026-08-15): with the pointer hovering the canvas, Tab
+// the owner's repro (2026-08-15): with the pointer hovering the canvas, Tab
 // used to call `e.preventDefault()` and `h.onTogglePalette()` — the
 // preventDefault killed the browser's native focus traversal entirely
 // (document.activeElement never moved across 5 Tab presses in the real

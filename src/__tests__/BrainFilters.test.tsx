@@ -45,12 +45,12 @@ describe('BrainFilters — project alias query union', () => {
       {
         project: 'lazy-backoffice',
         noteCount: 2,
-        rawValues: ['lazy-backoffice', 'c-users-david-documents-cerveau-lazy-backoffice'],
+        rawValues: ['lazy-backoffice', 'c-users-user-documents-projects-lazy-backoffice'],
       },
     ]);
     const queryCss = vi.fn().mockImplementation((selector: string) => {
       if (selector.includes('"lazy-backoffice"')) return Promise.resolve('#note-a some text\n');
-      if (selector.includes('"c-users-david-documents-cerveau-lazy-backoffice"')) {
+      if (selector.includes('"c-users-user-documents-projects-lazy-backoffice"')) {
         return Promise.resolve('#note-b some text\n');
       }
       return Promise.resolve('');
@@ -76,7 +76,7 @@ describe('BrainFilters — project alias query union', () => {
     await waitFor(() => {
       expect(queryCss).toHaveBeenCalledWith('article[data-cerveau-project="lazy-backoffice"]');
       expect(queryCss).toHaveBeenCalledWith(
-        'article[data-cerveau-project="c-users-david-documents-cerveau-lazy-backoffice"]',
+        'article[data-cerveau-project="c-users-user-documents-projects-lazy-backoffice"]',
       );
     });
 

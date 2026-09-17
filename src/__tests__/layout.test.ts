@@ -279,7 +279,7 @@ describe('laneLayout', () => {
     expect(ys[1]! - ys[0]!).toBe(LANE_ROW_HEIGHT);
   });
 
-  // fix/canvas-ux R4a deliverable #3 — David's no-overlap rule inside lane
+  // fix/canvas-ux R4a deliverable #3 — the owner's no-overlap rule inside lane
   // mode too. Investigated whether a tall REVIEW card (the approve/reject
   // gate form, MissionNode.tsx's `mission.status === 'review'` branch) could
   // clip into or visually overlap the row below: `LANE_ROW_HEIGHT` is a

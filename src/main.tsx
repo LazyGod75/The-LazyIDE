@@ -56,6 +56,10 @@ import { startMemoryGuardian } from './lib/agents/memoryGuardian'
 // "negligible in practice" is a claim about parallel fan-out shape, not a
 // verified millisecond figure for a real cold boot.
 import { initByokVault } from './lib/models/byokProviders'
+// Jev (TypeSafe) key mirror — same vault-warm pattern as initByokVault,
+// awaited in the same Promise.all so the Jev chip/panel never races a
+// cold cache (browser build: reads localStorage, resolves instantly).
+import { initJevVault } from './lib/jev/jevMode'
 // i18n flash fix: preload the detected locale's dictionary in parallel with
 // the vault warm so a non-eager locale (de/es/ja/zh) never paints the fr
 // fallback for a few hundred ms — see preloadDetectedLocale's doc comment.
@@ -80,7 +84,7 @@ async function bootstrap(): Promise<void> {
     // Parallel: the locale chunk fetch is pure web I/O, the vault warm is
     // Tauri IPC — no shared dependency, so neither should serialize behind
     // the other on the first-paint path.
-    await Promise.all([initByokVault(), preloadDetectedLocale()])
+    await Promise.all([initByokVault(), preloadDetectedLocale(), initJevVault()])
   } catch (err: unknown) {
     console.error('[main] initByokVault failed', err instanceof Error ? err.message : String(err))
   } finally {

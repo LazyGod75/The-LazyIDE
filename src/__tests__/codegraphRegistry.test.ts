@@ -30,24 +30,24 @@ beforeEach(() => {
 
 describe('getRepoByPath', () => {
   it('finds a repo registered under a Windows verbatim (\\\\?\\) prefix via a plain classic-form path', () => {
-    seedRegistry([entry('\\\\?\\C:\\Users\\user\\Documents\\cerveau\\Lazy')]);
-    const found = getRepoByPath('C:\\Users\\user\\Documents\\cerveau\\Lazy');
+    seedRegistry([entry('\\\\?\\C:\\Users\\user\\Documents\\projects\\Lazy')]);
+    const found = getRepoByPath('C:\\Users\\user\\Documents\\projects\\Lazy');
     expect(found?.name).toBe('demo');
   });
 
   it('finds a repo registered with backslashes via a forward-slash lookup path', () => {
-    seedRegistry([entry('C:\\Users\\user\\Documents\\cerveau\\Lazy')]);
-    const found = getRepoByPath('C:/Users/user/Documents/cerveau/Lazy');
+    seedRegistry([entry('C:\\Users\\user\\Documents\\projects\\Lazy')]);
+    const found = getRepoByPath('C:/Users/user/Documents/projects/Lazy');
     expect(found?.name).toBe('demo');
   });
 
   it('returns null for a path that is genuinely not registered', () => {
-    seedRegistry([entry('C:\\Users\\user\\Documents\\cerveau\\Lazy')]);
-    expect(getRepoByPath('C:\\Users\\user\\Documents\\cerveau\\OtherRepo')).toBeNull();
+    seedRegistry([entry('C:\\Users\\user\\Documents\\projects\\Lazy')]);
+    expect(getRepoByPath('C:\\Users\\user\\Documents\\projects\\OtherRepo')).toBeNull();
   });
 
   it('matches regardless of a trailing separator', () => {
-    seedRegistry([entry('C:\\Users\\user\\Documents\\cerveau\\Lazy\\')]);
-    expect(getRepoByPath('C:\\Users\\user\\Documents\\cerveau\\Lazy')?.name).toBe('demo');
+    seedRegistry([entry('C:\\Users\\user\\Documents\\projects\\Lazy\\')]);
+    expect(getRepoByPath('C:\\Users\\user\\Documents\\projects\\Lazy')?.name).toBe('demo');
   });
 });

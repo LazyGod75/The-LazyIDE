@@ -1194,6 +1194,7 @@ pub fn run() {
             commands::vault::secret_get,
             commands::vault::secret_presence,
             commands::vault::secret_delete,
+            commands::jev::jev_ask,
             solari_cdp_proxy::solari_cdp_proxy_base,
             commands::web::solari_replay_fetch,
             commands::shell::run_tests,

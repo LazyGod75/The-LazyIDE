@@ -54,7 +54,7 @@ import {
   laneColumnX,
 } from '../geometry';
 // scratch/_canvas-label-design.md §3.1 ("ellipsis MÉDIANE, pas finale") —
-// David's real project names are distinguished by their own SUFFIX
+// the owner's real project names are distinguished by their own SUFFIX
 // (`uc-smoke-b` vs `uc-smoke-c` vs `uc-smoke-2026-08-12`) — an END-ellipsis
 // (the former `lazyManager/truncateLabel.ts` import here) destroys exactly
 // that discriminating tail once a name needs truncating. See
@@ -841,7 +841,7 @@ export function ProjectGroupNodeCard({ data, selected, aggregate, headerTier = '
           height: `var(--canvas-lod-title-band-height, ${ZONE_HEADER_HEIGHT}px)`,
           flexShrink: 0,
           padding: '0 12px',
-          // fix/canvas-zone-title-overlap round 2 (David's measured repro,
+          // fix/canvas-zone-title-overlap round 2 (the owner's measured repro,
           // real packaged app, 12% zoom / 8 zones: two neighbouring headers
           // still overprinted each other — "uc=smokez2(", "Lazy-real-t"
           // colliding with "debounce" — even after the 22-character
@@ -1050,7 +1050,7 @@ export function ProjectGroupNodeCard({ data, selected, aggregate, headerTier = '
               how "Transverse" rendered as a bare "T" at low zoom.
 
               fix/canvas-zone-title-overlap — REVERSED by explicit product
-              direction (David's measured repro, 2026-08-14: at low zoom
+              direction (the owner's measured repro, 2026-08-14: at low zoom
               with several zones open, one zone's title/badges paint directly
               over its neighbour's — the SAME class of bug the removed clamp
               used to guard against, just reintroduced by removing it). The
@@ -1065,7 +1065,7 @@ export function ProjectGroupNodeCard({ data, selected, aggregate, headerTier = '
               `lodScale`, and why a CSS maxWidth here would not). `title`
               carries the full untruncated name for hover/accessibility.
 
-              fix/canvas-zone-title-clip (David's measured repro, round 3:
+              fix/canvas-zone-title-clip (the owner's measured repro, round 3:
               with the outer header's geometric containment live, 8 zone
               headers read "uc"/"La"/"de" etc — 2-3 characters, NO ellipsis,
               indistinguishable from each other; his own requirement, both

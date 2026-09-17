@@ -6,7 +6,7 @@
    — so anything sized in FLOW units shrinks screen-linearly with zoom. The
    fleet-view dot (nodeChrome.tsx's `DOT_SIZE`, 20 flow px) is a crisp 20
    screen px at zoom 1, but a mere 2 screen px at zoom 0.1 — invisible,
-   exactly David's own repro ("20px x zoom 0.1 = 2px"). Same problem, same
+   exactly the owner's own repro ("20px x zoom 0.1 = 2px"). Same problem, same
    fix, for a project zone's header name label (ProjectGroupNode.tsx): its
    12.5px font is genuinely 12.5 CSS px, but that's still measured in FLOW
    space, so it shrinks with the same zoom.
@@ -112,7 +112,7 @@ export function lodScale(zoom: number, contentPx: number, targetScreenPx: number
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   fix/canvas-header-overflow — measured bug: at low zoom (David's own
+   fix/canvas-header-overflow — measured bug: at low zoom (the owner's own
    14-17% repro), a project/frame header's LOD-compensated identity
    cluster (`lodScale` above keeps its CONTENT at a constant screen size)
    grows its own occupied FLOW-space footprint by that same compensation
@@ -155,7 +155,7 @@ export function lodScale(zoom: number, contentPx: number, targetScreenPx: number
  * `headerTier !== 'minimal'` instead of `headerTier === 'full'` like its two
  * siblings, so it kept rendering through the whole 'reduced' band (this
  * constant down to {@link HEADER_MINIMAL_ZOOM}) — the actual bug behind
- * "count badge covers the title" at David's 0.21 repro. Fixed to the same
+ * "count badge covers the title" at the owner's 0.21 repro. Fixed to the same
  * `=== 'full'` gate; this doc comment corrected to match so "secondary
  * badges" stays an accurate, complete list for the next reader.
  */
@@ -191,7 +191,7 @@ export const HOVER_ACTIONS_MIN_ZOOM = 0.3;
    only 36*0.13 ≈ 4.7 SCREEN px tall — the compensated text (rendered at a
    constant ~11.5 screen px via `transform: scale`) physically cannot fit
    inside a 4.7px box and gets clipped by `overflow: hidden`, exactly
-   David's "zone de titre trop petite" repro. This is the header ROW's own
+   the owner's "zone de titre trop petite" repro. This is the header ROW's own
    companion compensation: instead of scaling existing content, it grows
    the row's own flow-space HEIGHT so its on-screen size holds at
    {@link ZONE_TITLE_BAND_TARGET_PX} down to {@link LOD_FLOOR_ZOOM}, the

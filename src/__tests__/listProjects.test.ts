@@ -3,7 +3,7 @@
    Regression coverage for a real duplicate-entry bug: a project scanned via
    "Add project to brain" can be tagged in the tree both under its short
    name ("lazy-backoffice") and under a slug derived from its full path
-   ("c-users-david-documents-cerveau-lazy-backoffice") — previously these
+   ("c-users-user-documents-projects-lazy-backoffice") — previously these
    showed up as two separate, confusing dropdown entries for the same
    project. listBrainProjects() must merge them into one entry while still
    remembering both raw slugs (rawValues) so BrainFilters can query notes
@@ -42,7 +42,7 @@ describe('listBrainProjects — alias dedup', () => {
     mockGetPlatform.mockReturnValue(
       platformWithTree([
         { id: 'p1', label: 'lazy-backoffice' },
-        { id: 'p2', label: 'C:\\Users\\user\\Documents\\cerveau\\lazy-backoffice' },
+        { id: 'p2', label: 'C:\\Users\\user\\Documents\\projects\\lazy-backoffice' },
       ]),
     );
 
@@ -52,7 +52,7 @@ describe('listBrainProjects — alias dedup', () => {
     expect(projects[0].project).toBe('lazy-backoffice');
     expect(projects[0].noteCount).toBe(2);
     expect(projects[0].rawValues.sort()).toEqual(
-      ['lazy-backoffice', 'c-users-user-documents-cerveau-lazy-backoffice'].sort(),
+      ['lazy-backoffice', 'c-users-user-documents-projects-lazy-backoffice'].sort(),
     );
   });
 

@@ -314,7 +314,7 @@ export function GitHubPanel({ orgId }: GitHubPanelProps) {
       )}
 
       {phase.kind === 'idle' && !connected && (
-        // Layout fix (David 2026-08-14): SectionLabel above renders a plain
+        // Layout fix (user 2026-08-14): SectionLabel above renders a plain
         // <span> (inline), and this <button> is a browser-default
         // inline-block — as direct siblings with no block-level element
         // between them, they shared the same line box, so the button sat

@@ -250,7 +250,7 @@ export function Cockpit({
   // P2a: Track live manager overlay width so FluxFooter reserves exact space
   // instead of static worst-case MANAGER_OVERLAY_MAX_RESERVED_WIDTH.
   //
-  // fix/canvas-collapse-reservation round 2 (David's round-9 report: a
+  // fix/canvas-collapse-reservation round 2 (the owner's round-9 report: a
   // fresh launch with a persisted custom drag width reserved that stale
   // custom width for the canvas even though the overlay itself opened
   // COLLAPSED — this `useState` used to default to the hardcoded worst-case

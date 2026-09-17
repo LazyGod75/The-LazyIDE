@@ -257,7 +257,7 @@ describe('CanvasToolbar — contextual "Lancer" chip (fix/canvas-ux R6a BLOQUANT
   });
 });
 
-// fix/canvas-toolbar-squeeze (David's measured repro, real packaged app:
+// fix/canvas-toolbar-squeeze (the owner's measured repro, real packaged app:
 // reserving the ManagerOverlay's lane shrank the toolbar's own available
 // width from ~1066px to ~848px — with no shrink floor, the fit button
 // measured 17px wide (was 28) and text labels wrapped vertically mid-word,
@@ -285,7 +285,7 @@ describe('CanvasToolbar — squeeze hardening (fix/canvas-toolbar-squeeze)', () 
   });
 });
 
-// fix/canvas-toolbar-oscillation Option B — David's own explicit fallback
+// fix/canvas-toolbar-oscillation Option B — the owner's own explicit fallback
 // after two live fix attempts at a WIDTH-REACTIVE demotion mechanism both
 // produced a continuous, zero-interaction oscillation on a real machine
 // (instrumented 100ms sampling caught 5 distinct button counts cycling

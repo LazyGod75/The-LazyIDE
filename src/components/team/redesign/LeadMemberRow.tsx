@@ -81,7 +81,7 @@ export function LeadMemberRow({ member, allocation, usage, onOpenDrawer, onRallo
           )}
         </div>
         <BudgetBarTrack pct={hasLimit ? pct : 0} color={hasLimit ? usageColor(state) : 'rgba(255,255,255,0.15)'} />
-        {/* Money-pool disambiguation (David 2026-08-14): usedCredits comes
+        {/* Money-pool disambiguation (user 2026-08-14): usedCredits comes
             from org_usage_summary, which totals ALL of this member's
             usage_events — personal-plan usage AND org-wallet usage alike.
             It is this MEMBER's own activity total, never money drawn from

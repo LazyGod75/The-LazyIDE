@@ -464,7 +464,7 @@ describe('reconcile — lane mode zone widening (spec CRITICAL 4)', () => {
 
 // ── Zone title-width floor (fix/canvas-zone-title-clip) ──────────────
 
-// David's measured repro, round 3 of the floating-title saga: with the
+// the owner's measured repro, round 3 of the floating-title saga: with the
 // round-2 "geometric containment" fix live (ProjectGroupNode.tsx's outer
 // header clamped to `maxWidth: width` + `overflow: hidden`), all 8 zone
 // headers read `uc`, `La`, `uc`, `uc`, `laz`, `La`, `La`, `de` — 2-3
@@ -474,7 +474,7 @@ describe('reconcile — lane mode zone widening (spec CRITICAL 4)', () => {
 // usable name at the zoom levels people actually use ... the answer is
 // likely in the layout (minimum zone width / how zones are packed)."
 //
-// STATED EXPECTATION (required before implementing, per David's own
+// STATED EXPECTATION (required before implementing, per the owner's own
 // instruction — "state what you expect the header to read for a zone
 // named uc-smoke-2026-08-12 at minimum zoom, and make the test assert
 // that"): at ZONE_SPACING_PRACTICAL_ZOOM (0.5) — the SAME "zoom people
@@ -574,7 +574,7 @@ describe('reconcile — internal zone density wraps toward ~1.5 aspect, not a fl
 // ── Legacy row-position migration + auto-pack pinned-avoidance
 //    (fix/canvas-legacy-row-migration-envelope, fix/canvas-auto-pack-avoid-pinned) ──
 
-// David's round-6 report: with the round-5 title-width floor live,
+// the owner's round-6 report: with the round-5 title-width floor live,
 // `migrateBloatedZoneRowPositions` STILL never fired on his own real,
 // months-old profile — "fit" still measured 3767.52 x 880 for 8 zones,
 // unchanged. Per his own instruction ("read the real persisted data rather
@@ -611,7 +611,7 @@ function realProfileProjects(): FleetProject[] {
   return REAL_PINNED_PROJECTS.map((p) => project({ projectId: p.projectId, name: p.name }));
 }
 
-describe('reconcile — legacy row-position migration, built from David\'s own REAL profile data (fix/canvas-legacy-row-migration-envelope)', () => {
+describe('reconcile — legacy row-position migration, built from user\'s own REAL profile data (fix/canvas-legacy-row-migration-envelope)', () => {
   it('compacts the bloated "Lazy" -> "lazy-backoffice" gap in row y:0, and CASCADES the same correction to "LazySite-internet" so the row\'s overall span actually shrinks (not just the one internal gap)', () => {
     const { nodes } = reconcile(baseInputs({ projects: realProfileProjects(), positions: realProfilePositions() }));
     const lazy = findNode(nodes, makeRef('project', 'p-lazy'));
@@ -667,7 +667,7 @@ describe('reconcile — legacy row-position migration, built from David\'s own R
   });
 });
 
-// David's same round-6 report, second half of the same live measurement:
+// the owner's same round-6 report, second half of the same live measurement:
 // even with the row-gap migration above landed, his FULL profile (5 pinned
 // + `freshlyPackedCount: 3` auto-placed zones) still measured ~3771px —
 // barely moved. Root cause: `packAutoPlacedZones` always starts its OWN
@@ -1702,7 +1702,7 @@ describe('reconcile — frames / Canvas Groups (W-CLOSE row 2)', () => {
 
 // ── Sibling no-overlap invariant (fix/canvas-ux R4a, extended R10) ────
 //
-// David's rule, verbatim: "le canvas pour chaque projet n'a pas vraiment de
+// the owner's rule, verbatim: "le canvas pour chaque projet n'a pas vraiment de
 // limite en taille donc AUCUN agent ne doit être superposé ou l'un sur
 // l'autre" — zones are unbounded, so two rendered SIBLING nodes (same
 // parentId, i.e. same zone) overlapping is never acceptable. This is a
@@ -1833,7 +1833,7 @@ describe('reconcile — sibling no-overlap invariant (fix/canvas-ux R4a)', () =>
   });
 
   // ── R10: PINNED x PINNED declutter ──────────────────────────────────
-  // David's rule extended: a persisted position is preferred, but two
+  // the owner's rule extended: a persisted position is preferred, but two
   // persisted-position siblings colliding with EACH OTHER (e.g. two
   // missions from different sessions/runs, both auto-placed-then-persisted
   // onto the same grid slot) is exactly the case pre-R10 `resolveCollisions`

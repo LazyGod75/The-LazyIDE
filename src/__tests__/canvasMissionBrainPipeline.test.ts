@@ -1,7 +1,7 @@
 /**
  * canvasMissionBrainPipeline.test.ts — brain-integration wave.
  *
- * David's explicit demand: "les agents et le lazymanager doivent interagir
+ * the owner's explicit demand: "les agents et le lazymanager doivent interagir
  * avec le lazybrain de manière optimale". This suite locks in the audit
  * finding for points 1-3 of that wave: a chain-fired mission (chainEngine.ts's
  * attemptFire) and a manager-launched mission (create_draft/launch_draft,

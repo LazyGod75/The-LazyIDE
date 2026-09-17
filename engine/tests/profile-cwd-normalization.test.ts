@@ -42,7 +42,7 @@ describe('C — cwd plausibility check', () => {
   });
 
   it('Unix /home path is rejected on win32', () => {
-    expect(isCwdPlausible('/home/david/project', 'win32')).toBe(false);
+    expect(isCwdPlausible('/home/user/project', 'win32')).toBe(false);
   });
 
   it('Unix /usr path is rejected on win32', () => {

@@ -2528,7 +2528,7 @@ describe('approveMission — bounded merge timeout (never silent)', () => {
     vi.mocked(invoke).mockRejectedValue(new Error('ENOENT'));
 
     // A Windows canonicalize()-style repo root: verbatim-prefixed.
-    const verbatimRepoPath = '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\LazySite-internet';
+    const verbatimRepoPath = '\\\\?\\C:\\Users\\user\\Documents\\projects\\LazySite-internet';
     let caught: unknown;
     try {
       await result.current.approveMission(missionId, verbatimRepoPath);

@@ -72,8 +72,7 @@ describe('slug() — idempotency', () => {
 });
 
 describe('slug() — backward compatibility with existing on-disk filenames', () => {
-  // Real ids sampled from the owner's production brain (read-only;
-  // C:/Users/user/Documents/Lazy-Brain-David/brain/notes) — the raw
+  // Real ids sampled from the owner's production brain (read-only) — the raw
   // `id="..."` attribute value of file-neuron / topic-overview notes, i.e.
   // exactly the string writer.ts's writeNote() extracts before slugifying.
   // Scanning all 7793 distinct ids on that brain found exactly 5 for which
@@ -84,10 +83,10 @@ describe('slug() — backward compatibility with existing on-disk filenames', ()
   // since it depends on a machine-local, personal brain path).
   const realIdsFromProdBrain = [
     'file-c-program-files-android-android-studio-bin-lldb-helpers-mixed-mode-jb-mono-utils',
-    'file-trading-prometheus-research-autoresearch-archive-tests-prometheus-creative-py',
-    'file-trading-prometheus-research-autoresearch-archive-tests-prometheus-patterns-py',
-    'file-trading-prometheus-research-autoresearch-prometheus-profit-target-deepdive-py',
-    'topic-overview-code-c-Users-David-Documents-Albert school-Carmila alberton-Data for the CARMILA challenge',
+    'file-repos-sample-project-autoresearch-archive-tests-sample-creative-py',
+    'file-repos-sample-project-autoresearch-archive-tests-sample-patterns-py',
+    'file-repos-sample-project-autoresearch-sample-profit-target-deepdive-py',
+    'topic-overview-code-c-Users-owner-Documents-Sample project-Example exampler-Data for the EXAMPLE challenge',
     // A few ordinary (well under 80 chars) real ids for contrast — must be
     // completely unaffected by the fix.
     'file-c-program-files-android-android-studio-bin-helpers-jb-declarative-formatter',

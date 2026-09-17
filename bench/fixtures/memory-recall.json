@@ -1,5 +1,5 @@
 {
-  "_comment": "Synthetic fixture: deterministic, self-contained, no dependency on David's private brain.",
+  "_comment": "Synthetic fixture: deterministic, self-contained, no dependency on the owner's private brain.",
   "index": [
     {
       "id": "node-editor-undo",

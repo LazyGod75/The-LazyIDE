@@ -516,7 +516,7 @@ describe('Tauri persistence — verbatim-safe path join', () => {
     vi.useFakeTimers();
     (window as unknown as Record<string, unknown>)['__TAURI_INTERNALS__'] = {};
 
-    const projectRoot = String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project`;
+    const projectRoot = String.raw`\\?\C:\Users\user\Documents\projects\qa-project`;
     const calls: Array<{ cmd: string; args: unknown }> = [];
     mockedInvoke.mockImplementation((cmd: string, args?: unknown) => {
       calls.push({ cmd, args });
@@ -534,10 +534,10 @@ describe('Tauri persistence — verbatim-safe path join', () => {
     const writeFileCall = calls.find((c) => c.cmd === 'write_file');
 
     expect((createDirCall?.args as { path: string } | undefined)?.path).toBe(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project\.lazy`,
+      String.raw`\\?\C:\Users\user\Documents\projects\qa-project\.lazy`,
     );
     expect((writeFileCall?.args as { path: string } | undefined)?.path).toBe(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project\.lazy\usage-history.json`,
+      String.raw`\\?\C:\Users\user\Documents\projects\qa-project\.lazy\usage-history.json`,
     );
     expect((writeFileCall?.args as { path: string } | undefined)?.path).not.toContain('/');
   });

@@ -196,7 +196,7 @@ function benchLatency(): LatencyBench[] {
     try {
       const start = performance.now();
       execSync(`npx tsx bin/lazybrain.ts query "${query}" --limit 50`, {
-        cwd: 'C:\\Users\\username\\Documents\\cerveau\\LazyBrain',
+        cwd: 'C:\\Users\\username\\Documents\\projects\\LazyBrain',
         stdio: ['pipe', 'pipe', 'ignore'],
       });
       htmlMs = performance.now() - start;
@@ -434,7 +434,7 @@ async function main() {
   console.log(`\n${formatTable(result)}\n`);
 
   // Save results
-  const resultsPath = `C:\\Users\\username\\Documents\\cerveau\\LazyBrain\\bench\\results\\html-vs-md-${timestamp.split('T')[0]}.json`;
+  const resultsPath = `C:\\Users\\username\\Documents\\projects\\LazyBrain\\bench\\results\\html-vs-md-${timestamp.split('T')[0]}.json`;
   writeFileSync(resultsPath, JSON.stringify(result, null, 2));
   console.log(`Results saved to: ${resultsPath}\n`);
 

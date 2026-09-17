@@ -1,5 +1,5 @@
 /**
- * canvasFit.test.ts — fix/canvas-fit-fill-ratio (David's measured repro,
+ * canvasFit.test.ts — fix/canvas-fit-fill-ratio (the owner's measured repro,
  * 2026-08-14: clicking the canvas toolbar's plain "Fit view" button
  * (`[data-testid="canvas-toolbar-fit"]`) with 8 open project zones present
  * settled at 18% zoom, an 8-node content box of 516x158 inside a 1440x844
@@ -74,7 +74,7 @@ function baseInputs(overrides: Partial<ReconcileInputs> = {}): ReconcileInputs {
   };
 }
 
-/** Real project names + occupancy from David's own measured repro (8 open
+/** Real project names + occupancy from the owner's own measured repro (8 open
  *  zones, several idle "0 active" smoke-test projects, others with a real
  *  mission or two) — not a contrived best case. */
 const REPRO_PROJECT_NAMES = [
@@ -132,7 +132,7 @@ function computeWholeCanvasFit(projects: FleetProject[], viewport: { width: numb
 describe('canvas whole-canvas "Fit view" — fill ratio (fix/canvas-fit-fill-ratio)', () => {
   const VIEWPORT = { width: 1440, height: 844 };
 
-  it('for 8 real-world project zones (David\'s measured repro), the fitted content fills more than 50% of the smaller viewport dimension — was 7% area fill / 18% zoom before this fix', () => {
+  it('for 8 real-world project zones (user\'s measured repro), the fitted content fills more than 50% of the smaller viewport dimension — was 7% area fill / 18% zoom before this fix', () => {
     const result = computeWholeCanvasFit(reproProjects(), VIEWPORT);
     expect(result.smallerDimFill).toBeGreaterThan(0.5);
     // A sane band, not just "better than before": never so tight the
@@ -141,7 +141,7 @@ describe('canvas whole-canvas "Fit view" — fill ratio (fix/canvas-fit-fill-rat
     expect(result.zoom).toBeGreaterThanOrEqual(ARRANGE_MIN_READABLE_ZOOM);
   });
 
-  // fix/canvas-horizontal-pack-audit (David's round-5 report on a REAL
+  // fix/canvas-horizontal-pack-audit (the owner's round-5 report on a REAL
   // packaged-app live click, instrumentation-confirmed: "model bounds
   // {x:0, y:0, width:3767.52, height:880}" for these exact 8 zones —
   // "eight zones need ~2,400px including generous gutters, not 3,767 ...
@@ -150,7 +150,7 @@ describe('canvas whole-canvas "Fit view" — fill ratio (fix/canvas-fit-fill-rat
   // fixture (no persisted positions — the only path zoneMinWidthForTitle
   // and the same-row/row-to-row packing gaps can affect) proves the
   // CURRENT formula, including this round's own zoneMinWidthForTitle
-  // floor, produces bounds matching David's own "~2,400px" expectation
+  // floor, produces bounds matching the owner's own "~2,400px" expectation
   // almost exactly — not the live 3767px figure. That gap is therefore
   // NOT a packing-formula regression: it points at STALE, PERSISTED zone
   // positions the live app is carrying over from an earlier session/build
@@ -166,7 +166,7 @@ describe('canvas whole-canvas "Fit view" — fill ratio (fix/canvas-fit-fill-rat
     const zoneNodes = nodes.filter((n) => n.type === 'project');
     expect(zoneNodes).toHaveLength(8);
     const bounds = getNodesBounds(zoneNodes as never, { nodeOrigin: [0, 0] });
-    // Comfortably above David's own "~2,400px" estimate (real margin for
+    // Comfortably above the owner's own "~2,400px" estimate (real margin for
     // fixture drift) but nowhere near the live-reported 3767.52 — a
     // regression that reintroduces THIS class of bug (an oversized,
     // absolute-zoom-floor-sized gap paid per zone/row, the same disease
@@ -283,7 +283,7 @@ describe('canvas zone-title distinguishability (scratch/_canvas-label-design.md 
 // proves a FRESH pack (no persisted positions) of the 8-zone repro clears the
 // >50% fill floor — but `packAutoPlacedZones` (the path a normal reconcile()
 // actually takes) never revisits a zone that already has a PERSISTED
-// position, by design (see its own doc comment). David's real profile is
+// position, by design (see its own doc comment). the owner's real profile is
 // exactly that case: 8 zones whose positions were saved months ago, before
 // any of the packing-gap fixes existed — the diagnosis in §1 of the design
 // doc ("zones épinglées jamais re-packées"). This suite reproduces that
@@ -295,7 +295,7 @@ describe('canvas zone-title distinguishability (scratch/_canvas-label-design.md 
 describe('canvas "Ranger" — packAllZones repacks PINNED zones (scratch/_canvas-label-design.md §3.3 item 5)', () => {
   const VIEWPORT = { width: 1440, height: 844 };
 
-  /** Simulates David's real, months-old profile: every zone given an
+  /** Simulates the owner's real, months-old profile: every zone given an
    *  explicit PERSISTED position, spread far apart in a single row — the
    *  exact shape `packAutoPlacedZones` will never revisit on its own
    *  (`hasPersistedPosition` short-circuits it for every one of these). */
@@ -404,7 +404,7 @@ describe('canvas "Ranger" — packAllZones repacks PINNED zones (scratch/_canvas
   });
 });
 
-// fix/canvas-fit-instrumentation (round 3, David's own live rebuild: even
+// fix/canvas-fit-instrumentation (round 3, the owner's own live rebuild: even
 // with the manager COLLAPSED — the canvas owning the full window — "fit"
 // still produced a 500x122 content box in a 1440x844 viewport at 14% zoom
 // for 9 rendered nodes, "an order of magnitude larger than the actual
@@ -459,7 +459,7 @@ describe('getNodesBounds — must only ever see TOP-LEVEL (parentless) nodes (fi
   });
 });
 
-// fix/canvas-transverse-fit-outlier (David's measured regression, live CDP:
+// fix/canvas-transverse-fit-outlier (the owner's measured regression, live CDP:
 // whole-canvas "Fit view" settled at zoom 0.116 with 8 open project zones —
 // "unreadable thumbnails crammed in a corner of a mostly empty canvas").
 //

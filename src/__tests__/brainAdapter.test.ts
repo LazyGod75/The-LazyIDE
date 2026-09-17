@@ -69,7 +69,7 @@ describe('brainAdapter — getRealBrainData dateIdx', () => {
           id: 'b',
           title: 'B',
           type: 'bug',
-          cluster: 'C:\\Users\\user\\Documents\\cerveau\\Lazy\\lazy-backoffice',
+          cluster: 'C:\\Users\\user\\Documents\\projects\\Lazy\\lazy-backoffice',
           importance: 0.5,
         },
       ]),

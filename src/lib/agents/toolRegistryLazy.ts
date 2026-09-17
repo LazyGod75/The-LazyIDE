@@ -34,6 +34,7 @@
 
 import { ALL_TOOLS, renderToolSignatures } from './toolRegistry.js';
 import type { ToolDef } from './toolRegistry.js';
+import { isJevModeOn } from '../jev/jevMode.js';
 
 // ── Vocabulary ────────────────────────────────────────────────────────
 
@@ -62,6 +63,12 @@ export interface ToolMeta {
    *  always — never just the index line. Empty for a tool that is always
    *  lazy-loaded everywhere. */
   coreFor: ToolSurface[];
+  /** Optional runtime availability gate — when it returns false the tool
+   *  is invisible on every surface (dropped from core lists AND the index
+   *  AND find_tool results), as if it were never registered. Used by
+   *  ask_jev (src/lib/jev/): a BYOK, opt-in capability that must not
+   *  advertise itself to models of users who have no TypeSafe key. */
+  isAvailable?: () => boolean;
 }
 
 /** The merged registry entry — ToolDef (mechanism) + ToolMeta (lazy-load
@@ -136,6 +143,11 @@ const TOOL_META: Record<string, ToolMeta> = {
   delegate: { shortHint: 'Delegate a read-only sub-task to a sub-agent', tags: [], coreFor: [] },
   ask_user: { shortHint: 'Ask the human a clarifying question', tags: [], coreFor: ['mission', 'manager'] },
   find_tool: { shortHint: 'Look up a non-core tool\'s full definition', tags: [], coreFor: ['mission', 'codeur', 'manager'] },
+  // TypeSafe Jev — opt-in BYOK capability (src/lib/jev/). isAvailable hides
+  // it from every prompt surface when Jev mode is off or no key is set, so
+  // a model never sees a tool it cannot use (open-source constraint: zero
+  // dependency on a paid key).
+  ask_jev: { shortHint: 'Ask TypeSafe Jev a bounded typed judgment', tags: [], coreFor: [], isAvailable: isJevModeOn },
 };
 
 /** Merged {ToolDef + ToolMeta} view, in ALL_TOOLS order — the actual "single
@@ -173,18 +185,26 @@ const ALWAYS_CORE = new Set(['find_tool']);
  *  extra preload list (suggestTools' heuristic hits, or a caller-specified
  *  override) — unknown names in extraNames are ignored rather than throwing,
  *  since suggestTools/callers may pass a name that doesn't (yet) exist. */
+/** True when a registered tool is currently usable — absent `isAvailable`
+ *  means always available (the overwhelming default). */
+function isToolAvailable(t: RegisteredTool): boolean {
+  return t.isAvailable === undefined || t.isAvailable();
+}
+
 function resolveCoreNames(
   surface: ToolSurface,
   extraNames: readonly string[] = [],
 ): { core: Set<string>; index: RegisteredTool[] } {
+  const available = REGISTERED_TOOLS.filter(isToolAvailable);
   const core = new Set<string>(ALWAYS_CORE);
-  for (const t of REGISTERED_TOOLS) {
+  for (const t of available) {
     if (t.coreFor.includes(surface)) core.add(t.name);
   }
   for (const name of extraNames) {
-    if (REGISTERED_BY_NAME.has(name)) core.add(name);
+    const t = REGISTERED_BY_NAME.get(name);
+    if (t && isToolAvailable(t)) core.add(name);
   }
-  const index = REGISTERED_TOOLS.filter((t) => !core.has(t.name));
+  const index = available.filter((t) => !core.has(t.name));
   return { core, index };
 }
 
@@ -194,7 +214,12 @@ function resolveCoreNames(
  *  computed from the SAME renderer so the comparison is apples-to-apples. */
 export interface ToolPromptBudget {
   surface: ToolSurface;
+  /** Every tool in the registry (ALL_TOOLS.length) — the "before" count. */
   totalTools: number;
+  /** Tools whose isAvailable gate passes right now — the "after" pool the
+   *  core/index split actually covers (≤ totalTools; e.g. ask_jev is
+   *  invisible while Jev mode is off). */
+  availableCount: number;
   coreCount: number;
   indexCount: number;
   charsFull: number;
@@ -256,6 +281,7 @@ export function buildLazyToolBlock(
     budget: {
       surface,
       totalTools: ALL_TOOLS.length,
+      availableCount: core.size + sortedIndex.length,
       coreCount: core.size,
       indexCount: sortedIndex.length,
       charsFull,
@@ -291,17 +317,18 @@ export function getToolPromptBudget(
 export function findTool(query: string): RegisteredTool[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
+  const pool = REGISTERED_TOOLS.filter(isToolAvailable);
 
-  const exact = REGISTERED_TOOLS.find((t) => t.name.toLowerCase() === q);
+  const exact = pool.find((t) => t.name.toLowerCase() === q);
   if (exact) return [exact];
 
-  const byName = REGISTERED_TOOLS.filter((t) => t.name.toLowerCase().includes(q));
+  const byName = pool.filter((t) => t.name.toLowerCase().includes(q));
   if (byName.length > 0) return byName.slice(0, 5);
 
-  const byTag = REGISTERED_TOOLS.filter((t) => t.tags.some((tag) => tag === q));
+  const byTag = pool.filter((t) => t.tags.some((tag) => tag === q));
   if (byTag.length > 0) return byTag.slice(0, 5);
 
-  const byKeyword = REGISTERED_TOOLS.filter(
+  const byKeyword = pool.filter(
     (t) => t.shortHint.toLowerCase().includes(q) || t.description.toLowerCase().includes(q),
   );
   return byKeyword.slice(0, 5);

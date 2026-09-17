@@ -8,7 +8,7 @@
  * file-neuron composer) once per corpusDir in questions.json.
  *
  * SAFETY: writes only under the path given as argv[2] (or
- * LAZYBRAIN_FIXTURE_BRAIN). Never touches David's real brain — the target
+ * LAZYBRAIN_FIXTURE_BRAIN). Never touches the owner's real brain — the target
  * directory is created fresh and LAZYBRAIN_BRAIN_PATH is always set
  * explicitly for the child process, so brain discovery never falls through
  * to a real brain.

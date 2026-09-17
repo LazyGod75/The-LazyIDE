@@ -369,7 +369,7 @@ describe('run-12/M14 regression — real persisted shapes', () => {
       kind: 'command_output',
       command: 'type README.md',
       outputPath:
-        String.raw`\\?\C:\Users\user\AppData\Local\Temp\claude\C--Users-David-Documents-cerveau\cf11c5e0-5379-4fe9-8c85-391c96b17f97\scratchpad\qa-projects\alpha\.lazy\artifacts\M14\command_output-1.txt`,
+        String.raw`\\?\C:\Users\user\AppData\Local\Temp\claude\C--Users-user-Documents-repo\cf11c5e0-5379-4fe9-8c85-391c96b17f97\scratchpad\qa-projects\alpha\.lazy\artifacts\M14\command_output-1.txt`,
     },
   ];
 

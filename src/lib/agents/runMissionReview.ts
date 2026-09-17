@@ -13,6 +13,8 @@ import { saveArtifacts } from './artifacts.js';
 import { executeLearningStage } from './learningStage.js';
 import { translateStatusReason } from './statusReasonLabel.js';
 import { emitBuffered } from '../journal/journal.js';
+import { isJevModeOn } from '../jev/jevMode.js';
+import { jevScoreMissionReview } from '../jev/jevEnhancements.js';
 
 function clockHm(): string {
   const d = new Date();
@@ -132,7 +134,40 @@ export function announceReviewReady(opts: {
       ? { category: opts.stepCapFallthroughReason, message: preserved }
       : undefined,
   );
+  maybeScoreReviewWithJev(opts, diff, files);
   return finalTimeline;
+}
+
+/** Optional Jev second opinion (src/lib/jev/) — fire-and-forget, advisory
+ *  only: the judgment lands on mission.jevJudgment (a hint chip on the
+ *  review card) and NEVER touches approveGate/auto-merge. Skipped
+ *  entirely when Jev mode is off; any failure resolves to undefined and
+ *  the mission card just shows no chip — same as without a key. */
+function maybeScoreReviewWithJev(
+  opts: {
+    mission: Mission;
+    projectId: string;
+    onUpdate: (update: MissionUpdate) => void;
+  },
+  diff: MissionDiffSlice,
+  files: Mission['diffFiles'],
+): void {
+  if (!isJevModeOn()) return;
+  void jevScoreMissionReview({
+    missionTitle: opts.mission.title,
+    missionTask: opts.mission.agentTask ?? opts.mission.contract?.objective,
+    diffFiles: files,
+    diffSnippet: diff.diffSnippet,
+    diffAdded: diff.diffAdded,
+    diffRemoved: diff.diffRemoved,
+    emptyDeliverable: diff.emptyDeliverable,
+    projectId: opts.projectId,
+    missionId: opts.mission.id,
+  }).then((judgment) => {
+    if (judgment) {
+      opts.onUpdate({ id: opts.mission.id, patch: { jevJudgment: judgment } });
+    }
+  }).catch(() => { /* fire-and-forget — never surfaces */ });
 }
 
 function missionWithDiff(mission: Mission, diff: MissionDiffSlice): Mission {

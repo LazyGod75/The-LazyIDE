@@ -148,12 +148,12 @@ afterEach(() => {
 describe('MemoryPanel — brain path transparency', () => {
   it('shows the global-override label + real path when source is env_override', async () => {
     mockGetPlatform.mockReturnValue(
-      makeTauriPlatform({ path: '/mock/global/lazy-brain-david/brain', source: 'env_override' }),
+      makeTauriPlatform({ path: '/mock/global/lazy-brain-user/brain', source: 'env_override' }),
     );
     renderPanel();
 
     expect(await screen.findByText(/Global brain \(LAZYBRAIN_BRAIN_PATH\)/)).toBeInTheDocument();
-    expect(screen.getByText(/\/mock\/global\/lazy-brain-david\/brain/)).toBeInTheDocument();
+    expect(screen.getByText(/\/mock\/global\/lazy-brain-user\/brain/)).toBeInTheDocument();
     // The amber callout explaining the override must also render.
     expect(screen.getByText(/shared across all your projects/)).toBeInTheDocument();
   });
@@ -225,7 +225,7 @@ describe('MemoryPanel — publish brain to GitHub', () => {
 
   it('warns about personal data and adjusts the confirm label when source is env_override', async () => {
     mockGetPlatform.mockReturnValue(
-      makeTauriPlatform({ path: '/mock/global/lazy-brain-david/brain', source: 'env_override' }),
+      makeTauriPlatform({ path: '/mock/global/lazy-brain-user/brain', source: 'env_override' }),
     );
     renderPanel();
 
@@ -252,7 +252,7 @@ describe('MemoryPanel — publish brain to GitHub', () => {
   it('calls platform.brain.publishGithub with the entered URL and renders the returned link on success', async () => {
     const publishGithub = vi.fn().mockResolvedValue({
       ok: true,
-      url: 'https://github.com/LazyGod75/Lazy-Brain-David',
+      url: 'https://github.com/LazyGod75/Lazy-Brain-user',
       message: 'Published successfully.',
     } satisfies MockPublishResult);
     mockGetPlatform.mockReturnValue(
@@ -263,16 +263,16 @@ describe('MemoryPanel — publish brain to GitHub', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Publish to GitHub' }));
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.change(screen.getByPlaceholderText('https://github.com/your-account/my-brain.git'), {
-      target: { value: 'https://github.com/LazyGod75/Lazy-Brain-David.git' },
+      target: { value: 'https://github.com/LazyGod75/Lazy-Brain-user.git' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
 
     await waitFor(() => expect(publishGithub).toHaveBeenCalledWith({
-      remoteUrl: 'https://github.com/LazyGod75/Lazy-Brain-David.git',
+      remoteUrl: 'https://github.com/LazyGod75/Lazy-Brain-user.git',
     }));
     expect(await screen.findByText(/Published successfully/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'https://github.com/LazyGod75/Lazy-Brain-David' }))
-      .toHaveAttribute('href', 'https://github.com/LazyGod75/Lazy-Brain-David');
+    expect(screen.getByRole('link', { name: 'https://github.com/LazyGod75/Lazy-Brain-user' }))
+      .toHaveAttribute('href', 'https://github.com/LazyGod75/Lazy-Brain-user');
   });
 
   it('renders the honest next-step message when publishGithub reports ok: false', async () => {
@@ -328,7 +328,7 @@ describe('MemoryPanel — brain path renders independent of the sidecar', () => 
   it('shows the brain path and env-override callout even when health() and brain.health() reject', async () => {
     mockGetPlatform.mockReturnValue(
       makeSidecarBrokenPlatform(
-        { path: '/mock/global/lazy-brain-david/brain', source: 'env_override' },
+        { path: '/mock/global/lazy-brain-user/brain', source: 'env_override' },
         vi.fn().mockRejectedValue(new Error('sidecar unreachable')),
         vi.fn().mockRejectedValue(new Error('sidecar unreachable')),
       ),
@@ -731,7 +731,7 @@ describe('MemoryPanel — brain setup: scope choice calls setConfig', () => {
   });
 
   it('shows the env_override precedence note — the UI choice is a fallback while the env var is set', async () => {
-    const platform = makePlatformWithSetup({ path: '/mock/global/lazy-brain-david/brain', source: 'env_override' });
+    const platform = makePlatformWithSetup({ path: '/mock/global/lazy-brain-user/brain', source: 'env_override' });
     mockGetPlatform.mockReturnValue(platform);
     renderPanel();
 
@@ -1263,7 +1263,7 @@ describe('MemoryPanel — danger zone reset (brain_wipe)', () => {
 
   it('warns that the target is the global/personal brain when source is env_override', async () => {
     mockGetPlatform.mockReturnValue(
-      makeTauriPlatform({ path: '/mock/global/lazy-brain-david/brain', source: 'env_override' }),
+      makeTauriPlatform({ path: '/mock/global/lazy-brain-user/brain', source: 'env_override' }),
     );
     renderPanel();
 

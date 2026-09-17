@@ -1097,7 +1097,7 @@ async function nativeHealth(): Promise<HealthReport> {
 
   // git: git_current_branch needs a REAL registered project root. Passing
   // repoPath: '.' (the old code) resolves against the app PROCESS's cwd —
-  // the workspace parent directory, e.g. "...\Documents\cerveau" — which is
+  // the workspace parent directory, e.g. "...\Documents\projects" — which is
   // never itself a registered project root. The Rust path-jail guard
   // (commands/util.rs's ensure_repo_in_any_open_project) then rejected it
   // every single time with "access denied: '.' is outside every registered
@@ -1117,7 +1117,7 @@ async function nativeHealth(): Promise<HealthReport> {
         .catch((err: unknown): HealthReport['git'] => {
           // See the brain check above: same free-text-error-embeds-a-raw-
           // path issue, and the concrete report this was found from
-          // (raw "\\?\C:\Users\user\Documents\cerveau" in the panel) was
+          // (raw "\\?\C:\Users\user\Documents\projects" in the panel) was
           // this exact git-check failure text.
           details['git'] = stripVerbatimPrefixesInText(String(err));
           return 'down';

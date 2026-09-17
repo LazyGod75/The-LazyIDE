@@ -3,7 +3,7 @@
    split, same rationale as reconciler.ts's own W9 split: that file was
    nearing this repo's 800-line file cap). See git history for this
    component's full design rationale (W-UX3 three-tier fleet view /
-   fix/canvas-legibility "unified chrome" — David's own 10% capture showed
+   fix/canvas-legibility "unified chrome" — the owner's own 10% capture showed
    "colored dots visible but ANONYMOUS"): project name + per-status counts
    with status-colored + status-glyphed dots + the animated equalizer while
    work runs, at CONSTANT screen size, anchored to the zone's top-left. An
@@ -47,7 +47,7 @@
    i.e. this chip's name/count/approval-badge stack painted directly on
    top of the header's own (always-additive, never-replaced — see
    ProjectGroupNode.tsx's W-CARDS comment) LOD-scaled title, at ANY
-   `aggregate` zoom. That is the actual bug behind David's repeated repro
+   `aggregate` zoom. That is the actual bug behind the owner's repeated repro
    ("zone titles overlap the count chips / approval badge / '0 actif(s)'
    labels") — the two AGGREGATE_CHIP_MAX_SCALE-capped/reserved-band fixes
    above were both real and necessary, but neither one touched this
@@ -260,7 +260,7 @@ export function ZoneAggregateSummary({ name, counts, hasWork, idle, approvalMode
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               // W-UX3 audit fix #1 — CLAMP + truncate: a long zone name
-              // (David's « lazy-e2e-soak-scratch-1784236548334 », 211px) ran
+              // (the owner's « lazy-e2e-soak-scratch-1784236548334 », 211px) ran
               // straight into the neighbouring « Transverse » label at 10%.
               maxWidth: 128,
             }}

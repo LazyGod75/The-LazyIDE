@@ -130,8 +130,8 @@ describe('AppContext — multi-project registry', () => {
   // (project_register_inner/project_set_active_inner canonicalize() on the
   // Rust side), not the legacy-upgrade path (covered above).
   it('normalizes a verbatim (\\\\?\\-prefixed) root on restore and writes the normalized backstop key', async () => {
-    const verbatimRoot = '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\LazySite-internet';
-    const normalizedRoot = 'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet';
+    const verbatimRoot = '\\\\?\\C:\\Users\\user\\Documents\\projects\\LazySite-internet';
+    const normalizedRoot = 'C:\\Users\\user\\Documents\\projects\\LazySite-internet';
     const entries: ProjectEntryOutFixture[] = [
       { id: 'p1', root: verbatimRoot, brainId: null, active: true },
     ];

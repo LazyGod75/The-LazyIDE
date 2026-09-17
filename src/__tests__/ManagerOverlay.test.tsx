@@ -189,7 +189,7 @@ describe('ManagerOverlay — persistence across sessions', () => {
     expect(screen.queryByTestId('manager-overlay')).toBeNull();
   });
 
-  // fix/canvas-collapse-reservation (David's round-8 report, real packaged
+  // fix/canvas-collapse-reservation (the owner's round-8 report, real packaged
   // app: collapsed the overlay — manager-overlay confirmed gone from the
   // DOM — yet the canvas container stayed exactly as narrow as before, "a
   // large empty black band" where the panel used to be). Root cause: once a
@@ -284,7 +284,7 @@ describe('ManagerOverlay — manual choice primes over automatic (point 2/3)', (
   });
 });
 
-// fix/canvas-manager-collapse (David's measured repro, real packaged app:
+// fix/canvas-manager-collapse (the owner's measured repro, real packaged app:
 // manager-overlay is 836px wide in a 1440px window — 42% of the screen,
 // permanently — and the ONLY control found on it was the resize handle; the
 // EXISTING collapse control this file's own `openOverflowMenu()` helper

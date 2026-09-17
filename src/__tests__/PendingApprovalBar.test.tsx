@@ -89,7 +89,7 @@ describe('PendingApprovalBar — renders no blind approvals (2026-08-14 safety d
   });
 
   it('middle-truncates a long label visibly (never silently shows a shorter, different-looking string)', () => {
-    const longLabel = 'Ouvrir le projet : C:\\Users\\user\\Documents\\cerveau\\scratchpad\\uc-smoke-2026-08-12-long-name';
+    const longLabel = 'Ouvrir le projet : C:\\Users\\user\\Documents\\projects\\scratchpad\\uc-smoke-2026-08-12-long-name';
     renderBar({ pending: [item({ id: 'p1', label: longLabel, detail: longLabel })] });
     const rendered = screen.getByTestId('pending-approval-bar-expand-p1').textContent ?? '';
     expect(rendered.length).toBeLessThan(longLabel.length);

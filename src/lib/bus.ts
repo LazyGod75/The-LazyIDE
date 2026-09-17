@@ -331,6 +331,10 @@ export type BusEvents = {
   /** Emitted after the Solari API key is set, deleted, or changes — lets LazyBot UI
    *  surfaces (modal, palette, settings) unlock or lock without an app restart. */
   'solari:configuredChange': { configured: boolean };
+  /** Emitted when the TypeSafe key or the Jev-mode toggle changes — lets
+   *  the manager header chip, settings panel, and tool visibility update
+   *  without an app restart. */
+  'jev:stateChange': { configured: boolean; enabled: boolean };
   /** Approval-gate block — emitted by approvalGate.ts when a consequential
    *  cloud action is intercepted and a human verdict is required. The UI
    *  reads pending state via getPendingApproval/listPendingApprovals and

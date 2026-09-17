@@ -273,7 +273,7 @@ describe('GraphProposalCard — the successful graph fits the panel (fix #7)', (
   });
 });
 
-// 2026-08 "giant empty rectangle" fix (David, verbatim: "pourquoi la j'ai
+// 2026-08 "giant empty rectangle" fix (user, verbatim: "pourquoi la j'ai
 // un agent géant dans le canva ??") — the previous fit suite already locks
 // in "no free-text foreignObject inside a task/contest node, at any width"
 // (the 2026-08-06 decision, unchanged by this pass). What THIS suite guards

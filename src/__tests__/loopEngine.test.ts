@@ -697,7 +697,7 @@ describe('artifactOwnerIdForLoop', () => {
 
 describe('loopEngine persistence — verbatim-safe path join', () => {
   it('registerLoop() persists via a verbatim-safe joined path using backslash throughout, never a literal "/"', async () => {
-    const repoPath = String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project`;
+    const repoPath = String.raw`\\?\C:\Users\user\Documents\projects\qa-project`;
 
     await registerLoop(repoPath, {
       missionId: 'M1',
@@ -707,11 +707,11 @@ describe('loopEngine persistence — verbatim-safe path join', () => {
     });
 
     expect(createDir).toHaveBeenCalledWith(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project\.lazy`,
+      String.raw`\\?\C:\Users\user\Documents\projects\qa-project\.lazy`,
     );
     const [writtenPath] = writeFile.mock.calls[0] as [string, string];
     expect(writtenPath).toBe(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project\.lazy\loops.json`,
+      String.raw`\\?\C:\Users\user\Documents\projects\qa-project\.lazy\loops.json`,
     );
     expect(writtenPath).not.toContain('/');
   });

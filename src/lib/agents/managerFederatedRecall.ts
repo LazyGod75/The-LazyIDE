@@ -11,6 +11,7 @@ import {
 } from '../brain/federatedRecall.js';
 import { withTimeout } from '../brain/withTimeout.js';
 import { isTrivialManagerUtterance } from './managerAmbientRecall.js';
+import { jevRerankRecallHits } from '../jev/jevEnhancements.js';
 
 export const MANAGER_FEDERATED_TIMEOUT_MS = 300;
 export const MANAGER_FEDERATED_MAX_HITS = 3;
@@ -35,6 +36,9 @@ export async function maybeFederatedRecallForManager(
     fetch?: (query: string, limit?: number) => Promise<FederatedRecallResult>;
     timeoutMs?: number;
     force?: boolean;
+    /** projectId for the jev.judgment journal event — optional; the rerank
+     *  works (and journals under '*') without it. */
+    projectId?: string;
   },
 ): Promise<string | undefined> {
   if (!opts?.force && !looksLikeCrossProjectQuery(query)) return undefined;
@@ -45,7 +49,20 @@ export async function maybeFederatedRecallForManager(
       opts?.timeoutMs ?? MANAGER_FEDERATED_TIMEOUT_MS,
       'manager-federated-recall',
     );
-    return formatManagerFederatedDigest(result);
+    // Optional Jev rerank (src/lib/jev/) — drops hits the judgment finds
+    // irrelevant to the actual request. Fail-open inside: any error or an
+    // all-dropped result returns the hits unchanged. Entirely skipped when
+    // Jev mode is off.
+    const reranked = await jevRerankRecallHits(query, result.hits, opts?.projectId ?? '*');
+    const finalResult: FederatedRecallResult = reranked === result.hits
+      ? result
+      : {
+          hits: [...reranked],
+          text: reranked
+            .map((h) => `[#${h.id}] (from ${h.sourceProject ?? 'cross-project'}) ${h.title}: ${h.snippet}`)
+            .join('\n'),
+        };
+    return formatManagerFederatedDigest(finalResult);
   } catch {
     return undefined;
   }

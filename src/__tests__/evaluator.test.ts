@@ -843,7 +843,7 @@ describe('evaluateMission — managed (Pro) mode', () => {
       makeStream(JSON.stringify({ verdict: 'approve', summary: 'ok', score: 80, risk: 'low' })),
     );
 
-    const verbatimRepo = '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\Lazy';
+    const verbatimRepo = '\\\\?\\C:\\Users\\user\\Documents\\projects\\Lazy';
     const verbatimWorktree = `${verbatimRepo}\\.lazy\\worktrees\\agent-m-review-fix-thing`;
 
     await evaluateMission(makeMission({ worktree: 'agent/m-review-fix-thing' }), {
@@ -875,13 +875,13 @@ describe('evaluateMission — managed (Pro) mode', () => {
     );
 
     await evaluateMission(makeMission({ worktree: 'agent/m-review-fix-thing' }), {
-      repoPath: '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\Lazy',
+      repoPath: '\\\\?\\C:\\Users\\user\\Documents\\projects\\Lazy',
       // No worktreePath — exercises evaluateMission's own fallback.
     });
 
     expect(mockedInvoke).toHaveBeenCalledWith('run_shell', {
       command: 'npm test',
-      cwd: '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\Lazy\\.lazy\\worktrees\\agent-m-review-fix-thing',
+      cwd: '\\\\?\\C:\\Users\\user\\Documents\\projects\\Lazy\\.lazy\\worktrees\\agent-m-review-fix-thing',
       timeoutMs: 120000,
     });
   });
@@ -1591,13 +1591,13 @@ describe('evaluateMission — verification mission judging, full pipeline (manag
 
 describe('resolveWorktreePath', () => {
   it('joins with backslash and keeps a Windows \\\\?\\ verbatim prefix internally consistent — never mixes in a "/"', () => {
-    const result = resolveWorktreePath('\\\\?\\C:\\Users\\user\\Documents\\cerveau\\Lazy', {
+    const result = resolveWorktreePath('\\\\?\\C:\\Users\\user\\Documents\\projects\\Lazy', {
       id: 'mission-1',
       worktree: 'agent/m-review-fix-thing',
     });
 
     expect(result).toBe(
-      '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\Lazy\\.lazy\\worktrees\\agent-m-review-fix-thing',
+      '\\\\?\\C:\\Users\\user\\Documents\\projects\\Lazy\\.lazy\\worktrees\\agent-m-review-fix-thing',
     );
     expect(result).not.toContain('/');
   });

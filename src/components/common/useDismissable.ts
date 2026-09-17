@@ -73,7 +73,7 @@ export function useDismissable<T extends HTMLElement = HTMLDivElement>({
 }: UseDismissableOptions): RefObject<T | null> {
   const panelRef = useRef<T>(null);
 
-  // Root cause of "Escape doesn't close the popover" (David's repro,
+  // Root cause of "Escape doesn't close the popover" (the owner's repro,
   // 2026-08-15, canvas-legibility legend popover — 100% reproducible with
   // the app hovered/live): every real caller passes an inline lambda for
   // `onClose` (e.g. `onClose={() => setLegendOpen(false)}`), a fresh

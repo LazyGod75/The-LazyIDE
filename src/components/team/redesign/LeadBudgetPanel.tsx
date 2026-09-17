@@ -85,14 +85,14 @@ export function LeadBudgetPanel({
   const deptAllocations = allocations.filter((a) => a.entity_type === 'dept');
 
   return (
-    // W-UX3 finding D fix (David: « La page Team est bug ») — this panel
+    // W-UX3 finding D fix (user: « La page Team est bug ») — this panel
     // used to declare `flex: 1; minHeight: 0` (and `flex: 1` on the card
     // row below), a FIXED-HEIGHT dashboard layout — but it lives inside
     // LeadView's SCROLLING column (`overflowY: 'auto'`). In a scroll
     // container the flex algorithm hands a `minHeight: 0` child only the
     // LEFTOVER viewport space — near zero once members + invitations +
     // brain fill the page — and the panel's unclipped content then spilled
-    // OVER the sections below it (the exact overlap in David's capture:
+    // OVER the sections below it (the exact overlap in the owner's capture:
     // invitations painted inside the budget card, « Gérer les sièges »
     // colliding with the Brain section title). Scroll-column children must
     // be natural-height and non-shrinking: `flexShrink: 0`, no `flex: 1`.
@@ -203,7 +203,7 @@ export function LeadBudgetPanel({
             </div>
           )}
 
-          {/* Copy/layout fix (David 2026-08-14): this used to be a bare
+          {/* Copy/layout fix (user 2026-08-14): this used to be a bare
               underlined text link sitting among real buttons (top-up pills,
               "+ Nouvelle allocation") — visually inconsistent affordance in
               a panel full of buttons. Restyle as a proper secondary button

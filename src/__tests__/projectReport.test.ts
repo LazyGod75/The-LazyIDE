@@ -68,7 +68,7 @@ describe('buildProjectReport', () => {
   it('mission.approved also qualifies as completed', () => {
     const events = [
       row('mission.created', 1_000, { title: 'Approved' }, { mission_id: 'm-a' }),
-      row('mission.approved', 2_000, { approvedBy: 'david' }, { mission_id: 'm-a' }),
+      row('mission.approved', 2_000, { approvedBy: 'user' }, { mission_id: 'm-a' }),
     ];
     const report = buildProjectReport(events, NOW);
     expect(report.completedMissions[0].terminalType).toBe('mission.approved');
@@ -88,7 +88,7 @@ describe('buildProjectReport', () => {
   it('autoMerged is absent (not false) for a normal human approval', () => {
     const events = [
       row('mission.created', 1_000, { title: 'Human-merged' }, { mission_id: 'm-human' }),
-      row('mission.approved', 2_000, { approvedBy: 'david' }, { mission_id: 'm-human' }),
+      row('mission.approved', 2_000, { approvedBy: 'user' }, { mission_id: 'm-human' }),
     ];
     const report = buildProjectReport(events, NOW);
     expect(report.completedMissions[0].autoMerged).toBeUndefined();

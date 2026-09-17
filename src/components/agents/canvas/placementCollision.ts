@@ -1,5 +1,5 @@
 /* placementCollision.ts — shared no-overlap placement primitives (fix/canvas-ux
-   R4a wave). David's invariant, verbatim: "le canvas pour chaque projet n'a
+   R4a wave). the owner's invariant, verbatim: "le canvas pour chaque projet n'a
    pas vraiment de limite en taille donc AUCUN agent ne doit être superposé ou
    l'un sur l'autre" — zones are effectively unbounded, so there is never a
    good reason for two rendered sibling nodes to overlap.
@@ -86,7 +86,7 @@ export interface FindFreePositionOptions {
  * node should read as "the next free slot after this one", not jump
  * somewhere above/left of where it started.
  *
- * Because the canvas is unbounded (David's rule), this never truly fails —
+ * Because the canvas is unbounded (the owner's rule), this never truly fails —
  * worst case it steps far enough right/down that nothing is left to collide
  * with; the `maxCols`/`maxRows` bound plus fallback below is just a sane
  * circuit-breaker, not a real limitation.
@@ -126,7 +126,7 @@ export interface PositionedItem {
 
 // ── Persisted-position declutter (fix/canvas-ux R10) ──────────────────────
 //
-// David's golden rule extended: NO overlap EVER, PINNED x PINNED included.
+// the owner's golden rule extended: NO overlap EVER, PINNED x PINNED included.
 // Before this wave, `resolveCollisions` above treated every persisted
 // (pinned) position as fully immovable — correct for a SINGLE session's own
 // deliberate drag, but wrong across successive runs: two different missions

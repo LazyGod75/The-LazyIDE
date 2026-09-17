@@ -33,7 +33,7 @@ vi.mock('../i18n', () => {
 });
 
 vi.mock('../lib/auth', () => ({
-  useAuth: () => ({ user: { id: 'user-1', email: 'david@example.com' }, loading: false, signOut: vi.fn() }),
+  useAuth: () => ({ user: { id: 'user-1', email: 'user@example.com' }, loading: false, signOut: vi.fn() }),
 }));
 
 vi.mock('../lib/billing', () => ({

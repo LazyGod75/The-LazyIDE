@@ -160,7 +160,7 @@ _uc-tests/dump-after-login.json
 # Ad-hoc QA screenshot dumps (racine, hors _e2e-shots/ déjà couvert plus haut)
 /e2e-screenshots/
 /uc11/
-/UsersDavidDocumentscerveauLazy_uc-testsrunsuc10/
+/uc-testsruns*/
 
 
 _log-*.txt
@@ -193,7 +193,7 @@ _run-*.bat
 /dist/public-export/
 
 # Accidental Windows path-collapse junk (never publish)
-/UsersDavid*
+/Users*Documents*
 
 # Old real-app screenshot dump (demo/screenshots) — replaced by the public
 # readme captures; not referenced by any code, never publish.

@@ -385,7 +385,7 @@ describe('MissionNodeCard — one constant card at every zoom (W-CARDS)', () => 
     expect(mergePassed.style.background).toContain('--color-merge');
   });
 
-  // fix/canvas-promote-icon (David's measured repro: the "promote" quick
+  // fix/canvas-promote-icon (the owner's measured repro: the "promote" quick
   // action on a rejected review card rendered as raw text carrying a
   // literal 🧠 emoji) — a rejected verdict adds the 'promote' quick action
   // (cockpitHelpers.ts's urgentActionsFor, isJudgeRejected); its label must
@@ -512,7 +512,7 @@ describe('VerdictChip — score format (fix/canvas-ux R4d defect #2)', () => {
     expect(chip.textContent).not.toContain('Verdict —');
   });
 
-  // fix/canvas-verdict-contradiction (David's measured repro, 2026-08-14) —
+  // fix/canvas-verdict-contradiction (the owner's measured repro, 2026-08-14) —
   // the claim this test used to lock in ("no contradiction to fix... nothing
   // elsewhere on the card claims 'approved'") was wrong in practice:
   // deriveLiveLine (missionLiveLine.ts) renders "Verdict : rejeté" for this
@@ -702,7 +702,7 @@ describe('MissionNodeCard — live-action line honestly shows "évaluation indis
 // sources its props from `fullMission` (agentsStore lookup) which is always
 // undefined in these bare fixture renders (no AgentsStoreProvider) — see
 // MissionNode.tsx's own doc comment on that honest-degradation lookup.
-// fix/canvas-cost-credits (David's measured repro: a claude-haiku-4-5
+// fix/canvas-cost-credits (the owner's measured repro: a claude-haiku-4-5
 // mission — routed on the user's OWN Claude CLI subscription — showed
 // "$0.07") — the owner's standing rule (already established elsewhere in
 // this codebase, types.ts's estimatedCreditsByModel doc comment): mission
@@ -1344,7 +1344,7 @@ describe('ProjectGroupNodeCard — empty-zone ghost hint + Transverse label (spe
     // ("Transverse" -> "T").
     //
     // fix/canvas-zone-title-overlap round 2 — REINSTATED by explicit product
-    // direction (David's measured repro, real packaged app, 12% zoom / 8
+    // direction (the owner's measured repro, real packaged app, 12% zoom / 8
     // zones: two neighbouring headers still overprinted each other even
     // after the character-cap fix — a character count alone doesn't bound
     // the BADGES, whose own on-screen footprint still grows with the same
@@ -1382,7 +1382,7 @@ describe('ProjectGroupNodeCard — empty-zone ghost hint + Transverse label (spe
     });
 
     // fix/canvas-zone-title-overlap — REVERSED by explicit product direction
-    // (David's measured repro, 2026-08-14: several open zones at low zoom,
+    // (the owner's measured repro, 2026-08-14: several open zones at low zoom,
     // one zone's title/badges painting directly over its neighbour's — the
     // SAME class of bug this describe block's "never truncate" rule was
     // reintroducing). The new hard constraint is "no adaptive hiding at
@@ -1431,14 +1431,14 @@ describe('ProjectGroupNodeCard — empty-zone ghost hint + Transverse label (spe
     });
 
     // fix/canvas-zone-title-clip — STATED EXPECTATION (required before
-    // implementing, per David's own instruction: "state what you expect
+    // implementing, per the owner's own instruction: "state what you expect
     // the header to read for a zone named uc-smoke-2026-08-12 at minimum
     // zoom, and make the test assert that"): given a zone widened to
     // `zoneMinWidthForTitle`'s own guarantee (geometry.ts, sized at
     // ZONE_SPACING_PRACTICAL_ZOOM — the "zoom people actually use" tier —
     // reconciler.test.ts's own sibling suite proves `reconcile()` actually
     // produces a zone this wide), the header renders the FULL name, no
-    // ellipsis. This is the exact real project name from David's own repro.
+    // ellipsis. This is the exact real project name from the owner's own repro.
     it('renders the FULL "uc-smoke-2026-08-12" name with no ellipsis, once the zone is widened to its own zoneMinWidthForTitle', () => {
       const longName = 'uc-smoke-2026-08-12';
       expect(longName.length).toBeLessThan(ZONE_TITLE_RESERVED_NAME_CHARS); // 19 < 28 — under the cap

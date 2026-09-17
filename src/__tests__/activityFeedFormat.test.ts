@@ -89,7 +89,7 @@ describe('humanizeActivityItem', () => {
   it('renders a project.opened event as "HH:MM projet ouvert · <basename>", never the full path', () => {
     const item = makeItem({
       event_type: 'project.opened',
-      payload_preview: '{"root":"C:\\\\Users\\\\David\\\\Documents\\\\cerveau\\\\LazySite-internet"}',
+      payload_preview: '{"root":"C:\\\\Users\\\\user\\\\Documents\\\\projects\\\\LazySite-internet"}',
     });
     const line = humanizeActivityItem(item, t);
     expect(line).not.toContain('{');

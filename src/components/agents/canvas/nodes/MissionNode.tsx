@@ -58,6 +58,7 @@ import {
   RetryHint,
   TypeGlyph,
   UrgentRankChip,
+  JevJudgmentChip,
   VerdictChip,
   WorktreeBranchBadge,
   buildNodeTooltip,
@@ -136,7 +137,7 @@ export function isHeartbeatStale(elapsedMs: number): boolean {
   return elapsedMs > HEARTBEAT_STALE_THRESHOLD_MS;
 }
 
-/** fix/canvas-promote-icon (David's measured repro: the "promote" quick
+/** fix/canvas-promote-icon (the owner's measured repro: the "promote" quick
  *  action rendered as raw text carrying a literal 🧠 emoji, a real card in
  *  a real screenshot — the ONE quick-action button left using an emoji
  *  instead of a drawn icon, every other icon on this card and its siblings
@@ -502,6 +503,7 @@ export function MissionNodeCard({ data, selected }: MissionNodeCardProps) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
           <ModelTierChip model={mission.model} />
           {mission.judgeVerdict && <VerdictChip verdict={mission.judgeVerdict} />}
+          {mission.jevJudgment && <JevJudgmentChip judgment={mission.jevJudgment} />}
           <CostChip
             costUsd={fullMission?.agentMetrics?.costUsd}
             tokensSource={fullMission?.agentMetrics?.tokensSource}
@@ -892,6 +894,7 @@ export function MissionNodeCard({ data, selected }: MissionNodeCardProps) {
               </span>
             )}
             {mission.judgeVerdict && <VerdictChip verdict={mission.judgeVerdict} />}
+            {mission.jevJudgment && <JevJudgmentChip judgment={mission.jevJudgment} />}
             {contestWinner && <ContestWinnerChip />}
             {/* W-UX3 core deliverable 1 — ticking token/cost counter: real
                 numbers only (see `liveMetricsLabel`'s own doc comment),

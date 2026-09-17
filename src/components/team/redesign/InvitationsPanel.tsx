@@ -52,7 +52,7 @@ function InvitationRow({ orgId, invitation, onRefetch }: { orgId: string; invita
     }
   }
 
-  /* Resend (David 2026-08-14): there is no dedicated "resend" RPC — the
+  /* Resend (user 2026-08-14): there is no dedicated "resend" RPC — the
      backend (supabase/functions/org-invite -> invite_member) only ever
      INSERTs a fresh row and has no upsert-by-email path, and it counts
      every status='pending' row (expired ones included — nothing in the DB
@@ -90,7 +90,7 @@ function InvitationRow({ orgId, invitation, onRefetch }: { orgId: string; invita
         gap: 12,
         padding: '10px 4px',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
-        // Layout fix (David 2026-08-14): an expired invite still needs an
+        // Layout fix (user 2026-08-14): an expired invite still needs an
         // action (Resend) — fading the whole row to 0.55 opacity made that
         // action itself look disabled/unavailable, and "Revoke" was the
         // ONLY control offered, which isn't the obvious move for a dead

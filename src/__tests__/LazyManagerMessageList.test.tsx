@@ -304,7 +304,7 @@ describe('LazyManagerMessageList — manager wakeup chip (managerWakeup.ts)', ()
   it('renders a \\\\?\\-prefixed path embedded mid-sentence clean, even on a message already in state (not freshly ingested)', () => {
     const leakedReason =
       "Rien à fusionner — le dossier worktree n'existe plus sur le disque " +
-      '(\\\\?\\C:\\Users\\user\\Documents\\cerveau\\LazySite-internet\\.lazy\\worktrees\\agent-x).';
+      '(\\\\?\\C:\\Users\\user\\Documents\\projects\\LazySite-internet\\.lazy\\worktrees\\agent-x).';
     renderList({
       managerMessages: [{
         id: 'w4',
@@ -807,14 +807,14 @@ describe('LazyManagerMessageList — no duplicated text in an assistant bubble',
 
 // Real, observed QA defect (2026-08-12): the "Open project" action chip
 // truncated a long path with a bare `.slice(0, 32)` — no ellipsis, no
-// marker — so `C:\Users\user\Documents\cerveau\scratchpad\uc-smoke-2026-08-12`
-// rendered as "Open project: C:\Users\user\Documents\cerveau", a real,
+// marker — so `C:\Users\user\Documents\projects\scratchpad\uc-smoke-2026-08-12`
+// rendered as "Open project: C:\Users\user\Documents\projects", a real,
 // different, plausible-looking (but WRONG) directory. See truncateLabel.ts
 // for the fix (truncatePathLabel: middle-truncation keeping the final
 // segment visible) — this is the end-to-end render-level regression test.
 describe('LazyManagerMessageList — action chip truncation never hides ambiguity (2026-08-12 QA)', () => {
   it('never renders a long open_project path as a DIFFERENT, valid-looking directory with no indicator', () => {
-    const longPath = String.raw`C:\Users\user\Documents\cerveau\scratchpad\uc-smoke-2026-08-12`;
+    const longPath = String.raw`C:\Users\user\Documents\projects\scratchpad\uc-smoke-2026-08-12`;
     renderList({
       managerMessages: [
         {
@@ -829,7 +829,7 @@ describe('LazyManagerMessageList — action chip truncation never hides ambiguit
     const bubble = screen.getByTestId('manager-message-assistant');
     // The exact real-repro defect: naive slice(0, 32) produced precisely
     // this different, real-looking directory — must never appear again.
-    expect(bubble.textContent).not.toMatch(/Open project: C:\\Users\\user\\Documents\\cerveau(?![\w\\])/);
+    expect(bubble.textContent).not.toMatch(/Open project: C:\\Users\\user\\Documents\\projects(?![\w\\])/);
     // The final path segment (what the user actually asked to open) must
     // stay visible, and a truncation indicator must be present.
     expect(bubble.textContent).toContain('uc-smoke-2026-08-12');

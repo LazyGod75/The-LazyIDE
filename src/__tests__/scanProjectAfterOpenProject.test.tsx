@@ -139,7 +139,7 @@ afterEach(() => {
 
 describe('scan_project right after open_project — same raw path, different drive-letter case only on the STORED side', () => {
   it('does NOT reject the just-opened project as "not a currently open project"', async () => {
-    const rawPath = 'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet';
+    const rawPath = 'C:\\Users\\user\\Documents\\projects\\LazySite-internet';
     installProjectRegistryFake();
 
     const { result } = renderHook(() => useCombined(), { wrapper: appWrapper });

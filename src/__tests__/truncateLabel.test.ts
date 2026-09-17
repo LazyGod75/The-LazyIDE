@@ -3,9 +3,9 @@
  * (LazyManager action-chip rendering, 2026-08-12 QA): every action-chip
  * label in LazyManagerMessageList.tsx's actionSummary() used a bare
  * `.slice(0, N)` with NO truncation indicator. For a filesystem path this is
- * actively misleading, not just cosmetic — `C:\Users\user\Documents\cerveau\
+ * actively misleading, not just cosmetic — `C:\Users\user\Documents\projects\
  * scratchpad\uc-smoke-2026-08-12`.slice(0, 32) produces EXACTLY
- * `C:\Users\user\Documents\cerveau`, a real, different, plausible-looking
+ * `C:\Users\user\Documents\projects`, a real, different, plausible-looking
  * directory with no ellipsis or marker at all. A human reading the chip has
  * no way to tell the label was cut short, let alone that a whole different
  * (and wrong) path is implied. Same class of bug on a task description
@@ -41,7 +41,7 @@ describe('truncateLabel', () => {
 });
 
 describe('truncatePathLabel', () => {
-  const longPath = String.raw`C:\Users\user\Documents\cerveau\scratchpad\uc-smoke-2026-08-12`;
+  const longPath = String.raw`C:\Users\user\Documents\projects\scratchpad\uc-smoke-2026-08-12`;
 
   it('returns the path unchanged when it already fits within maxLen', () => {
     expect(truncatePathLabel(String.raw`C:\short\path`, 60)).toBe(String.raw`C:\short\path`);
@@ -51,7 +51,7 @@ describe('truncatePathLabel', () => {
     const result = truncatePathLabel(longPath, 32);
     // The exact real-repro defect: naive slice(0, 32) on longPath produces
     // precisely this different, real-looking directory with zero indicator.
-    expect(result).not.toBe(String.raw`C:\Users\user\Documents\cerveau`);
+    expect(result).not.toBe(String.raw`C:\Users\user\Documents\projects`);
   });
 
   it('always shows a truncation indicator when the path is cut', () => {
@@ -84,7 +84,7 @@ describe('truncatePathLabel', () => {
   });
 
   it('handles forward-slash paths (POSIX) the same way', () => {
-    const posix = '/Users/david/Documents/cerveau/scratchpad/uc-smoke-2026-08-12';
+    const posix = '/Users/user/Documents/projects/scratchpad/uc-smoke-2026-08-12';
     const result = truncatePathLabel(posix, 40);
     expect(result.endsWith('uc-smoke-2026-08-12')).toBe(true);
     expect(result).toContain('\u2026');

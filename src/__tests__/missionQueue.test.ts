@@ -48,16 +48,16 @@ describe('missionQueue — verbatim-safe path join', () => {
   });
 
   it('enqueue() persists via a verbatim-safe joined path using backslash throughout, never a literal "/"', async () => {
-    const repoPath = String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project`;
+    const repoPath = String.raw`\\?\C:\Users\user\Documents\projects\qa-project`;
     await enqueue(repoPath, 'M1');
 
     expect(createDir).toHaveBeenCalledWith(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project\.lazy`,
+      String.raw`\\?\C:\Users\user\Documents\projects\qa-project\.lazy`,
     );
     expect(writeFile).toHaveBeenCalledTimes(1);
     const [writtenPath, writtenContent] = writeFile.mock.calls[0] as [string, string];
     expect(writtenPath).toBe(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project\.lazy\mission-queue.json`,
+      String.raw`\\?\C:\Users\user\Documents\projects\qa-project\.lazy\mission-queue.json`,
     );
     expect(writtenPath).not.toContain('/');
     expect(JSON.parse(writtenContent).missions[0].missionId).toBe('M1');

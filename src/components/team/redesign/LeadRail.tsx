@@ -94,7 +94,7 @@ export function LeadRail({ members, allocations, usageRows, seatsPaid }: LeadRai
         >
           {t('team.redesign.lead.rail.title')}
         </div>
-        {/* Money-pool disambiguation (David 2026-08-14): org_usage_summary
+        {/* Money-pool disambiguation (user 2026-08-14): org_usage_summary
             sums EVERY usage_events row for the member — both the personal-
             plan path (org_id null, billed against the member's own
             credits_remaining_cents) and the org-wallet path (org_id =
@@ -139,7 +139,7 @@ export function LeadRail({ members, allocations, usageRows, seatsPaid }: LeadRai
         </div>
 
         {signals.length === 0 ? (
-          // W-UX-team finding (David 2026-08-14): a single left-aligned line
+          // W-UX-team finding (user 2026-08-14): a single left-aligned line
           // of muted text inside this flex:1 panel left a large dead void
           // below it (the rail stretches to the viewport's full height).
           // Center the reassurance state instead so the empty space reads

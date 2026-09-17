@@ -5,7 +5,7 @@
    This module is a pure code-dedup extraction: each export below keeps the
    EXACT values its source card already used. The three cards visually
    disagree on what color a given status should be — see "Known
-   divergences" — and reconciling that is a product decision for David to
+   divergences" — and reconciling that is a product decision for user to
    make on purpose, not a side effect of removing duplication. Until he
    decides, each card keeps rendering with its own historical palette via
    its own named export.

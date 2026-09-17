@@ -26,14 +26,14 @@ import { breadcrumbSegments } from '../components/editor/BreadcrumbBar';
 
 describe('breadcrumbSegments', () => {
   it('renders project-relative segments (project name first) for a verbatim-prefixed (\\\\?\\) path — the live repro', () => {
-    const path = String.raw`\\?\C:\Users\dev\Documents\cerveau\scratchpad\uc-smoke-b\app.js`;
-    const projectRoot = String.raw`C:\Users\dev\Documents\cerveau\scratchpad\uc-smoke-b`;
+    const path = String.raw`\\?\C:\Users\dev\Documents\projects\scratchpad\uc-smoke-b\app.js`;
+    const projectRoot = String.raw`C:\Users\dev\Documents\projects\scratchpad\uc-smoke-b`;
     expect(breadcrumbSegments(path, projectRoot)).toEqual(['uc-smoke-b', 'app.js']);
   });
 
   it('renders project-relative segments for a plain "C:\\..." path with nested directories', () => {
-    const path = String.raw`C:\Users\dev\Documents\cerveau\Lazy\src\components\editor\BreadcrumbBar.tsx`;
-    const projectRoot = String.raw`C:\Users\dev\Documents\cerveau\Lazy`;
+    const path = String.raw`C:\Users\dev\Documents\projects\Lazy\src\components\editor\BreadcrumbBar.tsx`;
+    const projectRoot = String.raw`C:\Users\dev\Documents\projects\Lazy`;
     expect(breadcrumbSegments(path, projectRoot)).toEqual(['Lazy', 'src', 'components', 'editor', 'BreadcrumbBar.tsx']);
   });
 

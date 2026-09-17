@@ -146,12 +146,12 @@
    on-screen size, so node geometry still shrinks with the graph but text
    never does.
 
-   2026-08 "giant empty rectangle" fix (David, verbatim: "pourquoi la j'ai
+   2026-08 "giant empty rectangle" fix (user, verbatim: "pourquoi la j'ai
    un agent géant dans le canva ??") — investigated fresh against this
    exact file's own git history before touching anything. The empty boxes
    are NOT a bug: dcd708a ("readable plan proposal — empty graph boxes")
    deliberately removed free-text titles from inside these nodes after
-   David called the earlier labeled version illisible even WITH the
+   user called the earlier labeled version illisible even WITH the
    legibility-floor machinery above (MIN_LEGIBLE_LABEL_BOX_PX/counter-scaled
    fonts) already in place — and GraphProposalCardFit.test.tsx locks that
    decision in explicitly ("boxes are never labeled at any width... by

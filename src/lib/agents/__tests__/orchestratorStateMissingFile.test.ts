@@ -57,11 +57,11 @@ describe('loadOrchestratorsJson — absent .lazy/orchestrators.json', () => {
     // used to require.
     readFileMock.mockRejectedValue(
       new Error(
-        "read_file: metadata failed for 'C:\\Users\\user\\Documents\\cerveau\\scratchpad\\uc-smoke-2026-08-12\\.lazy\\orchestrators.json': Le fichier spécifié est introuvable. (os error 2)",
+        "read_file: metadata failed for 'C:\\Users\\user\\Documents\\projects\\scratchpad\\uc-smoke-2026-08-12\\.lazy\\orchestrators.json': Le fichier spécifié est introuvable. (os error 2)",
       ),
     );
 
-    const result = await listOrchestrators('C:\\Users\\user\\Documents\\cerveau\\scratchpad\\uc-smoke-2026-08-12');
+    const result = await listOrchestrators('C:\\Users\\user\\Documents\\projects\\scratchpad\\uc-smoke-2026-08-12');
 
     expect(result).toEqual([]);
     expect(warnSpy).not.toHaveBeenCalled();

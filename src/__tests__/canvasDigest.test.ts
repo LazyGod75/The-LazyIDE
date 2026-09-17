@@ -267,7 +267,7 @@ describe('buildCanvasDigest — chains + drafts', () => {
 // before comparing. ────────────────────────────────────────────────────────
 describe('resolveProjectRootById — path normalization before membership comparison', () => {
   it('resolves when the stored root and the queried id share the SAME uppercase drive letter (the real repro: both differ from the normalized key)', async () => {
-    const rawPath = 'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet';
+    const rawPath = 'C:\\Users\\user\\Documents\\projects\\LazySite-internet';
     installInvokeFake([{ id: 'reg-1', root: rawPath, brainId: null, active: true }], []);
 
     const root = await resolveProjectRootById(rawPath);
@@ -276,8 +276,8 @@ describe('resolveProjectRootById — path normalization before membership compar
   });
 
   it('resolves when the query uses forward slashes but the stored root uses backslashes', async () => {
-    const storedRoot = 'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet';
-    const queryPath = 'C:/Users/user/Documents/cerveau/LazySite-internet';
+    const storedRoot = 'C:\\Users\\user\\Documents\\projects\\LazySite-internet';
+    const queryPath = 'C:/Users/user/Documents/projects/LazySite-internet';
     installInvokeFake([{ id: 'reg-1', root: storedRoot, brainId: null, active: true }], []);
 
     const root = await resolveProjectRootById(queryPath);
@@ -286,18 +286,18 @@ describe('resolveProjectRootById — path normalization before membership compar
   });
 
   it('resolves when queried with the canvas digest\'s own lowercase-drive normalized id', async () => {
-    const storedRoot = 'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet';
+    const storedRoot = 'C:\\Users\\user\\Documents\\projects\\LazySite-internet';
     installInvokeFake([{ id: 'reg-1', root: storedRoot, brainId: null, active: true }], []);
 
-    const root = await resolveProjectRootById('c:\\Users\\user\\Documents\\cerveau\\LazySite-internet');
+    const root = await resolveProjectRootById('c:\\Users\\user\\Documents\\projects\\LazySite-internet');
 
     expect(root).toBe(storedRoot);
   });
 
   it('still returns undefined for a project that genuinely is not open (no false-positive matching)', async () => {
-    installInvokeFake([{ id: 'reg-1', root: 'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet', brainId: null, active: true }], []);
+    installInvokeFake([{ id: 'reg-1', root: 'C:\\Users\\user\\Documents\\projects\\LazySite-internet', brainId: null, active: true }], []);
 
-    const root = await resolveProjectRootById('C:\\Users\\user\\Documents\\cerveau\\SomeOtherProject');
+    const root = await resolveProjectRootById('C:\\Users\\user\\Documents\\projects\\SomeOtherProject');
 
     expect(root).toBeUndefined();
   });
@@ -305,17 +305,17 @@ describe('resolveProjectRootById — path normalization before membership compar
 
 describe('resolveDraftProjectId — same normalization for its exact-id match path', () => {
   it('resolves a raw uppercase-drive path to the directory\'s own normalized id', async () => {
-    const rawPath = 'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet';
+    const rawPath = 'C:\\Users\\user\\Documents\\projects\\LazySite-internet';
     installInvokeFake([{ id: 'reg-1', root: rawPath, brainId: null, active: false }], []);
 
     const resolution = await resolveDraftProjectId(rawPath);
 
-    expect(resolution.projectId).toBe('c:\\Users\\user\\Documents\\cerveau\\LazySite-internet');
+    expect(resolution.projectId).toBe('c:\\Users\\user\\Documents\\projects\\LazySite-internet');
     expect(resolution.unresolvedName).toBeUndefined();
   });
 
   it('still falls through to unresolvedName for a name/path that matches nothing', async () => {
-    installInvokeFake([{ id: 'reg-1', root: 'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet', brainId: null, active: false }], []);
+    installInvokeFake([{ id: 'reg-1', root: 'C:\\Users\\user\\Documents\\projects\\LazySite-internet', brainId: null, active: false }], []);
 
     const resolution = await resolveDraftProjectId('totally-unknown-project');
 

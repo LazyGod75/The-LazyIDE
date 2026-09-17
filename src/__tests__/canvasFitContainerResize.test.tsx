@@ -1,6 +1,6 @@
 /**
  * canvasFitContainerResize.test.tsx — fix/canvas-fit-stale-container
- * (David's round-7 measured repro, real packaged app: clicked "Fit view"
+ * (the owner's round-7 measured repro, real packaged app: clicked "Fit view"
  * with the manager overlay EXPANDED, then again with it COLLAPSED —
  * verified via DOM inspection that `manager-overlay` was actually gone,
  * `manager-overlay-expand` the only trace left — and got BYTE-IDENTICAL
@@ -26,7 +26,7 @@
  * step of the computation now traces back to ONE `getBoundingClientRect()`
  * call taken at click time; nothing in the path can be stale.
  *
- * David's own instruction, verbatim: "Verify this one live-equivalent (a
+ * the owner's own instruction, verbatim: "Verify this one live-equivalent (a
  * test with two different container widths), not just in a fixture at one
  * width — that is what let three rounds pass with the bug intact." This
  * suite mounts the REAL `<CanvasView>` tree (the SAME harness

@@ -845,6 +845,38 @@ export interface LazyBotRoutineFailedPayload {
   error: string;
 }
 
+// ── jev.* (TypeSafe Jev judgments — see src/lib/jev/) ────────────────
+
+/**
+ * Audit trail for every call the optional Jev mode makes — the founder's
+ * "everything agents do must be visible" rule applies to a paid external
+ * judgment primitive too. One event per jevAsk call site (not per
+ * question): `answers` carries the compact per-question results so the
+ * activity feed can show what Jev actually said without storing the raw
+ * `state` (which may contain user text we don't want duplicated).
+ */
+export interface JevJudgmentPayload {
+  /** Which call site asked: 'wakeup' | 'lazybot_fallback' | 'review'
+   *  | 'recall_rerank' | 'ask_jev' | 'tool'. */
+  subject: string;
+  /** Jev model used (e.g. 'jev-latest', 'jev-1.13.0'). */
+  model?: string;
+  latencyMs?: number;
+  inputTokens?: number;
+  /** Compact per-question results keyed by the caller's question id. */
+  answers?: Record<string, {
+    noul?: number;
+    choice?: string;
+    score?: number;
+    confidence?: number;
+  }>;
+  /** Whether the judgment actually changed what the code did next —
+   *  false = computed but ignored (threshold not met / keep-all). */
+  applied?: boolean;
+  /** Short human-readable detail (e.g. chosen bot id, kept hit count). */
+  note?: string;
+}
+
 // ── The discriminated union (spec §4.2, full vocabulary) ────────────
 
 export type JournalEventInput =
@@ -924,6 +956,7 @@ export type JournalEventInput =
   | Evt<'spawn.deferred', SpawnDeferredPayload>
   | Evt<'app.recovered', AppRecoveredPayload>
   | Evt<'agent.message_read', AgentMessageReadPayload>
+  | Evt<'jev.judgment', JevJudgmentPayload>
   | Evt<'frontend.error', FrontendErrorPayload>;
 
 /** P7.2 — Message read receipt for agent mailbox. */

@@ -17,7 +17,7 @@ import './canvas.css';
 import type { CSSProperties, ReactNode } from 'react';
 import { useI18n } from '../../../../i18n';
 import type { FleetMission } from '../../../../lib/agents/fleetMissions';
-import type { JudgeVerdict, PlanStep } from '../../../../lib/agents/types';
+import type { JudgeVerdict, Mission, PlanStep } from '../../../../lib/agents/types';
 import { conversationAccentColor } from '../../../../lib/agents/conversationColor';
 import { basename } from '../../../../lib/paths';
 import { FULL_CARD_MAX_HEIGHT, FULL_CARD_WIDTH } from '../geometry';
@@ -512,7 +512,7 @@ export function ConversationOriginDot({ conversationId }: { conversationId: stri
 }
 
 /**
- * fix/canvas-verdict-contradiction (David's measured repro, 2026-08-14: a
+ * fix/canvas-verdict-contradiction (the owner's measured repro, 2026-08-14: a
  * card's own body text read "REVIEW / Verdict: rejected" while this exact
  * chip, right next to it, read "Verdict —") — the judge's own reason, when
  * cheaply available, so a user facing a rejection can actually act on it
@@ -592,6 +592,58 @@ export function VerdictChip({ verdict }: { verdict: JudgeVerdict }) {
           ? t('canvas.node.verdictPassedNoScore')
           : t('canvas.node.verdictRejectedNoScore')
         : t('canvas.node.verdictScore', { score: Math.round(verdict.score) })}
+    </span>
+  );
+}
+
+/** TypeSafe Jev advisory judgment (Mission.jevJudgment — src/lib/jev/,
+ *  computed fire-and-forget when a mission enters review and Jev mode is
+ *  on). Advisory ONLY: never gates approve/reject — a compact hint chip
+ *  next to VerdictChip showing P(the diff satisfies the task), colored
+ *  green/amber/red, with the urgency level in the tooltip. */
+export function JevJudgmentChip({ judgment }: { judgment: NonNullable<Mission['jevJudgment']> }) {
+  const { t } = useI18n();
+  const pct = Math.round(judgment.satisfies * 100);
+  const tone =
+    judgment.satisfies >= 0.7
+      ? { bg: 'var(--color-success-soft)', fg: 'var(--color-success-text)' }
+      : judgment.satisfies >= 0.4
+        ? { bg: 'rgba(251,185,36,0.14)', fg: 'var(--color-warning-text)' }
+        : { bg: 'rgba(248,113,113,0.14)', fg: 'var(--color-danger-text)' };
+  // Defensive: judgment.urgency is normalized to 0..2 at write time, but a
+  // persisted mission from an older build could carry a raw float — index
+  // the label list with a clamped integer so the tooltip never degrades.
+  const urgencyIdx = Math.max(0, Math.min(2, Math.round(judgment.urgency)));
+  const urgencyLabel = [
+    t('canvas.node.jevUrgency0'),
+    t('canvas.node.jevUrgency1'),
+    t('canvas.node.jevUrgency2'),
+  ][urgencyIdx] ?? '';
+  // Confidence-gated display (TypeSafe confidence-routing pattern): a score
+  // the model itself is unsure about must LOOK unsure — a confidence-0.2
+  // hint rendered at full strength reads as a verdict. Older persisted
+  // judgments have no confidence → rendered normally.
+  const lowConf = typeof judgment.confidence === 'number' && judgment.confidence < 0.35;
+  const title = lowConf
+    ? `${t('canvas.node.jevJudgmentTitle', { pct, urgency: urgencyLabel })} · ${t('canvas.node.jevLowConfidence')}`
+    : t('canvas.node.jevJudgmentTitle', { pct, urgency: urgencyLabel });
+  return (
+    <span
+      data-testid="jev-judgment-chip"
+      data-low-confidence={lowConf || undefined}
+      title={title}
+      style={{
+        fontSize: 10.5,
+        fontWeight: 700,
+        padding: '1px 6px',
+        borderRadius: 4,
+        background: tone.bg,
+        color: tone.fg,
+        fontFamily: 'var(--font-mono)',
+        opacity: lowConf ? 0.55 : 1,
+      }}
+    >
+      Jev {pct}%{lowConf ? '?' : ''}
     </span>
   );
 }

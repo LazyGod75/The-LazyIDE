@@ -106,7 +106,7 @@ describe('visibleCenter', () => {
   });
 
   // fix/canvas-header-toolbar-overlap — a top-docked floating toolbar
-  // (David's verbatim repro: "j'ai toujours des agents sur le titre du
+  // (the owner's verbatim repro: "j'ai toujours des agents sur le titre du
   // cluster projet donc illisible") is the one occlusion that DOES touch
   // the Y axis, unlike the right panel/left rail above.
   describe('topInset (fix/canvas-header-toolbar-overlap)', () => {
@@ -229,7 +229,7 @@ describe('insetFitViewPadding', () => {
     });
   });
 
-  // fix/canvas-header-toolbar-overlap — David's verbatim repro: "j'ai
+  // fix/canvas-header-toolbar-overlap — the owner's verbatim repro: "j'ai
   // toujours des agents sur le titre du cluster projet donc illisible",
   // measured live at zoom 0.21 — a zone header title sliding under the
   // floating toolbar after any fitView (boot, fit button, "Rangement
@@ -261,7 +261,7 @@ describe('insetFitViewPadding', () => {
     });
   });
 
-  // fix/canvas-toolbar-fit-floor — David's real-app repro: after "Ranger" +
+  // fix/canvas-toolbar-fit-floor — the owner's real-app repro: after "Ranger" +
   // "Fit view" (packaged build, manager collapsed), the first row of zone
   // plaques still landed under the toolbar even though `toolbarHeight`
   // should have reserved room — i.e. the real DOM measurement can silently
@@ -311,7 +311,7 @@ describe('insetFitViewPadding', () => {
     });
   });
 
-  // fix/canvas-toolbar-fit-floor round 2 (David's corrected real-app
+  // fix/canvas-toolbar-fit-floor round 2 (the owner's corrected real-app
   // measurement: `.canvas-zone-header` — the plaque's own box, not the name
   // span inside it — measured top=86 while the toolbar spanned y=79..121,
   // overlapping, even with CANVAS_TOOLBAR_MIN_TOP_RESERVE_PX alone applied).
@@ -404,7 +404,7 @@ describe('measureDockedPanelInsets', () => {
     expect(measureDockedPanelInsets(canvas)).toEqual({ panelWidth: 0, railWidth: 0, toolbarHeight: 0, fluxHeight: 0 });
   });
 
-  // fix/canvas-header-toolbar-overlap — David's verbatim repro: "j'ai
+  // fix/canvas-header-toolbar-overlap — the owner's verbatim repro: "j'ai
   // toujours des agents sur le titre du cluster projet donc illisible".
   describe('toolbarHeight (fix/canvas-header-toolbar-overlap)', () => {
     it("measures the toolbar's occlusion height relative to the canvas container's own top edge (not the toolbar's raw height alone)", () => {
@@ -451,7 +451,7 @@ describe('measureDockedPanelInsets', () => {
     });
   });
 
-  // fix/canvas-usable-rect — David's explicit ask: "minus the FLUX bar at
+  // fix/canvas-usable-rect — the owner's explicit ask: "minus the FLUX bar at
   // the bottom". Mirrors the toolbarHeight describe block above exactly
   // (same shape, same edges, same degenerate guards) — the bottom-occlusion
   // analog of the top one.
@@ -502,7 +502,7 @@ describe('measureDockedPanelInsets', () => {
   });
 });
 
-// fix/canvas-usable-rect — David's explicit ask: "make it one usable canvas
+// fix/canvas-usable-rect — the owner's explicit ask: "make it one usable canvas
 // rect helper so every framing path shares it".
 describe('usableCanvasRect', () => {
   it('returns exactly the same shape insetFitViewPadding already returned (a one-line alias, single source of truth)', () => {
@@ -516,7 +516,7 @@ describe('usableCanvasRect', () => {
   });
 });
 
-// fix/canvas-usable-rect (David's forensics: "fit" clipped content off the
+// fix/canvas-usable-rect (the owner's forensics: "fit" clipped content off the
 // LEFT edge — a minZoom floor forcing zoom higher than the padded content
 // could satisfy, which getViewportForBounds's own asymmetric-padding
 // correction cannot resolve on its own). computeSafeMinZoom is a pure

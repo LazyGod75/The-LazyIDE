@@ -17,6 +17,9 @@ export const MANAGER_ACTION_EXECUTOR_NOOPS = new Set<string>([
   'brain_neighbours',
   'web_search',
   'web_fetch',
+  // ask_jev is resolved by agentsStore.tsx's grounding pass (the same
+  // lane as web_search above) — the executor itself is a no-op.
+  'ask_jev',
   'scan_project',
   'briefing_query',
   'decision_lookup',

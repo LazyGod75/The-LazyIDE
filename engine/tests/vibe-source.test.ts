@@ -76,7 +76,7 @@ describe('VibeSource', () => {
     const { readFileSync, writeFileSync } = await import('node:fs');
     const metaPath = join(home, 'logs', 'session', 'session_20260601_120000_a1b2c3d4', 'meta.json');
     const meta = JSON.parse(readFileSync(metaPath, 'utf8'));
-    meta.environment.working_directory = 'C:/Users/x/Documents/cerveau/LazyBrain';
+    meta.environment.working_directory = 'C:/Users/x/Documents/projects/LazyBrain';
     writeFileSync(metaPath, JSON.stringify(meta), 'utf8');
     const ref = source
       .listConversations()

@@ -2,7 +2,7 @@
    QA report (2026-08-15, live in the running app):
 
    1. Every file row rendered its FULL absolute path (e.g.
-      "C:\Users\user\Documents\cerveau\LazySite-internet\docs\CAPABILITIES.md"),
+      "C:\Users\user\Documents\projects\LazySite-internet\docs\CAPABILITIES.md"),
       noisy and exposing the user's home-directory layout. Fixed the same way
       BreadcrumbBar.tsx's breadcrumb was (commit 39dba51): buildFileItems
       (paletteItems.ts) now renders a project-relative hint — project name
@@ -33,7 +33,7 @@ vi.mock('../lib/platform', async (importOriginal) => {
   return { ...actual, getPlatform: vi.fn() };
 });
 
-const PROJECT_ROOT = 'C:\\Users\\user\\Documents\\cerveau\\demo-project';
+const PROJECT_ROOT = 'C:\\Users\\user\\Documents\\projects\\demo-project';
 const FILE_PATH = `${PROJECT_ROOT}\\src\\index.ts`;
 
 vi.mock('../app/AppContext', async (importOriginal) => {

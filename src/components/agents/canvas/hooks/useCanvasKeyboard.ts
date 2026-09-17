@@ -263,7 +263,7 @@ export function useCanvasKeyboard({
       // shortcuts further down (Shift+F, O/L/D inspect, ?) stay live: they
       // never change canvas state.
       //
-      // David's repro (2026-08-15): Tab USED to be bound here
+      // the owner's repro (2026-08-15): Tab USED to be bound here
       // (`e.preventDefault(); h.onTogglePalette();`), which made it a dead
       // key the instant the pointer hovered the canvas (`hoveredRef` gates
       // this whole listener) — `preventDefault()` on Tab suppresses the

@@ -59,6 +59,10 @@ const BYOK_LOCALSTORAGE_PREFIX = 'lazy.apikey.';
  *  build — migrating (rather than ignoring) it is the honest cleanup. */
 export const ALL_BYOK_PROVIDER_IDS = [
   'anthropic', 'openai', 'google', 'deepseek', 'openrouter', 'xai', 'groq', 'mistral',
+  // 'typesafe' is not a chat provider (no BYOK_PROVIDER_DEFS entry) — it is
+  // the Jev capability key (src/lib/jev/jevMode.ts), listed here so a
+  // `lazy.apikey.typesafe` localStorage value migrates to the vault too.
+  'typesafe',
 ] as const;
 
 /** Vault key a BYOK provider's API key is stored under. */

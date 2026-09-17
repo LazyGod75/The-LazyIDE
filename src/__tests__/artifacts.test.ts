@@ -49,16 +49,16 @@ describe('artifacts — verbatim-safe path join', () => {
   });
 
   it('saveArtifacts() persists via a verbatim-safe joined path using backslash throughout, never a literal "/"', async () => {
-    const repoPath = String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project`;
+    const repoPath = String.raw`\\?\C:\Users\user\Documents\projects\qa-project`;
     await saveArtifacts(repoPath, makeMission());
 
     expect(createDir).toHaveBeenCalledWith(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project\.lazy\artifacts`,
+      String.raw`\\?\C:\Users\user\Documents\projects\qa-project\.lazy\artifacts`,
     );
     expect(writeFile).toHaveBeenCalledTimes(1);
     const [writtenPath] = writeFile.mock.calls[0] as [string, string];
     expect(writtenPath).toBe(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project\.lazy\artifacts\m-1.json`,
+      String.raw`\\?\C:\Users\user\Documents\projects\qa-project\.lazy\artifacts\m-1.json`,
     );
     expect(writtenPath).not.toContain('/');
   });

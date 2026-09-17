@@ -120,7 +120,7 @@ describe('useCanvasHydration — BUG 1 (W6f data-loss guard)', () => {
 });
 
 describe('useCanvasHydration — boot viewport sanity guard (W-UX3 finding B)', () => {
-  it('falls back to fitView when the persisted zoom is out of range (David repro: 188%)', async () => {
+  it('falls back to fitView when the persisted zoom is out of range (user repro: 188%)', async () => {
     const layout = { ...defaultCanvasLayout(), viewport: { x: 0, y: 0, zoom: 1.88 } };
     loadCanvasPersisted.mockResolvedValue({ layout, chainsFile: defaultCanvasChains() });
 

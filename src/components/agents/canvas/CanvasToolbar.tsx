@@ -204,7 +204,7 @@ const FIT_VERTICAL_PADDING = 0.2;
 // changes (background/color), matching the same duration every other
 // interactive canvas surface (chrome/canvas.css) now shares.
 //
-// fix/canvas-toolbar-squeeze (David's measured repro, real packaged app:
+// fix/canvas-toolbar-squeeze (the owner's measured repro, real packaged app:
 // reserving the ManagerOverlay's lane shrank this row's own available width
 // from ~1066px to ~848px — with no `flexShrink: 0` floor, flexbox's DEFAULT
 // shrink behavior compressed every child proportionally instead of the row
@@ -253,7 +253,7 @@ const ACTIVE_TOGGLE_STYLE: CSSProperties = {
 };
 
 /**
- * fix/canvas-toolbar-oscillation — Option B, David's own explicit fallback.
+ * fix/canvas-toolbar-oscillation — Option B, the owner's own explicit fallback.
  * Two live fix attempts at a WIDTH-REACTIVE demotion mechanism (a
  * ResizeObserver-driven overflow set, then the same set plus a
  * canvas-view-derived maxWidth and hysteresis on top of it) both failed to
@@ -266,7 +266,7 @@ const ACTIVE_TOGGLE_STYLE: CSSProperties = {
  * computation again. Index 0 is the least essential (first choice for
  * always-demoted); the LAST entries are the ones kept always-visible — see
  * TOOLBAR_ALWAYS_VISIBLE_KEYS below, which decides the split ONCE, not per
- * render. No entry ever moves between the two sets at runtime. David's own
+ * render. No entry ever moves between the two sets at runtime. the owner's own
  * explicit floor — fit / zoom / search — never appears here at all; neither
  * does the overflow-toggle itself (it IS the escape valve) nor the two
  * contextual/urgent controls (focus-failures, launch-selected-draft), which
@@ -440,7 +440,7 @@ interface CanvasLegendPopoverProps {
 }
 
 /**
- * fix/canvas-legibility — the toolbar's status legend: David's QA finding
+ * fix/canvas-legibility — the toolbar's status legend: the owner's QA finding
  * "colors have no legend, no icons readable" — this is the direct answer,
  * mapping every {@link NodeLiveness} to its glyph + accent color + label in
  * one place, reachable at any zoom level (unlike a per-node tooltip, which
@@ -538,7 +538,7 @@ interface OverflowMenuProps {
   triggerRef?: RefObject<HTMLElement | null>;
   /**
    * fix/canvas-toolbar-squeeze — pre-built menu rows for whatever main-row
-   * controls `TOOLBAR_DEMOTABLE_PRIORITY` currently has demoted (David's
+   * controls `TOOLBAR_DEMOTABLE_PRIORITY` currently has demoted (the owner's
    * own explicit ask: "move controls into the overflow menu ... instead of
    * squeezing every button"). Built by the caller (CanvasToolbar itself
    * already owns every one of these controls' onClick/active-state
@@ -959,7 +959,7 @@ export function CanvasToolbar({
   // qualifies as the `measureDockedPanelInsets` anchor, so this component's
   // own root div works without any extra prop drilling from CanvasView.
   const toolbarRootRef = useRef<HTMLDivElement | null>(null);
-  // fix/canvas-collapse-reservation (David's round-8 report, after
+  // fix/canvas-collapse-reservation (the owner's round-8 report, after
   // fix/canvas-fit-stale-container already made "fit" measure the LIVE
   // container correctly: "the maths is right, the input is wrong" — the
   // canvas container itself stayed the OLD, narrower width after the
@@ -971,7 +971,7 @@ export function CanvasToolbar({
   // extracted here so it can run from TWO triggers instead of one: the
   // button's own onClick (unchanged), and a `ResizeObserver` on that SAME
   // container (below) — "the view is usable immediately rather than after
-  // the user clicks fit again" (David's own words) means the canvas must
+  // the user clicks fit again" (the owner's own words) means the canvas must
   // react to ITS OWN container actually changing size, not wait for a
   // second deliberate click.
   const runFit = useCallback(() => {
@@ -1280,7 +1280,7 @@ export function CanvasToolbar({
           // P47 — panel-aware: without this, "fit view" itself can settle
           // the whole fleet under the docked ManagerOverlay's right edge.
           //
-          // fix/canvas-fit-fill-ratio (David's measured repro: "fit"
+          // fix/canvas-fit-fill-ratio (the owner's measured repro: "fit"
           // collapsing to 18% zoom / 7% fill for 8 project zones) — this
           // plain "fit everything" button used to call `fitView` with NO
           // `minZoom` at all, unlike its sibling whole-canvas fit
@@ -1295,7 +1295,7 @@ export function CanvasToolbar({
           // past it, but never further than the whole-canvas floor every
           // other "fit everything" call site already respects.
           //
-          // fix/canvas-usable-rect (David's forensics: a busier canvas whose
+          // fix/canvas-usable-rect (the owner's forensics: a busier canvas whose
           // content genuinely needed to zoom out further than
           // ARRANGE_MIN_READABLE_ZOOM got its zoom forced UP to that floor
           // anyway, and getViewportForBounds's own asymmetric-padding
@@ -1543,7 +1543,7 @@ export function CanvasToolbar({
           style={{
             width: 128,
             // fix/canvas-toolbar-squeeze — "keep zoom/fit/search reachable"
-            // (David's own explicit floor): a fixed `width` alone still
+            // (the owner's own explicit floor): a fixed `width` alone still
             // shrinks under flex pressure (flex-shrink defaults to 1
             // regardless of an explicit width) — this is the one non-button
             // essential control in the row, so it gets the same floor.

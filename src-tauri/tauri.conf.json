@@ -23,7 +23,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:* https://*.supabase.co wss://*.supabase.co ipc: http://ipc.localhost https://api.deepseek.com https://api.openai.com https://openrouter.ai https://api.x.ai https://api.groq.com https://api.mistral.ai https://api.anthropic.com https://api.getsolari.com wss://api.getsolari.com https://mcp.getsolari.com; frame-src 'self' http://localhost:* http://127.0.0.1:* https://*.getsolari.com;"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:* https://*.supabase.co wss://*.supabase.co ipc: http://ipc.localhost https://api.deepseek.com https://api.openai.com https://openrouter.ai https://api.x.ai https://api.groq.com https://api.mistral.ai https://api.anthropic.com https://api.getsolari.com wss://api.getsolari.com https://mcp.getsolari.com https://api.typesafe.ai; frame-src 'self' http://localhost:* http://127.0.0.1:* https://*.getsolari.com;"
     }
   },
   "plugins": {

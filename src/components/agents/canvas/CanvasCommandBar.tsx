@@ -26,7 +26,7 @@
    offers corner anchors, never a true center, and this component needs no
    live viewport/RF context.
 
-   ── fix/canvas-command-bar-stuck-overlay (David's forensics, real packaged
+   ── fix/canvas-command-bar-stuck-overlay (the owner's forensics, real packaged
       app: a click-through-proof full-viewport overlay bricked the app —
       canvas-command-bar-overlay measured `position: fixed`, `inset: 0`
       (0,0 -> 1440x844, the ENTIRE viewport), `zIndex: 2100`, covering the

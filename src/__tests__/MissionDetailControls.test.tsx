@@ -83,7 +83,7 @@ vi.mock('../components/agents/agentsStore', () => ({
   resolveProjectRoot: () => resolveProjectRootSpy(),
 }));
 
-const REAL_ROOT = 'C:\\Users\\user\\Documents\\cerveau\\Lazy';
+const REAL_ROOT = 'C:\\Users\\user\\Documents\\projects\\Lazy';
 
 const reviewMission: Mission = {
   id: 'm-review',

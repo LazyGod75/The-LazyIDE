@@ -287,6 +287,37 @@ const validators: Record<string, Validator> = {
   },
   web_search: (a) => check(requireString(a, 'query')),
   web_fetch: (a) => check(requireString(a, 'url')),
+  // ask_jev (TypeSafe Jev — optional, gated at execution by Jev mode):
+  // `state` is any JSON value (unchecked — opaque context), `questions`
+  // is the typed contract the grounding resolver maps onto the Jev wire
+  // format. Structural check only — semantics live in the prompt.
+  ask_jev: (a) => {
+    const qs = requireArray(a, 'questions');
+    if (qs !== true) return fail(qs);
+    const list = a['questions'] as unknown[];
+    if (list.length === 0) return fail('"questions" must have at least one entry');
+    for (const q of list) {
+      if (typeof q !== 'object' || q === null || Array.isArray(q)) {
+        return fail('a "questions" entry must be an object');
+      }
+      const qq = q as Record<string, unknown>;
+      const id = requireString(qq, 'id');
+      if (id !== true) return fail(`question ${id}`);
+      const qt = qq['type'];
+      if (qt !== 'noul' && qt !== 'choice' && qt !== 'score') {
+        return fail(`question "${qq['id']}": "type" must be "noul", "choice", or "score"`);
+      }
+      const instr = requireString(qq, 'instructions');
+      if (instr !== true) return fail(`question ${instr}`);
+      if (qt === 'choice' || qt === 'score') {
+        const opts = qq['options'];
+        if (!Array.isArray(opts) || opts.length < 2 || !opts.every((o) => typeof o === 'string')) {
+          return fail(`question "${qq['id']}" (${qt}) needs "options" — at least 2 strings`);
+        }
+      }
+    }
+    return ok();
+  },
   query_mission: (a) => check(requireString(a, 'missionId')),
   get_agent_output: (a) => check(requireString(a, 'missionId')),
   clone_mission: (a) => check(requireString(a, 'missionId')),

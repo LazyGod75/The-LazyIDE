@@ -83,11 +83,11 @@ describe('isAbsolutePathWin', () => {
 
 describe('joinPath', () => {
   it('joins segments onto a Windows verbatim (\\\\?\\) base using backslash throughout, never introducing a "/"', () => {
-    const base = String.raw`\\?\C:\Users\user\Documents\cerveau\Lazy`;
+    const base = String.raw`\\?\C:\Users\user\Documents\projects\Lazy`;
     const result = joinPath(base, '.lazy', 'worktrees', 'agent-m-review-fix-thing');
 
     expect(result).toBe(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\Lazy\.lazy\worktrees\agent-m-review-fix-thing`,
+      String.raw`\\?\C:\Users\user\Documents\projects\Lazy\.lazy\worktrees\agent-m-review-fix-thing`,
     );
     expect(result).not.toContain('/');
   });
@@ -152,7 +152,7 @@ describe('stripVerbatimPrefix — shared across consumers', () => {
 
 describe('basename', () => {
   it('extracts the last segment of a Windows path', () => {
-    expect(basename('C:\\Users\\user\\Documents\\cerveau\\demo-shop')).toBe('demo-shop');
+    expect(basename('C:\\Users\\user\\Documents\\projects\\demo-shop')).toBe('demo-shop');
   });
 
   it('extracts the last segment of a POSIX path', () => {
@@ -181,8 +181,8 @@ describe('basename', () => {
 
 describe('normalizeRepoPathForGit', () => {
   it('strips the verbatim prefix and leaves a clean backslash path untouched', () => {
-    const prefixed = String.raw`\\?\C:\Users\user\Documents\cerveau\demo-shop`;
-    expect(normalizeRepoPathForGit(prefixed)).toBe(String.raw`C:\Users\user\Documents\cerveau\demo-shop`);
+    const prefixed = String.raw`\\?\C:\Users\user\Documents\projects\demo-shop`;
+    expect(normalizeRepoPathForGit(prefixed)).toBe(String.raw`C:\Users\user\Documents\projects\demo-shop`);
   });
 
   it('strips the verbatim prefix AND fixes a mixed-separator verbatim path (the actual "os error 267" repro)', () => {
@@ -232,8 +232,8 @@ describe('isPathWithinRoot', () => {
   it('is true when a verbatim-prefixed root matches a plain, differently-cased same directory', () => {
     expect(
       isPathWithinRoot(
-        String.raw`\\?\C:\Users\user\Documents\cerveau\lazy-backoffice`,
-        String.raw`c:\Users\user\Documents\cerveau\lazy-backoffice`,
+        String.raw`\\?\C:\Users\user\Documents\projects\lazy-backoffice`,
+        String.raw`c:\Users\user\Documents\projects\lazy-backoffice`,
       ),
     ).toBe(true);
   });
@@ -253,8 +253,8 @@ describe('isPathWithinRoot', () => {
   it('is false for a sibling directory sharing a name PREFIX (…\\Lazy vs …\\LazySite-internet)', () => {
     expect(
       isPathWithinRoot(
-        String.raw`C:\Users\user\Documents\cerveau\Lazy`,
-        String.raw`C:\Users\user\Documents\cerveau\LazySite-internet\src\a.ts`,
+        String.raw`C:\Users\user\Documents\projects\Lazy`,
+        String.raw`C:\Users\user\Documents\projects\LazySite-internet\src\a.ts`,
       ),
     ).toBe(false);
   });
@@ -266,7 +266,7 @@ describe('isPathWithinRoot', () => {
 });
 
 // ── stripVerbatimPrefixesInText (9th instance — Settings Health panel
-//    rendering a raw "\\?\C:\Users\user\Documents\cerveau" error detail
+//    rendering a raw "\\?\C:\Users\user\Documents\projects" error detail
 //    verbatim; see this file's header and paths.ts's own doc comment on
 //    this function for the full history) ──────────────────────────────
 
@@ -274,10 +274,10 @@ describe('stripVerbatimPrefixesInText', () => {
   it('strips a verbatim prefix embedded mid-sentence in a Rust error message', () => {
     const msg =
       "access denied: '" +
-      String.raw`\\?\C:\Users\user\Documents\cerveau` +
+      String.raw`\\?\C:\Users\user\Documents\projects` +
       "' is outside every registered project root (8 checked)";
     expect(stripVerbatimPrefixesInText(msg)).toBe(
-      "access denied: 'C:\\Users\\user\\Documents\\cerveau' is outside every registered project root (8 checked)",
+      "access denied: 'C:\\Users\\user\\Documents\\projects' is outside every registered project root (8 checked)",
     );
   });
 

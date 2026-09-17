@@ -359,7 +359,7 @@ mod tests {
         let brain_dir = tmp.path().join("brain");
         std::fs::create_dir_all(brain_dir.join("notes")).expect("create brain/notes dir");
         // Legacy config lives in the PARENT of brain_dir, mirroring the
-        // product owner's real Lazy-Brain-David layout: config sits next to
+        // product owner's real Lazy-Brain-user layout: config sits next to
         // (not inside) the `brain/` leaf.
         std::fs::write(tmp.path().join(".lazybrain-config.json"), "{}").expect("write legacy config");
 

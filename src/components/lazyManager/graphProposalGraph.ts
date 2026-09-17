@@ -64,7 +64,7 @@ export interface ProposalGraph {
   edges: ProposalGraphEdge[];
 }
 
-// 2026-08 "giant empty rectangle" fix (David, verbatim: "pourquoi la j'ai
+// 2026-08 "giant empty rectangle" fix (user, verbatim: "pourquoi la j'ai
 // un agent géant dans le canva ??") — this box used to be 180x84 while its
 // ONLY content (since the 2026-08-06 "rectangles vides" decision, dcd708a:
 // free-text titles inside these boxes were tried and explicitly rejected as

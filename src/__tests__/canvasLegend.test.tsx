@@ -132,7 +132,7 @@ describe('CanvasToolbar — status legend popover (fix/canvas-legibility)', () =
     expect(screen.queryByTestId('canvas-legend-popover')).not.toBeInTheDocument();
   });
 
-  // David's repro (2026-08-15): Escape reliably failed to close this exact
+  // the owner's repro (2026-08-15): Escape reliably failed to close this exact
   // popover in the real app. Root cause was useDismissable.ts's effect
   // depending on `onClose` — CanvasLegendPopover is passed
   // `onClose={() => setLegendOpen(false)}`, a fresh lambda on every

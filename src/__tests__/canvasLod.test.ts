@@ -53,7 +53,7 @@ describe('three-tier fleet view thresholds (W-UX3, fix/canvas-legibility)', () =
     expect(ZOOM_AGGREGATE).toBeLessThan(ZOOM_CHIP);
   });
 
-  it("David's 10% repro zoom no longer lands in any hiding tier — content stays visible", () => {
+  it("the owner's 10% repro zoom no longer lands in any hiding tier — content stays visible", () => {
     expect(0.1).toBeGreaterThan(ZOOM_AGGREGATE); // aggregate tier can never engage
     expect(0.35).toBeGreaterThan(ZOOM_AGGREGATE);
     expect(0.35).toBeLessThan(ZOOM_CHIP);
@@ -88,7 +88,7 @@ describe('lodScale — constant screen-size compensation', () => {
   });
 
   // scratch/_canvas-label-design.md §3.2 ("compensation bornée, le modèle
-  // tldraw") — David's original repro zoom (0.1) is now BELOW the raised
+  // tldraw") — the owner's original repro zoom (0.1) is now BELOW the raised
   // LOD_FLOOR_ZOOM (0.25), so the dot no longer holds a full 18 screen px
   // there BY DESIGN (it shrinks with the canvas past the floor, same as
   // tldraw's own `min(scale, 3.5)` cap) — the constant-screen-size guarantee
@@ -156,7 +156,7 @@ describe('lodScale — constant screen-size compensation', () => {
   });
 });
 
-// fix/canvas-header-overflow — measured bug: at low zoom (David's own
+// fix/canvas-header-overflow — measured bug: at low zoom (the owner's own
 // 14-17% repro), a project/frame header's LOD-compensated identity cluster
 // overflowed past its own zone and covered a NEIGHBOURING zone's title
 // (measured: "Lazy" covered by the lazy-backoffice/LazySite-internet
@@ -192,7 +192,7 @@ describe('titleBandHeight — zoom-compensated title band height (fix/canvas-tit
     }
   });
 
-  // scratch/_canvas-label-design.md §3.2 — David's ORIGINAL repro zoom
+  // scratch/_canvas-label-design.md §3.2 — the owner's ORIGINAL repro zoom
   // (0.13) is now below the raised LOD_FLOOR_ZOOM (0.25): the row is
   // already at its fixed max (176 flow px, capped — see the next test) and
   // shrinks WITH zoom below that point, same bounded-compensation shape as

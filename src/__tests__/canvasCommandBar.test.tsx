@@ -143,11 +143,11 @@ describe('CanvasCommandBar', () => {
   });
 });
 
-// fix/canvas-command-bar-stuck-overlay (David's forensics, real packaged
+// fix/canvas-command-bar-stuck-overlay (the owner's forensics, real packaged
 // app: a full-viewport `position: fixed` overlay at zIndex 2100 covered the
 // top navigation and swallowed every click app-wide; two Escape presses did
 // not close it). These pin the STRUCTURAL invariants the fix relies on —
-// never a test that reproduces the exact keystroke sequence David could not
+// never a test that reproduces the exact keystroke sequence user could not
 // even reliably reproduce himself.
 describe('CanvasCommandBar — stuck-overlay hardening (fix/canvas-command-bar-stuck-overlay)', () => {
   it('is positioned absolute within its own container, never fixed to the viewport — cannot spatially reach the top navigation regardless of z-index', async () => {
@@ -169,7 +169,7 @@ describe('CanvasCommandBar — stuck-overlay hardening (fix/canvas-command-bar-s
   // (React's synthetic onKeyDown on the overlay div) only ever fires while
   // DOM focus is still somewhere INSIDE the overlay — Escape pressed after
   // focus has moved elsewhere (a toast, an async update elsewhere in a busy
-  // session — exactly what David's own forensics describe) never reached
+  // session — exactly what the owner's own forensics describe) never reached
   // it, and useCanvasKeyboard.ts's own separate window-level Escape handler
   // has no notion of `commandBarOpen` at all. Dispatching the keydown on
   // `window` itself (not on any element inside the overlay) proves Escape

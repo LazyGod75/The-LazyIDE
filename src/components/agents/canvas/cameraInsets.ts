@@ -3,7 +3,7 @@
    the manager's 'canvas:focus' bus event, the zone mission-roster dot's
    `onFocusNode`) used to center against the FULL container width — with
    the ~360px ManagerOverlay docked right (Cockpit.tsx), a freshly focused
-   node landed mostly (David measured ~80%) UNDER that panel: "y a un agent
+   node landed mostly (user measured ~80%) UNDER that panel: "y a un agent
    invisible". React Flow's own `fitView` supports asymmetric per-side
    `padding` (@xyflow/system's `Padding` — the exact mechanism
    `getViewportForBounds` already uses for its own breathing-room fraction),
@@ -30,7 +30,7 @@
    not unit tests; jsdom has no real layout engine, see CanvasView.test.tsx's
    own "container sizing" caveat for the identical limitation).
 
-   ── fix/canvas-header-toolbar-overlap (David's verbatim: "j'ai toujours
+   ── fix/canvas-header-toolbar-overlap (the owner's verbatim: "j'ai toujours
       des agents sur le titre du cluster projet donc illisible", measured
       live at zoom 0.21) ──────────────────────────────────────────────────
    `DockedPanelInsets` gained a THIRD real-DOM measurement, `toolbarHeight`:
@@ -142,7 +142,7 @@ export interface DockedPanelInsets {
    */
   toolbarHeight: number;
   /**
-   * fix/canvas-usable-rect (David's forensics: "fit" clipped content off
+   * fix/canvas-usable-rect (the owner's forensics: "fit" clipped content off
    * the LEFT edge because nothing accounted for the left rail in a
    * clamped-zoom scenario — see `computeSafeMinZoom`'s own doc comment for
    * the actual root cause — plus his own explicit ask: "minus the FLUX bar
@@ -339,7 +339,7 @@ export function setCenterTarget(
 export const DEFAULT_HORIZONTAL_GUTTER_PX = 24;
 
 /**
- * fix/canvas-toolbar-fit-floor (David's real-app measurement, packaged
+ * fix/canvas-toolbar-fit-floor (the owner's real-app measurement, packaged
  * build, 1440x844, manager collapsed, after "Ranger" + "Fit view": toolbar's
  * own rendered rect y=79..121 — i.e. Panel's default ~15-16px top margin
  * plus the toolbar's own ~38-42px fixed height, `fix/canvas-toolbar-
@@ -373,7 +373,7 @@ export const DEFAULT_HORIZONTAL_GUTTER_PX = 24;
 export const CANVAS_TOOLBAR_MIN_TOP_RESERVE_PX = 76;
 
 /**
- * fix/canvas-toolbar-fit-floor round 2 (David's corrected real-app
+ * fix/canvas-toolbar-fit-floor round 2 (the owner's corrected real-app
  * measurement: his first repro measured `[data-testid="project-node-name"]`
  * — a SPAN that lives INSIDE the plaque, below its own top edge — reading
  * "0px occluded"; the real box is `.canvas-zone-header`, and THAT one
@@ -431,7 +431,7 @@ export const CANVAS_FIT_TOP_RESERVE_PX = CANVAS_TOOLBAR_MIN_TOP_RESERVE_PX + CAN
 const DEFAULT_TOP_GUTTER_PX = 12;
 
 /**
- * fix/canvas-usable-rect (David's explicit ask: "make it one usable canvas
+ * fix/canvas-usable-rect (the owner's explicit ask: "make it one usable canvas
  * rect helper so every framing path shares it, rather than each caller
  * subtracting what it happens to know about") — the SINGLE source of truth
  * for "how much of the container is actually usable canvas, per side",
@@ -484,7 +484,7 @@ export function usableCanvasRect(
  * padding correctly WHEN the resolved zoom is not itself clamped above what
  * the content can actually fit into that padding — see
  * `computeSafeMinZoom`'s own doc comment for the case where it can't:
- * David's measured "fit clips content off the left edge" regression was
+ * the owner's measured "fit clips content off the left edge" regression was
  * exactly a `minZoom` floor forcing zoom higher than the padded content
  * could satisfy, which this function alone cannot prevent on its own — a
  * caller passing a floor to `fitView` should run it through
@@ -503,7 +503,7 @@ export function insetFitViewPadding(
 }
 
 /**
- * fix/canvas-usable-rect (David's forensics: after this session's own
+ * fix/canvas-usable-rect (the owner's forensics: after this session's own
  * ARRANGE_MIN_READABLE_ZOOM floor landed on the toolbar's plain "Fit view"
  * button, a busier canvas whose content genuinely needs to zoom out FURTHER
  * than that floor to fit within the padded usable area got its zoom forced
@@ -513,7 +513,7 @@ export function insetFitViewPadding(
  * the plain (un-padded) viewport instead and the side with the BIGGER
  * padding demand — here, the left rail's inset, bigger than the right's
  * now that the panel reserves real space — spills off-screen. Measured:
- * "-96" reproduced with realistic numbers; David's own repro measured
+ * "-96" reproduced with realistic numbers; the owner's own repro measured
  * "-59") — a `minZoom` floor must never win over "keep the content
  * actually visible". This computes the NATURAL (fully unclamped) fit zoom
  * for the SAME bounds/container/padding a real `fitView` call will use, and
@@ -548,7 +548,7 @@ export function computeSafeMinZoom(
 }
 
 /**
- * fix/canvas-transverse-fit-outlier (David's measured regression, live CDP:
+ * fix/canvas-transverse-fit-outlier (the owner's measured regression, live CDP:
  * whole-canvas "Fit view" settled at zoom 0.116 with 8 open project zones —
  * "unreadable thumbnails crammed in a corner of a mostly empty canvas").
  *

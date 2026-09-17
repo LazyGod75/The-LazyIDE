@@ -2,7 +2,7 @@
    scratch/_canvas-label-design.md §3.1, "Troncature résiduelle = ellipsis
    MÉDIANE, pas finale").
 
-   ROOT PROBLEM: David's real project names are distinguished by their own
+   ROOT PROBLEM: the owner's real project names are distinguished by their own
    SUFFIX (`uc-smoke-b` vs `uc-smoke-c` vs `uc-smoke-2026-08-12`, a date/
    variant tag appended at the end). The canvas zone header's own PRIOR
    truncator (`components/lazyManager/truncateLabel.ts`'s `truncateLabel`,
@@ -15,7 +15,7 @@
    `truncateMiddle('uc-smoke-2026-08-12', 11)` -> `'uc-sm…08-12'` (design
    doc's own worked example). Deliberately a NEW, separate module from
    `lazyManager/truncateLabel.ts` (not a shared rename/move): that file's
-   own header flags it as carrying David's own in-flight uncommitted work
+   own header flags it as carrying the owner's own in-flight uncommitted work
    at the time of this fix — see this repo's canvas-title fix history for
    the same "never touch a file mid-flight under someone else" convention
    already documented on ProjectGroupNode.tsx's `truncateLabel` import.

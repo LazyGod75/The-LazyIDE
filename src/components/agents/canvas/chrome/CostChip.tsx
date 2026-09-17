@@ -9,7 +9,7 @@
    already uses) so it reads as part of the same visual family despite
    living in a sibling file.
 
-   fix/canvas-cost-credits (David's measured repro, 2026-08-14: a
+   fix/canvas-cost-credits (the owner's measured repro, 2026-08-14: a
    claude-haiku-4-5 mission — routed on the user's OWN Claude CLI
    subscription — showed "$0.07") — the owner's standing rule, already
    established elsewhere in this codebase (types.ts's

@@ -36,7 +36,7 @@ describe('createRuleBlock — verbatim-safe path join', () => {
   });
 
   it('createRuleBlock() persists via a verbatim-safe joined path using backslash throughout, never a literal "/"', async () => {
-    const projectRoot = String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project`;
+    const projectRoot = String.raw`\\?\C:\Users\user\Documents\projects\qa-project`;
 
     const rule = await createRuleBlock(projectRoot, {
       name: 'Naming Convention',
@@ -45,11 +45,11 @@ describe('createRuleBlock — verbatim-safe path join', () => {
     });
 
     expect(createDir).toHaveBeenCalledWith(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project\.lazy\rules`,
+      String.raw`\\?\C:\Users\user\Documents\projects\qa-project\.lazy\rules`,
     );
     const [writtenPath] = writeFile.mock.calls[0] as [string, string];
     expect(writtenPath).toBe(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\qa-project\.lazy\rules\naming-convention.md`,
+      String.raw`\\?\C:\Users\user\Documents\projects\qa-project\.lazy\rules\naming-convention.md`,
     );
     expect(writtenPath).not.toContain('/');
     expect(rule.path).toBe(writtenPath);

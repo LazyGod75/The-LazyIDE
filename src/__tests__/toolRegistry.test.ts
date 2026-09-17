@@ -559,7 +559,11 @@ describe('toolRegistryLazy', () => {
     it('reports a real reduction in the tool-definitions block size', () => {
       const budget = getToolPromptBudget('mission');
       expect(budget.totalTools).toBe(ALL_TOOLS.length);
-      expect(budget.coreCount + budget.indexCount).toBe(budget.totalTools);
+      // core + index covers every AVAILABLE tool — gated tools (ask_jev
+      // while Jev mode is off) are invisible on the surface, so the honest
+      // invariant is against availableCount, not totalTools.
+      expect(budget.coreCount + budget.indexCount).toBe(budget.availableCount);
+      expect(budget.availableCount).toBeLessThanOrEqual(budget.totalTools);
       expect(budget.charsLazy).toBeLessThan(budget.charsFull);
       expect(budget.tokensApproxLazy).toBeLessThan(budget.tokensApproxFull);
       expect(budget.savingsPct).toBeGreaterThan(0);

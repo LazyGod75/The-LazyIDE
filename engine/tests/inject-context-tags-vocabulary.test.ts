@@ -154,7 +154,7 @@ describe('buildTagVocabularyBlock', () => {
   it('scopes the census to the project slug derived from cwd', () => {
     mockCensus.mockReturnValue({ types: [], tags: [] });
 
-    buildTagVocabularyBlock('C:\\Users\\user\\Documents\\cerveau\\lazy');
+    buildTagVocabularyBlock('C:\\Users\\user\\Documents\\projects\\lazy');
 
     expect(mockCensus).toHaveBeenCalledWith('lazy');
   });
@@ -203,7 +203,7 @@ describe('appendHighlights budget ordering — [TAGS] outranks a 3rd RECENT NOTE
     // guaranteed-unconditional append never overshoots the caller's real
     // ceiling) — add its cost back so the INTERNAL gated budget (what this
     // test is actually targeting) still lands exactly at throughTags.
-    const unbounded = runMarkerInject(true, 'C:\\Users\\user\\Documents\\cerveau\\lazy');
+    const unbounded = runMarkerInject(true, 'C:\\Users\\user\\Documents\\projects\\lazy');
     const tagsIdx = unbounded.indexOf('[TAGS]');
     expect(tagsIdx).toBeGreaterThan(-1);
     const nextSectionIdx = unbounded.indexOf('\n', tagsIdx + '[TAGS]'.length);
@@ -213,7 +213,7 @@ describe('appendHighlights budget ordering — [TAGS] outranks a 3rd RECENT NOTE
 
     const result = runMarkerInject(
       true,
-      'C:\\Users\\user\\Documents\\cerveau\\lazy',
+      'C:\\Users\\user\\Documents\\projects\\lazy',
       'skill',
       budget,
     );
@@ -225,7 +225,7 @@ describe('appendHighlights budget ordering — [TAGS] outranks a 3rd RECENT NOTE
   it('still appends the final recall nudge even when [TAGS] itself is dropped by an extremely tight budget', () => {
     mockListAll.mockReturnValue([note({ topic: 'lazy/code' })]);
 
-    const result = runMarkerInject(true, 'C:\\Users\\user\\Documents\\cerveau\\lazy', 'skill', 1);
+    const result = runMarkerInject(true, 'C:\\Users\\user\\Documents\\projects\\lazy', 'skill', 1);
 
     expect(result).toMatch(/\[RECALL\]/);
   });

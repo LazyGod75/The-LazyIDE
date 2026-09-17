@@ -164,7 +164,7 @@ export const ZONE_HEADER_HEIGHT = 36;
  *  the header stopped growing INSIDE the frame at all). Each step fixed a
  *  real, narrower bug than the last, but growing an IN-FRAME reservation
  *  was never going to survive a stale persisted child position — the
- *  actual reason David kept re-reporting the same symptom. */
+ *  actual reason user kept re-reporting the same symptom. */
 export const ZONE_TITLE_BAND_HEIGHT = 0;
 
 /** fix/canvas-title-float — the floating zone-title row's own worst-case
@@ -266,7 +266,7 @@ export const ZONE_GAP = 60;
 export const ZONE_TITLE_TYPICAL_MAX_NAME_CHARS = 40;
 
 /**
- * fix/canvas-zone-title-overlap (David's measured repro, 2026-08-14: at 18%
+ * fix/canvas-zone-title-overlap (the owner's measured repro, 2026-08-14: at 18%
  * zoom, "uc-smoke-2026-08-12" overprints "uc-smoke-b", and one zone's own
  * "0 active"/"Merge: manua…" badges land under a neighbour's title) — a
  * HARD, zoom-invariant cap on how many characters of a zone's name the
@@ -441,7 +441,7 @@ export const ZONE_HORIZONTAL_GAP = ZONE_TITLE_MAX_FLOW_WIDTH;
  * zoom real multi-project browsing should still land on, not the technical
  * minimum a user could theoretically drag the wheel to).
  *
- * scratch/_canvas-label-design.md §3.3 — David's own "unify the practical
+ * scratch/_canvas-label-design.md §3.3 — the owner's own "unify the practical
  * zoom" instruction: this used to be a value distinct from `cameraInsets.ts`'s
  * `ARRANGE_MIN_READABLE_ZOOM` (0.35, the fit's own readability floor) for no
  * real reason — "one constant, the zoom people actually use", not two
@@ -543,7 +543,7 @@ export function packColumnsForZoneCount(zoneCount: number, viewportAspect: numbe
 }
 
 /**
- * fix/canvas-zone-title-clip (David's measured repro, round 3 of the
+ * fix/canvas-zone-title-clip (the owner's measured repro, round 3 of the
  * floating-title saga, real packaged app: with the round-2 "geometric
  * containment" fix live — `ProjectGroupNode.tsx`'s outer `canvas-zone-
  * header` clamped to `maxWidth: width` + `overflow: hidden` — all 8 zone
@@ -560,7 +560,7 @@ export function packColumnsForZoneCount(zoneCount: number, viewportAspect: numbe
  * scaleFactor` pre-scale flow px — a handful of px, mostly consumed by
  * fixed chrome, leaving 2-3 characters for the name.
  *
- * David's own requirement (verbatim): "a header must never paint outside
+ * the owner's own requirement (verbatim): "a header must never paint outside
  * its zone AND must stay identifiable ... the zone's own width has to
  * accommodate a usable name at the zoom levels people actually use ... the
  * answer is likely in the layout (minimum zone width / how zones are
@@ -575,7 +575,7 @@ export function packColumnsForZoneCount(zoneCount: number, viewportAspect: numbe
  * `minZoom` derives from that same constant, so it is the worst case a user
  * can actually REACH).
  *
- * fix/canvas-zone-title-full-at-floor (David, live app at 26% zoom:
+ * fix/canvas-zone-title-full-at-floor (user, live app at 26% zoom:
  * "la moitié des noms des zones dans le canva sont coupés" — every zone
  * header read "lazy-bac…"/"uc-smoke-2…" with an ellipsis): the OLD
  * evaluation tier was {@link ZONE_SPACING_PRACTICAL_ZOOM} (0.35). At any
@@ -598,7 +598,7 @@ export function packColumnsForZoneCount(zoneCount: number, viewportAspect: numbe
  * (`ProjectGroupNode.tsx`'s name span carries its own `overflow: hidden` +
  * `textOverflow: ellipsis`), never a silent hard clip.
  *
- * Worked example (the exact case David's own repro used):
+ * Worked example (the exact case the owner's own repro used):
  * "uc-smoke-2026-08-12" is 19 characters (under the 28-char cap) —
  * `(19*12.5*0.56 + 40) * lodScale(0.25, 12.5, 11.5) = (133+40) * 3.68 =
  * 173 * 3.68 ≈ 637` flow px (was ≈455 at the old 0.35 tier). A zone this

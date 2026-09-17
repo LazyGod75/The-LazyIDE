@@ -54,7 +54,7 @@ THE LAZYBRAIN FIXTURE BRAIN
   the actual code-scanner + file-neuron composer — engine/src/graph/
   code-scanner.ts, engine/src/annotator/blocks/composers/file-neuron.ts),
   once per corpusDir, into an ISOLATED directory (LAZYBRAIN_FIXTURE_BRAIN),
-  never David's real brain. Reproduce with:
+  never the owner's real brain. Reproduce with:
 
     cd engine && npm run build          # if dist/ is stale
     node scripts/build-fixture-brain.mjs <someIsolatedDir>
@@ -128,7 +128,7 @@ COST/TIME FOR A FULL 24-QUESTION x 6-VARIANT RUN (144 calls)
   Pilot: 36 calls, wall time ~9 minutes end to end (indexing excluded,
   already built). Linear extrapolation: ~36 minutes for all 24 questions x
   6 variants. Answering model is Haiku on the Claude subscription (no
-  incremental $ cost reported by David's own account setup) — `claude -p
+  incremental $ cost reported by the owner's own account setup) — `claude -p
   --output-format json` does report a total_cost_usd per call (~$0.01-0.03
   observed with cache creation), which is an internal API-equivalent cost
   estimate, not an actual charge against a subscription plan.

@@ -21,6 +21,7 @@ import { markCaptchaSolved } from '../../lib/bots/botCaptchaResume';
 import type { AutonomyMode } from '../../lib/agents/types';
 import { LazyManagerConversationTabs, OPEN_CONVERSATION_CAP_REASON_ID } from './LazyManagerConversationTabs';
 import { getPanelWidthTier, type PanelWidthTier } from './panelWidthTier';
+import { JevChip } from './JevChip';
 
 /**
  * One tab strip entry — structurally mirrored from agentsStore.tsx's
@@ -939,6 +940,10 @@ export function LazyManagerHeader({
             )}
           </div>
         )}
+
+        {/* Jev mode chip — optional TypeSafe capability, orchestrator only
+            (it powers manager judgments, not the codeur chat surface). */}
+        {mode === 'orchestrator' && <JevChip />}
 
         {/* Model picker — searchable popover (ModelPickerDropdown), not a
             native <select>: the Devin catalog alone is ~80-240 entries, a

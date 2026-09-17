@@ -21,7 +21,7 @@ describe('humanizeLiveAction', () => {
   });
 
   it('humanizes a Read tool call to the file basename, never the full path', () => {
-    const result = humanizeLiveAction('Read: Read {"file_path":"C:\\\\Users\\\\David\\\\.claude\\\\settings.json"}');
+    const result = humanizeLiveAction('Read: Read {"file_path":"C:\\\\Users\\\\user\\\\.claude\\\\settings.json"}');
     expect(result).not.toContain('{');
     expect(result).not.toContain('C:\\Users');
     expect(result).toContain('lit');

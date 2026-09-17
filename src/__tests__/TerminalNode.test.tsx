@@ -101,11 +101,11 @@ describe('TerminalNodeCard', () => {
   // header shows a short basename, while the full (verbatim-stripped) path
   // is still available as the native tooltip.
   it('shows a short basename for a Windows verbatim cwd — never the raw \\\\?\\ path — with the full path as tooltip', () => {
-    renderCard({ id: 't1', kind: 'terminal', cwd: '\\\\?\\C:\\Users\\david\\worktrees\\cards' });
+    renderCard({ id: 't1', kind: 'terminal', cwd: '\\\\?\\C:\\Users\\user\\worktrees\\cards' });
     const cwdEl = screen.getByTestId('terminal-node-cwd');
     expect(cwdEl).toHaveTextContent('cards');
     expect(cwdEl.textContent).not.toContain('\\\\?\\');
-    expect(cwdEl.getAttribute('title')).toBe('C:\\Users\\david\\worktrees\\cards');
+    expect(cwdEl.getAttribute('title')).toBe('C:\\Users\\user\\worktrees\\cards');
   });
 
   it('close button removes the surface from canvasStore', () => {

@@ -63,7 +63,10 @@ const EXEC_TOOLS = ['run_command', 'run_tests', 'run_lint', 'run_build'] as cons
 // on every profile alongside delegate/ask_user, since knowing a non-core
 // tool's full definition never itself grants execution rights (the profile's
 // own allowedTools list still gates the actual call).
-const ORCHESTRATION_TOOLS = ['delegate', 'ask_user', 'find_tool'] as const;
+// ask_jev (TypeSafe Jev) joins the same set — a read-only external judgment
+// call; the real gate is Jev mode itself (src/lib/jev/jevMode.ts), enforced
+// inside the handler AND by toolRegistryLazy's isAvailable prompt filter.
+const ORCHESTRATION_TOOLS = ['delegate', 'ask_user', 'find_tool', 'ask_jev'] as const;
 
 // Cloud tools are Solari-hosted browser/desktop/sandbox actions. They are
 // agent-only: the assistant and manager surfaces never touch the cloud. The

@@ -5,7 +5,7 @@
  * bench/token-economy/README-FIXTURE.txt for the exact commands) from the
  * same corpusDirs as everything else in this harness.
  *
- * This module does NOT touch David's real brain. It only ever reads
+ * This module does NOT touch the owner's real brain. It only ever reads
  * LAZYBRAIN_FIXTURE_BRAIN, an isolated directory outside the repo, and never
  * falls back to brain discovery — if the env var is missing this throws
  * rather than silently scanning ~/Documents for a real brain.
@@ -29,7 +29,7 @@ function requireFixtureBrainDir() {
   if (!dir) {
     throw new Error(
       'LAZYBRAIN_FIXTURE_BRAIN is not set. Refusing to fall back to brain discovery ' +
-        '(which could resolve to a real brain, e.g. David\'s). Set it to the isolated ' +
+        '(which could resolve to a real brain, e.g. user\'s). Set it to the isolated ' +
         'scratch brain built by scripts/build-fixture-brain.mjs.',
     );
   }

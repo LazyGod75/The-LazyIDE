@@ -318,7 +318,7 @@ fn gh_available() -> bool {
 }
 
 /// Derive a reasonable default repo name from the brain root's folder name
-/// (e.g. a user-named brain dir like `Lazy-Brain-David` transfers
+/// (e.g. a user-named brain dir like `Lazy-Brain-user` transfers
 /// directly). A generic/implementation-detail folder name like
 /// `.lazybrain` falls back to a descriptive default instead of publishing
 /// a dot-file-looking repo name.
@@ -761,8 +761,8 @@ mod tests {
     #[test]
     fn resolve_publish_root_strips_trailing_brain_component() {
         assert_eq!(
-            resolve_publish_root("C:/Users/X/Documents/Lazy-Brain-David/brain"),
-            std::path::PathBuf::from("C:/Users/X/Documents/Lazy-Brain-David")
+            resolve_publish_root("C:/Users/X/Documents/Lazy-Brain-user/brain"),
+            std::path::PathBuf::from("C:/Users/X/Documents/Lazy-Brain-user")
         );
         assert_eq!(
             resolve_publish_root("/home/x/.lazybrain/brain"),

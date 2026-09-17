@@ -14,27 +14,27 @@ describe('findOutOfScopeTaskPath', () => {
   it('flags a task naming a sibling project outside the active root (the real repro)', () => {
     const result = findOutOfScopeTaskPath(
       'Finish the project at C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON — add the missing export.',
-      'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet',
+      'C:\\Users\\user\\Documents\\projects\\LazySite-internet',
     );
     expect(result).not.toBeNull();
     expect(result?.mentionedPath).toBe('C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON');
-    expect(result?.activeRoot).toBe('C:\\Users\\user\\Documents\\cerveau\\LazySite-internet');
+    expect(result?.activeRoot).toBe('C:\\Users\\user\\Documents\\projects\\LazySite-internet');
   });
 
   it('returns null when the task has no absolute path at all', () => {
-    expect(findOutOfScopeTaskPath('Fix the typo in the README', 'C:\\Users\\user\\Documents\\cerveau\\Lazy')).toBeNull();
+    expect(findOutOfScopeTaskPath('Fix the typo in the README', 'C:\\Users\\user\\Documents\\projects\\Lazy')).toBeNull();
   });
 
   it('returns null when the mentioned path IS the active root', () => {
-    const root = 'C:\\Users\\user\\Documents\\cerveau\\Lazy';
+    const root = 'C:\\Users\\user\\Documents\\projects\\Lazy';
     expect(findOutOfScopeTaskPath(`Work in ${root} on the README`, root)).toBeNull();
   });
 
   it('returns null when the mentioned path is a DESCENDANT of the active root', () => {
     expect(
       findOutOfScopeTaskPath(
-        'Edit C:\\Users\\user\\Documents\\cerveau\\Lazy\\src\\components\\App.tsx',
-        'C:\\Users\\user\\Documents\\cerveau\\Lazy',
+        'Edit C:\\Users\\user\\Documents\\projects\\Lazy\\src\\components\\App.tsx',
+        'C:\\Users\\user\\Documents\\projects\\Lazy',
       ),
     ).toBeNull();
   });
@@ -43,34 +43,34 @@ describe('findOutOfScopeTaskPath', () => {
     expect(
       findOutOfScopeTaskPath(
         'Look at C:\\Users\\user\\Documents for context',
-        'C:\\Users\\user\\Documents\\cerveau\\Lazy',
+        'C:\\Users\\user\\Documents\\projects\\Lazy',
       ),
     ).toBeNull();
   });
 
   it('is case-insensitive and separator-tolerant (Windows semantics)', () => {
     const result = findOutOfScopeTaskPath(
-      'Finish c:/USERS/David/Documents/GameOn/BackOfficeGameON please',
-      'C:\\Users\\user\\Documents\\cerveau\\Lazy',
+      'Finish c:/USERS/user/Documents/GameOn/BackOfficeGameON please',
+      'C:\\Users\\user\\Documents\\projects\\Lazy',
     );
     expect(result).not.toBeNull();
   });
 
   it('ignores a shallow mention (drive + 1 segment) as too generic', () => {
-    expect(findOutOfScopeTaskPath('Check C:\\Windows for reference', 'C:\\Users\\user\\Documents\\cerveau\\Lazy')).toBeNull();
+    expect(findOutOfScopeTaskPath('Check C:\\Windows for reference', 'C:\\Users\\user\\Documents\\projects\\Lazy')).toBeNull();
   });
 
   it('strips trailing sentence punctuation before comparing', () => {
     const result = findOutOfScopeTaskPath(
       'The other project lives at C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON.',
-      'C:\\Users\\user\\Documents\\cerveau\\Lazy',
+      'C:\\Users\\user\\Documents\\projects\\Lazy',
     );
     expect(result?.mentionedPath).toBe('C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON');
   });
 
   it('never scans POSIX-style single-leading-slash paths (deliberate precision tradeoff — see header)', () => {
     expect(
-      findOutOfScopeTaskPath('Fix the /api/users route and the /docs page', 'C:\\Users\\user\\Documents\\cerveau\\Lazy'),
+      findOutOfScopeTaskPath('Fix the /api/users route and the /docs page', 'C:\\Users\\user\\Documents\\projects\\Lazy'),
     ).toBeNull();
   });
 
@@ -86,14 +86,14 @@ describe('findOutOfScopeTaskPath', () => {
   });
 
   it('returns null when taskText is empty/undefined', () => {
-    expect(findOutOfScopeTaskPath('', 'C:\\Users\\user\\Documents\\cerveau\\Lazy')).toBeNull();
-    expect(findOutOfScopeTaskPath(undefined, 'C:\\Users\\user\\Documents\\cerveau\\Lazy')).toBeNull();
+    expect(findOutOfScopeTaskPath('', 'C:\\Users\\user\\Documents\\projects\\Lazy')).toBeNull();
+    expect(findOutOfScopeTaskPath(undefined, 'C:\\Users\\user\\Documents\\projects\\Lazy')).toBeNull();
   });
 
   it('handles a verbatim-prefixed (\\\\?\\) active root the same as its unprefixed form', () => {
     const result = findOutOfScopeTaskPath(
       'Finish C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON',
-      '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\Lazy',
+      '\\\\?\\C:\\Users\\user\\Documents\\projects\\Lazy',
     );
     expect(result).not.toBeNull();
     expect(result?.mentionedPath).toBe('C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON');
@@ -101,8 +101,8 @@ describe('findOutOfScopeTaskPath', () => {
 
   it('finds the first out-of-scope path when multiple are mentioned', () => {
     const result = findOutOfScopeTaskPath(
-      'Compare C:\\Users\\user\\Documents\\cerveau\\Lazy with C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON',
-      'C:\\Users\\user\\Documents\\cerveau\\Lazy',
+      'Compare C:\\Users\\user\\Documents\\projects\\Lazy with C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON',
+      'C:\\Users\\user\\Documents\\projects\\Lazy',
     );
     expect(result?.mentionedPath).toBe('C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON');
   });
@@ -114,24 +114,24 @@ describe('findOutOfScopeTaskPath', () => {
     // (verbatim-prefixed), the task path is plain with a lowercase drive
     // letter. Same directory — must be allowed.
     const result = findOutOfScopeTaskPath(
-      'Finish the schema work in c:\\Users\\user\\Documents\\cerveau\\lazy-backoffice',
-      '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\lazy-backoffice',
+      'Finish the schema work in c:\\Users\\user\\Documents\\projects\\lazy-backoffice',
+      '\\\\?\\C:\\Users\\user\\Documents\\projects\\lazy-backoffice',
     );
     expect(result).toBeNull();
   });
 
   it('allows a same-directory match differing only by drive-letter case', () => {
     const result = findOutOfScopeTaskPath(
-      'Work in c:\\Users\\user\\Documents\\cerveau\\Lazy on the README',
-      'C:\\Users\\user\\Documents\\cerveau\\Lazy',
+      'Work in c:\\Users\\user\\Documents\\projects\\Lazy on the README',
+      'C:\\Users\\user\\Documents\\projects\\Lazy',
     );
     expect(result).toBeNull();
   });
 
   it('allows a same-directory match with forward slashes on one side', () => {
     const result = findOutOfScopeTaskPath(
-      'Work in C:/Users/user/Documents/cerveau/Lazy on the README',
-      'C:\\Users\\user\\Documents\\cerveau\\Lazy',
+      'Work in C:/Users/user/Documents/projects/Lazy on the README',
+      'C:\\Users\\user\\Documents\\projects\\Lazy',
     );
     expect(result).toBeNull();
   });
@@ -139,15 +139,15 @@ describe('findOutOfScopeTaskPath', () => {
   it('still refuses a genuinely different project (sanity check the above did not weaken the guard)', () => {
     const result = findOutOfScopeTaskPath(
       'Finish the project at C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON',
-      'C:\\Users\\user\\Documents\\cerveau\\lazy-backoffice',
+      'C:\\Users\\user\\Documents\\projects\\lazy-backoffice',
     );
     expect(result).not.toBeNull();
   });
 
   it('still refuses a sibling directory sharing a name PREFIX (…\\Lazy vs …\\LazySite-internet — the exact trap that bit us)', () => {
     const result = findOutOfScopeTaskPath(
-      'Port the header component from C:\\Users\\user\\Documents\\cerveau\\LazySite-internet\\src\\Header.tsx',
-      'C:\\Users\\user\\Documents\\cerveau\\Lazy',
+      'Port the header component from C:\\Users\\user\\Documents\\projects\\LazySite-internet\\src\\Header.tsx',
+      'C:\\Users\\user\\Documents\\projects\\Lazy',
     );
     expect(result).not.toBeNull();
     expect(result?.mentionedPath).toContain('LazySite-internet');
@@ -162,7 +162,7 @@ describe('findOutOfScopeTaskPath', () => {
       '{ "merge-scaffold": { "text": "See C:\\\\Users\\\\user\\\\Documents\\\\GameOn\\\\BackOfficeGameON for reference" } }',
       '```',
     ].join('\n');
-    const result = findOutOfScopeTaskPath(taskText, 'C:\\Users\\user\\Documents\\cerveau\\lazy-backoffice');
+    const result = findOutOfScopeTaskPath(taskText, 'C:\\Users\\user\\Documents\\projects\\lazy-backoffice');
     expect(result).toBeNull();
   });
 
@@ -179,12 +179,12 @@ describe('findOutOfScopeTaskPath', () => {
       '',
       BRAIN_RECALL_HEADER,
       '- [notes] outcome-queued-consolider-la-base-de-code',
-      '  Project: c:\\Users\\user\\Documents\\cerveau\\lazy-backo',
+      '  Project: c:\\Users\\user\\Documents\\projects\\lazy-backo',
       'Use these only if relevant; prefer repo truth over memory.',
     ].join('\n');
     const result = findOutOfScopeTaskPath(
       taskText,
-      '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\lazy-backoffice',
+      '\\\\?\\C:\\Users\\user\\Documents\\projects\\lazy-backoffice',
     );
     expect(result).toBeNull();
   });
@@ -196,7 +196,7 @@ describe('findOutOfScopeTaskPath', () => {
       BRAIN_RECALL_HEADER,
       '- [notes] unrelated note',
     ].join('\n');
-    const result = findOutOfScopeTaskPath(taskText, 'C:\\Users\\user\\Documents\\cerveau\\Lazy');
+    const result = findOutOfScopeTaskPath(taskText, 'C:\\Users\\user\\Documents\\projects\\Lazy');
     expect(result).not.toBeNull();
     expect(result?.mentionedPath).toBe('C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON');
   });
@@ -210,7 +210,7 @@ describe('findOutOfScopeTaskPath', () => {
   it('never flags a task naming a plain http://localhost URL (the real repro)', () => {
     const result = findOutOfScopeTaskPath(
       'Open http://localhost:3000/game/index.html and check the score screen.',
-      'C:\\Users\\user\\Documents\\cerveau\\Lazy',
+      'C:\\Users\\user\\Documents\\projects\\Lazy',
     );
     expect(result).toBeNull();
   });
@@ -218,7 +218,7 @@ describe('findOutOfScopeTaskPath', () => {
   it('never flags a task naming an https:// URL with a deep path', () => {
     const result = findOutOfScopeTaskPath(
       'Fetch https://example.com/docs/api/reference.html for the schema.',
-      'C:\\Users\\user\\Documents\\cerveau\\Lazy',
+      'C:\\Users\\user\\Documents\\projects\\Lazy',
     );
     expect(result).toBeNull();
   });
@@ -226,7 +226,7 @@ describe('findOutOfScopeTaskPath', () => {
   it('still flags a genuine out-of-scope Windows path mentioned ALONGSIDE a URL (URL never masks the real path)', () => {
     const result = findOutOfScopeTaskPath(
       'Compare http://localhost:3000/game/index.html with the reference implementation at C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON.',
-      'C:\\Users\\user\\Documents\\cerveau\\Lazy',
+      'C:\\Users\\user\\Documents\\projects\\Lazy',
     );
     expect(result).not.toBeNull();
     expect(result?.mentionedPath).toBe('C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON');
@@ -234,8 +234,8 @@ describe('findOutOfScopeTaskPath', () => {
 
   it('never flags a task naming ONLY a URL and an in-scope path (no false positive from either)', () => {
     const result = findOutOfScopeTaskPath(
-      'Open http://localhost:3000/game/index.html and update C:\\Users\\user\\Documents\\cerveau\\Lazy\\src\\App.tsx.',
-      'C:\\Users\\user\\Documents\\cerveau\\Lazy',
+      'Open http://localhost:3000/game/index.html and update C:\\Users\\user\\Documents\\projects\\Lazy\\src\\App.tsx.',
+      'C:\\Users\\user\\Documents\\projects\\Lazy',
     );
     expect(result).toBeNull();
   });
@@ -252,13 +252,13 @@ describe('findOutOfScopeTaskPath', () => {
   // extraReadableProjectIds: ["Lazy"] and was blocked anyway) -------------
 
   describe('extraReadableRoots', () => {
-    const lazyDocsRoot = 'C:\\Users\\user\\Documents\\cerveau\\Lazy-Docs';
-    const lazyRoot = 'C:\\Users\\user\\Documents\\cerveau\\Lazy';
+    const lazyDocsRoot = 'C:\\Users\\user\\Documents\\projects\\Lazy-Docs';
+    const lazyRoot = 'C:\\Users\\user\\Documents\\projects\\Lazy';
     const thirdProjectRoot = 'C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON';
 
     it('does NOT flag a task path that lies under a declared extra readable root', () => {
       const result = findOutOfScopeTaskPath(
-        'Lire directement sur disque l\'arbre reel de C:\\Users\\user\\Documents\\cerveau\\Lazy\\src et documenter.',
+        'Lire directement sur disque l\'arbre reel de C:\\Users\\user\\Documents\\projects\\Lazy\\src et documenter.',
         lazyDocsRoot,
         [lazyRoot],
       );
@@ -267,17 +267,17 @@ describe('findOutOfScopeTaskPath', () => {
 
     it('still flags the exact same task text as out of scope when NO extra readable roots are declared', () => {
       const result = findOutOfScopeTaskPath(
-        'Lire directement sur disque l\'arbre reel de C:\\Users\\user\\Documents\\cerveau\\Lazy\\src et documenter.',
+        'Lire directement sur disque l\'arbre reel de C:\\Users\\user\\Documents\\projects\\Lazy\\src et documenter.',
         lazyDocsRoot,
         // no third argument at all — matches today's call shape
       );
       expect(result).not.toBeNull();
-      expect(result?.mentionedPath).toBe('C:\\Users\\user\\Documents\\cerveau\\Lazy\\src');
+      expect(result?.mentionedPath).toBe('C:\\Users\\user\\Documents\\projects\\Lazy\\src');
     });
 
     it('still flags the same task text as out of scope when extraReadableRoots is an empty array', () => {
       const result = findOutOfScopeTaskPath(
-        'Lire directement sur disque l\'arbre reel de C:\\Users\\user\\Documents\\cerveau\\Lazy\\src et documenter.',
+        'Lire directement sur disque l\'arbre reel de C:\\Users\\user\\Documents\\projects\\Lazy\\src et documenter.',
         lazyDocsRoot,
         [],
       );
@@ -318,7 +318,7 @@ describe('findOutOfScopeTaskPath', () => {
 
     it('is case-insensitive and separator-tolerant for extra readable roots too', () => {
       const result = findOutOfScopeTaskPath(
-        'Read c:/USERS/user/Documents/cerveau/Lazy/src/App.tsx for reference.',
+        'Read c:/USERS/user/Documents/projects/Lazy/src/App.tsx for reference.',
         lazyDocsRoot,
         [lazyRoot],
       );

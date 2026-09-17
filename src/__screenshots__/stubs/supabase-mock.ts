@@ -51,8 +51,8 @@ const DEMO_DATA: OrgData = {
       role: 'viewer',
       dept_id: null,
       added_at: '2026-03-05T10:00:00Z',
-      display_name: 'David Kim',
-      email: 'david@acme.com',
+      display_name: 'user Kim',
+      email: 'user@acme.com',
     },
   ],
   invitations: [

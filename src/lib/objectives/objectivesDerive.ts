@@ -5,7 +5,7 @@
    mission events via journalQuery and persisting the result) lives in
    useObjectivesAutoProgress.ts, which is the only caller of this module.
 
-   Rule (David, explicit): an objective linked to a project (projectId set)
+   Rule (user, explicit): an objective linked to a project (projectId set)
    auto-derives currentCount from that project's MERGED missions (journal
    event type 'mission.approved' — same event usePersonalKpis.ts counts for
    "mergedThisWeek") created since the objective's own creation timestamp.

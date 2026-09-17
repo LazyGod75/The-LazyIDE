@@ -18,7 +18,7 @@
  *     own `open` state, re-clicked (pointerdown then click, matching real
  *     browser event order) while open, ends up CLOSED rather than
  *     flickering shut and reopening.
- *   - the "Escape doesn't close" regression (David's repro, 2026-08-15,
+ *   - the "Escape doesn't close" regression (the owner's repro, 2026-08-15,
  *     canvas legend popover): an unrelated re-render of the caller — which
  *     always passes a fresh `onClose` lambda, e.g.
  *     `onClose={() => setOpen(false)}` — must NOT tear down and reinstall

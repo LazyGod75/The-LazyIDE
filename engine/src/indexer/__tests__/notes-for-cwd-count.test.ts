@@ -83,17 +83,17 @@ describe('notesForCwdCount', () => {
     seedNotes(db, [
       {
         id: 'a',
-        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\projects\\Lazy',
         type: 'file-neuron',
       },
       {
         id: 'b',
-        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\projects\\Lazy',
         type: 'file-neuron',
       },
     ]);
 
-    const result = notesForCwdCount('C:/Users/user/Documents/cerveau/Lazy');
+    const result = notesForCwdCount('C:/Users/user/Documents/projects/Lazy');
 
     expect(result.count).toBe(2);
   });
@@ -105,17 +105,17 @@ describe('notesForCwdCount', () => {
     seedNotes(db, [
       {
         id: 'a',
-        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\projects\\Lazy',
         type: 'file-neuron',
       },
       {
         id: 'b',
-        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy\\engine',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\projects\\Lazy\\engine',
         type: 'file-neuron',
       },
     ]);
 
-    const result = notesForCwdCount('C:/Users/user/Documents/cerveau/Lazy');
+    const result = notesForCwdCount('C:/Users/user/Documents/projects/Lazy');
 
     expect(result.count).toBe(2);
   });
@@ -127,22 +127,22 @@ describe('notesForCwdCount', () => {
     seedNotes(db, [
       {
         id: 'a',
-        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\projects\\Lazy',
         type: 'file-neuron',
       },
       {
         id: 'sibling-1',
-        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\LazyBrain',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\projects\\LazyBrain',
         type: 'file-neuron',
       },
       {
         id: 'sibling-2',
-        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\LazySite-internet',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\projects\\LazySite-internet',
         type: 'file-neuron',
       },
     ]);
 
-    const result = notesForCwdCount('C:/Users/user/Documents/cerveau/Lazy');
+    const result = notesForCwdCount('C:/Users/user/Documents/projects/Lazy');
 
     expect(result.count).toBe(1);
   });
@@ -157,12 +157,12 @@ describe('notesForCwdCount', () => {
       db,
       Array.from({ length: 350 }, (_, i) => ({
         id: `note-${i}`,
-        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Lazy',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\projects\\Lazy',
         type: 'file-neuron',
       })),
     );
 
-    const result = notesForCwdCount('C:/Users/user/Documents/cerveau/Lazy');
+    const result = notesForCwdCount('C:/Users/user/Documents/projects/Lazy');
 
     expect(result.count).toBe(350);
   });
@@ -174,12 +174,12 @@ describe('notesForCwdCount', () => {
     seedNotes(db, [
       {
         id: 'a',
-        source: 'code-scanner:C:\\Users\\user\\Documents\\cerveau\\Trading',
+        source: 'code-scanner:C:\\Users\\user\\Documents\\projects\\Trading',
         type: 'file-neuron',
       },
     ]);
 
-    const result = notesForCwdCount('C:/Users/user/Documents/cerveau/UnknownProject');
+    const result = notesForCwdCount('C:/Users/user/Documents/projects/UnknownProject');
 
     expect(result.count).toBe(1);
   });

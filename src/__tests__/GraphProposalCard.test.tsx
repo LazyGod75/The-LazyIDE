@@ -215,8 +215,8 @@ describe('GraphProposalCard', () => {
   // time, reused verbatim (see computeOutOfScopeStepWarnings,
   // graphProposalGraph.ts) rather than a second heuristic.
   describe('per-step out-of-scope-path warning', () => {
-    const TARGET_ROOT = 'C:\\Users\\user\\Documents\\cerveau\\Lazy-Docs';
-    const OTHER_OPEN_ROOT = 'C:\\Users\\user\\Documents\\cerveau\\Lazy';
+    const TARGET_ROOT = 'C:\\Users\\user\\Documents\\projects\\Lazy-Docs';
+    const OTHER_OPEN_ROOT = 'C:\\Users\\user\\Documents\\projects\\Lazy';
 
     function withOpenProjects() {
       mockUseAppContextOptional.mockReturnValue({
@@ -235,13 +235,13 @@ describe('GraphProposalCard', () => {
       msg.proposal!.steps = [
         {
           id: 'step-1',
-          description: 'Lis directement sur disque les sources reelles de C:\\Users\\user\\Documents\\cerveau\\Lazy\\engine\\ et documente-les.',
+          description: 'Lis directement sur disque les sources reelles de C:\\Users\\user\\Documents\\projects\\Lazy\\engine\\ et documente-les.',
         },
       ];
       renderCard(msg);
       const warning = screen.getByTestId('graph-proposal-step-scope-warning-step-1');
       expect(warning).toBeInTheDocument();
-      expect(warning).toHaveTextContent('C:\\Users\\user\\Documents\\cerveau\\Lazy\\engine');
+      expect(warning).toHaveTextContent('C:\\Users\\user\\Documents\\projects\\Lazy\\engine');
       // Names the OWNING project, not just any substring of the path —
       // exact phrase from lazyManager.proposal.stepScopeWarningKnownProject.
       expect(warning).toHaveTextContent('project "Lazy"');
@@ -259,7 +259,7 @@ describe('GraphProposalCard', () => {
       msg.proposal!.steps = [
         {
           id: 'step-1',
-          description: 'Lis directement sur disque les sources reelles de C:\\Users\\user\\Documents\\cerveau\\Lazy\\engine\\ et documente-les.',
+          description: 'Lis directement sur disque les sources reelles de C:\\Users\\user\\Documents\\projects\\Lazy\\engine\\ et documente-les.',
           extraReadableProjectIds: ['Lazy'],
         },
       ];
@@ -317,7 +317,7 @@ describe('GraphProposalCard', () => {
       msg.proposal!.steps = [
         {
           id: 'step-1',
-          description: 'Lis directement sur disque les sources reelles de C:\\Users\\user\\Documents\\cerveau\\Lazy\\engine\\ et documente-les.',
+          description: 'Lis directement sur disque les sources reelles de C:\\Users\\user\\Documents\\projects\\Lazy\\engine\\ et documente-les.',
         },
       ];
       renderCard(msg);
@@ -332,7 +332,7 @@ describe('GraphProposalCard', () => {
       msg.proposal!.steps = [
         {
           id: 'step-1',
-          description: 'Lis directement sur disque les sources reelles de C:\\Users\\user\\Documents\\cerveau\\Lazy\\engine\\ et documente-les.',
+          description: 'Lis directement sur disque les sources reelles de C:\\Users\\user\\Documents\\projects\\Lazy\\engine\\ et documente-les.',
         },
       ];
       renderCard(msg);

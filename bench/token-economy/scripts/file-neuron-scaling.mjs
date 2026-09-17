@@ -28,7 +28,7 @@
  *      (`lazybrain graph --cwd <staging> --skip-clusters --pretty`, i.e.
  *      the actual engine/src/graph/code-scanner.ts +
  *      engine/src/annotator/blocks/composers/file-neuron.ts) into an
- *      isolated fixture brain — never David's real brain.
+ *      isolated fixture brain — never the owner's real brain.
  *   3. Token counts use estimateTokenCount(), copied byte-for-byte from
  *      engine/src/util/tokenize.ts / bench/token-economy/lib/tokenize.mjs,
  *      so numbers stay comparable with LazyBrain's other token claims.

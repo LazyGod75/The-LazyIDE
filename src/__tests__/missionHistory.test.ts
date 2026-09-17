@@ -96,7 +96,7 @@ describe('deriveStageSpans', () => {
       row('mission.created', 1_000, {}),
       row('mission.started', 2_000, {}),
       row('mission.review_requested', 7_000, { proofCount: 1 }),
-      row('mission.approved', 8_000, { approvedBy: 'david' }),
+      row('mission.approved', 8_000, { approvedBy: 'user' }),
     ];
     const spans = deriveStageSpans(events);
     expect(spans).toContainEqual({ stage: 'review', startMs: 7_000, endMs: 8_000 });

@@ -316,7 +316,7 @@ function buildSameFileEdges(notes: IndexedNote[], nodeIds: Set<string>): BrainEd
  * Returns null for notes without useful cwd/topic context.
  */
 function cwdGroupKey(note: IndexedNote): string | null {
-  // source may be a cwd-style path like "/Users/david/Documents/cerveau/LazyBrain"
+  // source may be a cwd-style path like "/Users/user/Documents/projects/LazyBrain"
   if (note.source && !note.source.startsWith('code-scanner:') && note.source.length > 4) {
     return note.source.toLowerCase().trim();
   }

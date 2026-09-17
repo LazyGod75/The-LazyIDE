@@ -52,7 +52,7 @@ vi.mock('../app/AppContext', async (importOriginal) => {
     useAppContext: () => ({
       setActiveSpace: vi.fn(),
       openProject: vi.fn(),
-      projectRoot: 'C:\\Users\\user\\Documents\\cerveau\\scratchpad\\uc-smoke-b',
+      projectRoot: 'C:\\Users\\user\\Documents\\projects\\scratchpad\\uc-smoke-b',
       // Deliberately empty: this file's path-hint test exercises the "no
       // owning project registered" branch of buildFileItems (paletteItems.ts)
       // — see CommandPalettePathDisplay.test.tsx for the project-relative
@@ -88,8 +88,8 @@ const mockGetPlatform = getPlatform as ReturnType<typeof vi.fn>;
 // Windows extended-length ("verbatim") path, exactly the shape
 // `std::fs::canonicalize()` produces on the Rust side — literal runtime
 // value `\\?\C:\Users\user\...\app.js`.
-const RAW_VERBATIM_PATH = '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\scratchpad\\uc-smoke-b\\app.js';
-const EXPECTED_STRIPPED_PATH = 'C:\\Users\\user\\Documents\\cerveau\\scratchpad\\uc-smoke-b\\app.js';
+const RAW_VERBATIM_PATH = '\\\\?\\C:\\Users\\user\\Documents\\projects\\scratchpad\\uc-smoke-b\\app.js';
+const EXPECTED_STRIPPED_PATH = 'C:\\Users\\user\\Documents\\projects\\scratchpad\\uc-smoke-b\\app.js';
 
 function mockTauriPlatform() {
   mockGetPlatform.mockReturnValue({

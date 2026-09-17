@@ -42,24 +42,24 @@ describe('TauriPlatform.missions — verbatim-safe path join', () => {
       return Promise.resolve(undefined);
     });
 
-    const projectRoot = String.raw`\\?\C:\Users\user\Documents\cerveau\Lazy`;
+    const projectRoot = String.raw`\\?\C:\Users\user\Documents\projects\Lazy`;
     await TauriPlatform.missions.save(projectRoot, [{ id: 'M1' }]);
 
     const createDirCall = calls.find((c) => c.cmd === 'fs_create_dir');
     const writeFileCall = calls.find((c) => c.cmd === 'write_file');
 
     expect((createDirCall?.args as { path: string }).path).toBe(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\Lazy\.lazy`,
+      String.raw`\\?\C:\Users\user\Documents\projects\Lazy\.lazy`,
     );
     expect((writeFileCall?.args as { path: string }).path).toBe(
-      String.raw`\\?\C:\Users\user\Documents\cerveau\Lazy\.lazy\missions.json`,
+      String.raw`\\?\C:\Users\user\Documents\projects\Lazy\.lazy\missions.json`,
     );
     expect((writeFileCall?.args as { path: string }).path).not.toContain('/');
     expect((writeFileCall?.args as { content: string }).content).toBe(JSON.stringify([{ id: 'M1' }]));
   });
 
   it('load() joins the same verbatim-safe path for read_file', async () => {
-    const projectRoot = String.raw`\\?\C:\Users\user\Documents\cerveau\Lazy`;
+    const projectRoot = String.raw`\\?\C:\Users\user\Documents\projects\Lazy`;
     let readPath = '';
     mockedInvoke.mockImplementation((cmd: string, args?: unknown) => {
       if (cmd === 'read_file') {
@@ -71,7 +71,7 @@ describe('TauriPlatform.missions — verbatim-safe path join', () => {
 
     const result = await TauriPlatform.missions.load(projectRoot);
 
-    expect(readPath).toBe(String.raw`\\?\C:\Users\user\Documents\cerveau\Lazy\.lazy\missions.json`);
+    expect(readPath).toBe(String.raw`\\?\C:\Users\user\Documents\projects\Lazy\.lazy\missions.json`);
     expect(readPath).not.toContain('/');
     expect(result).toEqual([{ id: 'M1' }]);
   });

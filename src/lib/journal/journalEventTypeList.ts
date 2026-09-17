@@ -105,6 +105,7 @@ const JOURNAL_EVENT_TYPE_MAP: Record<JournalEventType, true> = {
   'app.recovered': true,
   'frontend.error': true,
   'brain.ops_orphan': true,
+  'jev.judgment': true,
 };
 
 /** Every `JournalEventType` literal, as real runtime strings — see this

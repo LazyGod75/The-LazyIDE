@@ -12,7 +12,7 @@
  *      element by default (panOnDrag=[0,1], selectionOnDrag=false,
  *      selectionKeyCode='Shift'),
  *   2. wheel=ZOOM by default (zoomOnScroll=true/panOnScroll=false,
- *      David's own explicit expectation, unrelated axis from R11 — still
+ *      the owner's own explicit expectation, unrelated axis from R11 — still
  *      correct and untouched by this fix) and pinch is never disabled,
  *   3. toggling `CanvasPrefs.wheelMode` to 'scroll' (via the toolbar's
  *      overflow-menu toggle) flips ONLY the wheel props — pan/select stay

@@ -170,7 +170,7 @@ export function overlayWidthFor(state: OverlayWidthState, expandedWidth: number 
 }
 
 /**
- * fix/canvas-collapse-reservation round 2 (David's round-9 report: the
+ * fix/canvas-collapse-reservation round 2 (the owner's round-9 report: the
  * collapse-transition fix landed, but a FRESH LAUNCH with a persisted
  * custom drag width still reserved that stale custom width, not the
  * collapsed one — "1440 - 836 (the custom width) - ~80 (rail) ~= 524",
@@ -457,7 +457,7 @@ function ManagerOverlayImpl({
   // 2026-08-06: a drag-chosen custom width (VS Code terminal style) always
   // wins over the state machine's own width; `null` falls back to it.
   //
-  // fix/canvas-collapse-reservation (David's round-8 report, real packaged
+  // fix/canvas-collapse-reservation (the owner's round-8 report, real packaged
   // app: collapsed the overlay — `manager-overlay` confirmed gone from the
   // DOM, only `manager-overlay-expand` left — yet the canvas container
   // stayed exactly as narrow as before, a "large empty black band" where
@@ -472,7 +472,7 @@ function ManagerOverlayImpl({
   // never touched the WIDTH this line computes, which is the ONLY value
   // `manager:overlayWidthChange` below ever emits.
   //
-  // fix/canvas-collapse-reservation round 2 (David's round-9 report: the
+  // fix/canvas-collapse-reservation round 2 (the owner's round-9 report: the
   // round-8 fix closed the COLLAPSE-TRANSITION path, but a fresh app
   // LAUNCH with a persisted custom width still reserved that stale custom
   // width, matching his own measured "1440 - 836 - ~80 ~= 524" almost
@@ -773,7 +773,7 @@ function ManagerOverlayImpl({
           touchAction: 'none',
         }}
       />
-      {/* fix/canvas-manager-collapse (David's measured repro, real packaged
+      {/* fix/canvas-manager-collapse (the owner's measured repro, real packaged
           app: manager-overlay is 836px wide in a 1440px window — 42% of the
           screen, permanently — and the ONLY control found on it was the
           resize handle; no collapse/minimise affordance anywhere reachable,

@@ -194,6 +194,15 @@ export function detectDeterministicManagerAction(
   return undefined;
 }
 
+/** Jev-assisted variant of the notice above (LAYER 3b in managerEngine.ts)
+ *  — same honest disclosure, but names Jev as the resolver so the audit
+ *  trail matches the jev.judgment journal event emitted alongside it. */
+export function formatJevFallbackNotice(locale: string | undefined, botName: string): string {
+  return locale?.toLowerCase().startsWith('fr')
+    ? `[système] Le modèle n'a pas émis d'action exploitable — Jev a reconstruit l'action run_lazybot pour « ${botName} » à partir de ta demande.`
+    : `[system] The model emitted no executable action — Jev reconstructed the run_lazybot action for "${botName}" from your request.`;
+}
+
 export function formatDeterministicFallbackNotice(locale: string | undefined, action: ManagerAction): string {
   const fr = locale?.toLowerCase().startsWith('fr');
   if (action.type === 'run_lazybot') {

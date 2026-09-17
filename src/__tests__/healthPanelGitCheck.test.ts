@@ -32,7 +32,7 @@ describe('TauriPlatform.health() — git check targets the active project root',
   });
 
   it('reports git "ok" and passes the ACTIVE PROJECT ROOT to git_current_branch — never repoPath: "."', async () => {
-    const projectRoot = String.raw`C:\Users\user\Documents\cerveau\scratchpad\uc-smoke-c`;
+    const projectRoot = String.raw`C:\Users\user\Documents\projects\scratchpad\uc-smoke-c`;
     let gitRepoPathArg: unknown;
     mockedInvoke.mockImplementation((cmd: string, args?: unknown) => {
       if (cmd === 'get_project_root') return Promise.resolve(projectRoot);
@@ -69,7 +69,7 @@ describe('TauriPlatform.health() — git check targets the active project root',
   });
 
   it('still reports git "down" with the real error when a project IS open but git genuinely fails', async () => {
-    const projectRoot = String.raw`C:\Users\user\Documents\cerveau\Lazy`;
+    const projectRoot = String.raw`C:\Users\user\Documents\projects\Lazy`;
     mockedInvoke.mockImplementation((cmd: string) => {
       if (cmd === 'get_project_root') return Promise.resolve(projectRoot);
       if (cmd === 'git_current_branch') {

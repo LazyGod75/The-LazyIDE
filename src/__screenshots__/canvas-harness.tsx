@@ -999,7 +999,7 @@ async function selectAndZoom(nodes: ReadonlyArray<{ kind: NodeKind; id: string }
 function ViewModeEffects({ mode }: { mode: ViewMode }) {
   useEffect(() => {
     if (mode === 'zoomed-out') void clickZoomUntil('out', 35);
-    // W-UX3 three-tier fleet view — the AGGREGATE tier at David's own 10%
+    // W-UX3 three-tier fleet view — the AGGREGATE tier at the owner's own 10%
     // repro zoom (below ZOOM_AGGREGATE 0.18): dots hidden, per-zone
     // constant-size summary chips (name + status counts + equalizer). The
     // mute-screenshot acceptance shot.

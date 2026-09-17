@@ -174,7 +174,7 @@ export function clusterLayoutSlot(clusterId: string): { index: number; total: nu
  * absolute filesystem path: a project added via "Add project to brain"
  * (AddProjectToBrainWizard) carries its project root as the cluster id, so
  * without this the UI would render something like
- * `C:\Users\david\projects\debounce` verbatim (and, in the canvas label,
+ * `C:\Users\user\projects\debounce` verbatim (and, in the canvas label,
  * uppercased on top of that) — unreadable, and it leaks the user's full
  * directory tree for no benefit. This returns just the last path segment
  * (the project folder's own name) instead.

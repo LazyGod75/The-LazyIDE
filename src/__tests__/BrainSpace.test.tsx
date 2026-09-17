@@ -162,13 +162,13 @@ afterEach(() => {
 
 describe('BrainSpace — brain path-override status badge (brain-path transparency)', () => {
   it('shows the "Path override" badge when brain.info() reports source env_override', async () => {
-    renderSpace({ path: '/mock/global/lazy-brain-david/brain', source: 'env_override' });
+    renderSpace({ path: '/mock/global/lazy-brain-user/brain', source: 'env_override' });
 
     expect(await screen.findByText(en['brain.pathOverride.label'])).toBeInTheDocument();
   });
 
   it('renders the badge as a non-interactive status readout (role="status"), not a toggle control', async () => {
-    renderSpace({ path: '/mock/global/lazy-brain-david/brain', source: 'env_override' });
+    renderSpace({ path: '/mock/global/lazy-brain-user/brain', source: 'env_override' });
 
     const badge = await screen.findByRole('status', { name: new RegExp(en['brain.pathOverride.label']) });
     expect(badge).toBeInTheDocument();
@@ -178,11 +178,11 @@ describe('BrainSpace — brain path-override status badge (brain-path transparen
   });
 
   it('exposes the real override path via the badge tooltip', async () => {
-    renderSpace({ path: '/mock/global/lazy-brain-david/brain', source: 'env_override' });
+    renderSpace({ path: '/mock/global/lazy-brain-user/brain', source: 'env_override' });
 
     const badge = await screen.findByText(en['brain.pathOverride.label']);
     const tooltipHost = badge.closest('[title]');
-    expect(tooltipHost?.getAttribute('title')).toContain('/mock/global/lazy-brain-david/brain');
+    expect(tooltipHost?.getAttribute('title')).toContain('/mock/global/lazy-brain-user/brain');
   });
 
   it('does NOT show the badge when brain.info() reports source project', async () => {
@@ -219,7 +219,7 @@ describe('BrainSpace — publish brain to GitHub dialog', () => {
   });
 
   it('warns about personal data when source is env_override', async () => {
-    renderSpace({ path: '/mock/global/lazy-brain-david/brain', source: 'env_override' });
+    renderSpace({ path: '/mock/global/lazy-brain-user/brain', source: 'env_override' });
 
     fireEvent.click(await screen.findByRole('button', { name: en['settings.memory.publish.titleShort'] }));
 
@@ -289,7 +289,7 @@ describe('BrainSpace — brain info renders independent of the sidecar', () => {
   it('shows the "Path override" badge even when brain.health() rejects and graph()/graphAll() never resolve', async () => {
     mockGetPlatform.mockReturnValue(
       makeSidecarBrokenPlatform(
-        { path: '/mock/global/lazy-brain-david/brain', source: 'env_override' },
+        { path: '/mock/global/lazy-brain-user/brain', source: 'env_override' },
         vi.fn(() => new Promise(() => {})),
         vi.fn(() => new Promise(() => {})),
         vi.fn().mockRejectedValue(new Error('sidecar unreachable')),

@@ -69,7 +69,7 @@
    tauri.ts did `String(err)` straight from a rejected invoke(), and the
    path-jail guard's rejection text names the offending path in full), so
    the Settings Health panel rendered a literal
-   `\\?\C:\Users\user\Documents\cerveau` in its technical-detail text.
+   `\\?\C:\Users\user\Documents\projects` in its technical-detail text.
    None of the whole-string helpers above apply to a value that merely
    CONTAINS a path — added stripVerbatimPrefixesInText below (scans the
    whole string for the prefix instead of only checking index 0) and wired

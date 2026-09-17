@@ -252,7 +252,7 @@ export interface CanvasViewProps {
   scheduledOverride?: ScheduleNodeData[];
   missionLoopMetaOverride?: ReadonlyMap<string, MissionLoopMeta>;
   /**
-   * fix/canvas-overlay-occlusion (David's measured repro: the canvas toolbar
+   * fix/canvas-overlay-occlusion (the owner's measured repro: the canvas toolbar
    * AND a mission card's own action row both physically extend under the
    * docked ManagerOverlay, so their rightmost controls/buttons are visible
    * in the DOM but unreachable/clipped) — real DOM width, in px, this
@@ -439,7 +439,7 @@ function CanvasViewTree({
   // below (the toolbar is guaranteed already rendered by the time any of
   // these fire — Ranger/Auto-layout's post-arrange fit, zoom-to-selection,
   // focus-failures, focus-node, recenter, draft-launch fit): those are
-  // exactly the real-app scenarios David's repro covers. Left at its
+  // exactly the real-app scenarios the owner's repro covers. Left at its
   // default `false` for the ONE static `fitViewOptions` prop passed
   // straight to `<ReactFlow>` for the initial-mount fit (below) — at that
   // exact render, the toolbar Panel (a CHILD of `<ReactFlow>`) has not

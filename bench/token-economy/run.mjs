@@ -13,7 +13,7 @@
  *   node run.mjs --ids q01 --dry-run          # build contexts, skip the LLM call
  *
  * Requires LAZYBRAIN_FIXTURE_BRAIN set to the isolated fixture brain (never
- * David's real brain — see lib/lazyFixture.mjs, which throws if unset).
+ * the owner's real brain — see lib/lazyFixture.mjs, which throws if unset).
  *
  * Writes one raw JSON result per (question, config) under results/raw/.
  */

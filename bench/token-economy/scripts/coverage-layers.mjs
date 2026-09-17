@@ -30,9 +30,13 @@ import { estimateTokenCount } from '../lib/tokenize.mjs';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = join(HERE, '..', '..', '..');
 const QUESTIONS = JSON.parse(readFileSync(join(HERE, '..', 'questions.json'), 'utf8'));
-const FIXTURE =
-  process.env.LAZYBRAIN_FIXTURE_BRAIN ||
-  'C:/Users/user/AppData/Local/Temp/claude/C--Users-David-Documents-cerveau/32ad4d7b-6319-4de8-bacd-f12144290e18/scratchpad/brain-fixture/brain';
+const FIXTURE = process.env.LAZYBRAIN_FIXTURE_BRAIN;
+if (!FIXTURE) {
+  throw new Error(
+    'LAZYBRAIN_FIXTURE_BRAIN is not set. Refusing to fall back to a local brain ' +
+      'path. Point it at a scratch brain built by scripts/build-fixture-brain.mjs.',
+  );
+}
 
 function hasTerm(hay, term) {
   if (!hay) return false;

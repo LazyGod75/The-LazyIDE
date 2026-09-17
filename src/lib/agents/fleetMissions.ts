@@ -93,6 +93,12 @@ export interface FleetMission {
    */
   judgeVerdict?: JudgeVerdict;
   /**
+   * Mirrors Mission.jevJudgment (src/lib/jev/ — optional TypeSafe Jev
+   * advisory judgment, only ever present when Jev mode was on at review
+   * time). Same "mirror verbatim" convention as judgeVerdict above.
+   */
+  jevJudgment?: Mission['jevJudgment'];
+  /**
    * Agent Canvas (W1c, spec §4.2/§6) additive fields — mirror the matching
    * `Mission` fields verbatim, never re-derived. Populated by
    * `toFleetMission` below. Absent on every mission that predates the
@@ -237,6 +243,7 @@ function toFleetMission(mission: Mission, updatedMs: number): FleetMission {
     contractScopePaths: mission.contract?.scopePaths,
     paused: mission.paused,
     judgeVerdict: mission.judgeVerdict,
+    jevJudgment: mission.jevJudgment,
     loopConfig: mission.loopConfig,
     loopParentId: mission.loopParentId,
     loopIteration: mission.loopIteration,

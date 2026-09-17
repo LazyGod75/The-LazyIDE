@@ -17,6 +17,7 @@ pub(crate) mod teams;
 pub(crate) mod teams_git;
 pub(crate) mod github_oauth;
 pub(crate) mod vault;
+pub(crate) mod jev;
 pub(crate) mod chat;
 pub(crate) mod agent;
 pub(crate) mod brain;

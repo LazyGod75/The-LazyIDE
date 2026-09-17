@@ -1,7 +1,7 @@
 /* ZoneMissionDots.tsx — feat/always-visible-agents: persistent per-mission
    status dots for a project zone (spec: "every agent must have a
    persistent visual presence at EVERY zoom level, including on collapsed
-   zones" — David's own 17%-zoom screenshot showed a zone reduced to
+   zones" — the owner's own 17%-zoom screenshot showed a zone reduced to
    aggregate counts only, ZERO individual missions visible).
 
    Extracted from ProjectGroupNode.tsx (already at this repo's 800-line file

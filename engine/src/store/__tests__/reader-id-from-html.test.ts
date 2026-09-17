@@ -41,7 +41,7 @@ describe('readNote — id resolution is not fooled by an -id-suffixed attribute'
   it('resolves the real id when data-cerveau-author-id follows it (the real-brain shape)', () => {
     const id = writeAndRead(
       '<article id="mission-real-note-id" data-cerveau-type="episodic" ' +
-        'data-cerveau-author="davidlazyide" data-cerveau-author-id="a90b099a-025d-410c-b40f-ac139873f0b3">' +
+        'data-cerveau-author="sampleauthor" data-cerveau-author-id="a90b099a-025d-410c-b40f-ac139873f0b3">' +
         '<h2>Mission</h2><p>body</p></article>',
     );
     expect(id).toBe('mission-real-note-id');
@@ -50,7 +50,7 @@ describe('readNote — id resolution is not fooled by an -id-suffixed attribute'
   it('resolves the real id when data-cerveau-author-id precedes it (order must not matter)', () => {
     const id = writeAndRead(
       '<article data-cerveau-author-id="a90b099a-025d-410c-b40f-ac139873f0b3" ' +
-        'data-cerveau-author="davidlazyide" id="mission-real-note-id" data-cerveau-type="episodic">' +
+        'data-cerveau-author="sampleauthor" id="mission-real-note-id" data-cerveau-type="episodic">' +
         '<h2>Mission</h2><p>body</p></article>',
     );
     expect(id).toBe('mission-real-note-id');

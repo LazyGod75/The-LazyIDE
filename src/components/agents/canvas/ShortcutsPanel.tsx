@@ -35,7 +35,7 @@ export interface ShortcutGroup {
  * scheme is ACTUALLY active (CanvasPrefs.wheelMode, CanvasView.tsx's own
  * `<ReactFlow>` prop swap) rather than a single hardcoded scheme, so the
  * panel never lies about what the wheel currently does. `'zoom'` (the R11
- * default — David's own explicit expectation) reads "wheel zooms"; `'scroll'`
+ * default — the owner's own explicit expectation) reads "wheel zooms"; `'scroll'`
  * (the opt-in toggle, R1b's earlier trackpad-first scheme) reads "wheel
  * pans, ctrl+wheel/pinch zooms" — both variants share every entry AFTER the
  * wheel-specific ones (left-drag pan, middle-drag pan, shift+drag select,

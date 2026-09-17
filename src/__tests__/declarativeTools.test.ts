@@ -65,7 +65,7 @@ describe('isPathWithinProjectScope', () => {
   });
 
   it('rejects an absolute path (Windows drive, verbatim, UNC, or POSIX root)', () => {
-    expect(isPathWithinProjectScope('C:\\Users\\david\\secrets.env')).toBe(false);
+    expect(isPathWithinProjectScope('C:\\Users\\user\\secrets.env')).toBe(false);
     expect(isPathWithinProjectScope('\\\\?\\C:\\Windows\\system.ini')).toBe(false);
     expect(isPathWithinProjectScope('\\\\server\\share\\file')).toBe(false);
     expect(isPathWithinProjectScope('/etc/passwd')).toBe(false);

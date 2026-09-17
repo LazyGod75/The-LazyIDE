@@ -206,7 +206,7 @@ describe('MissionDetail — Run review (repoPath regression)', () => {
   it('resolves the real absolute project root and passes it as repoPath — never the relative "."', async () => {
     mockedInvoke.mockImplementation((cmd: string) => {
       if (cmd === 'get_project_root') {
-        return Promise.resolve('C:\\Users\\user\\Documents\\cerveau\\Lazy');
+        return Promise.resolve('C:\\Users\\user\\Documents\\projects\\Lazy');
       }
       return Promise.resolve(undefined);
     });
@@ -217,7 +217,7 @@ describe('MissionDetail — Run review (repoPath regression)', () => {
     await waitFor(() => expect(evaluateMissionSpy).toHaveBeenCalledTimes(1));
 
     const opts = evaluateMissionSpy.mock.calls[0][1] as { repoPath: string };
-    expect(opts.repoPath).toBe('C:\\Users\\user\\Documents\\cerveau\\Lazy');
+    expect(opts.repoPath).toBe('C:\\Users\\user\\Documents\\projects\\Lazy');
     expect(opts.repoPath).not.toBe('.');
   });
 
@@ -262,7 +262,7 @@ describe('MissionDetail — Run review (worktreePath regression — Windows \\?\
   it('passes an explicit worktreePath derived from mission.worktree, correctly joined with the SAME separator as a Windows \\\\?\\ repoPath — never mixed with "/"', async () => {
     mockedInvoke.mockImplementation((cmd: string) => {
       if (cmd === 'get_project_root') {
-        return Promise.resolve('\\\\?\\C:\\Users\\user\\Documents\\cerveau\\Lazy');
+        return Promise.resolve('\\\\?\\C:\\Users\\user\\Documents\\projects\\Lazy');
       }
       return Promise.resolve(undefined);
     });
@@ -277,7 +277,7 @@ describe('MissionDetail — Run review (worktreePath regression — Windows \\?\
       worktreePath?: string;
     };
     expect(opts.worktreePath).toBe(
-      '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\Lazy\\.lazy\\worktrees\\agent-m-review-fix-thing',
+      '\\\\?\\C:\\Users\\user\\Documents\\projects\\Lazy\\.lazy\\worktrees\\agent-m-review-fix-thing',
     );
     // The exact defect: a reconstructed path mixing the \\?\ verbatim prefix
     // with a literal '/' is what broke Rust's canonicalize().

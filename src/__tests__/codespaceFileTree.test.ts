@@ -33,14 +33,14 @@ describe('relativeToRoot', () => {
   // it into its own leading "?" crumb — see BreadcrumbBar.tsx's
   // breadcrumbSegments, which is built on this function.
   it('resolves correctly when path is verbatim-prefixed but root is not (the live breadcrumb repro)', () => {
-    const root = String.raw`C:\Users\user\Documents\cerveau\scratchpad\uc-smoke-b`;
-    const path = String.raw`\\?\C:\Users\user\Documents\cerveau\scratchpad\uc-smoke-b\app.js`;
+    const root = String.raw`C:\Users\user\Documents\projects\scratchpad\uc-smoke-b`;
+    const path = String.raw`\\?\C:\Users\user\Documents\projects\scratchpad\uc-smoke-b\app.js`;
     expect(relativeToRoot(root, path)).toBe('app.js');
   });
 
   it('resolves correctly when both root and path are verbatim-prefixed', () => {
-    const root = String.raw`\\?\C:\Users\user\Documents\cerveau\uc-smoke-b`;
-    const path = String.raw`\\?\C:\Users\user\Documents\cerveau\uc-smoke-b\src\app.js`;
+    const root = String.raw`\\?\C:\Users\user\Documents\projects\uc-smoke-b`;
+    const path = String.raw`\\?\C:\Users\user\Documents\projects\uc-smoke-b\src\app.js`;
     expect(relativeToRoot(root, path)).toBe('src/app.js');
   });
 
@@ -51,11 +51,11 @@ describe('relativeToRoot', () => {
   });
 
   it('strips the verbatim prefix even in the outside-root fallback (never leaks "\\\\?\\" into the result)', () => {
-    const root = String.raw`\\?\C:\Users\user\Documents\cerveau\uc-smoke-b`;
-    const path = String.raw`\\?\C:\Users\user\Documents\cerveau\other-project\app.js`;
+    const root = String.raw`\\?\C:\Users\user\Documents\projects\uc-smoke-b`;
+    const path = String.raw`\\?\C:\Users\user\Documents\projects\other-project\app.js`;
     const result = relativeToRoot(root, path);
     expect(result).not.toContain('?');
-    expect(result).toBe('C:/Users/user/Documents/cerveau/other-project/app.js');
+    expect(result).toBe('C:/Users/user/Documents/projects/other-project/app.js');
   });
 });
 

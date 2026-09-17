@@ -19,7 +19,7 @@ import { type Page, expect, test } from '@playwright/test';
 // ---------------------------------------------------------------------------
 
 const SPA_TIMEOUT = 15_000;
-const SCREENSHOT_DIR = 'C:\\Users\\user\\Documents\\cerveau\\_wiki-tour';
+const SCREENSHOT_DIR = 'C:\\Users\\user\\Documents\\projects\\_wiki-tour';
 
 // ---------------------------------------------------------------------------
 // Helpers

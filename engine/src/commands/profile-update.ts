@@ -176,7 +176,7 @@ export function normalizeCwd(cwd: string): string {
 
 /**
  * Return false when a cwd string is implausible on the given platform.
- * This filters out cross-platform fixture noise (e.g. /home/david on Windows).
+ * This filters out cross-platform fixture noise (e.g. /home/user on Windows).
  *
  * On win32: reject paths starting with /home, /usr, /tmp, /var
  * On posix: reject paths matching a Windows drive letter pattern (C:/, D:/, etc.)

@@ -300,7 +300,7 @@ function wrapperWithApp({ children }: { children: React.ReactNode }) {
 describe('launch_mission at a known-but-closed project — auto-open via recents (BUG 1 fix)', () => {
   it('a projectId name matching a recent (closed) root is auto-opened and the mission launches for real', async () => {
     simulateTauri();
-    const root = 'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet';
+    const root = 'C:\\Users\\user\\Documents\\projects\\LazySite-internet';
     localStorage.setItem(
       'lazy.projects.recent',
       JSON.stringify([{ root, lastOpenedMs: Date.now() }]),

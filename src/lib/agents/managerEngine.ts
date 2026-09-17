@@ -51,9 +51,11 @@ import {
 } from './managerDynamicContext.js';
 import { formatLazyBotsContext } from '../bots/botManagerContext.js';
 import type { LazyBotSummary } from '../bots/botManagerContext.js';
+import { isJevModeOn } from '../jev/jevMode.js';
 import {
   detectDeterministicManagerAction,
   formatDeterministicFallbackNotice,
+  formatJevFallbackNotice,
 } from './managerLazyBotFallback.js';
 import {
   appendTurnRetryMessages,
@@ -375,6 +377,14 @@ export interface ManagerContext {
    * (decisions.ts) from the project brain's decision neurons.
    */
   decisionLookupResult?: string;
+  /**
+   * Grounded REAL TypeSafe Jev judgment for the manager's ask_jev action,
+   * injected on the follow-up turn (see runGroundedFollowUp in
+   * agentsStore.tsx). Built via runAskJev (src/lib/jev/jevAskRunner.ts) —
+   * typed answers (noul P(yes) / choice+probabilities / score+confidence),
+   * or an explicit "(ask_jev unavailable: …)" line when Jev mode is off.
+   */
+  jevResult?: string;
   /**
    * PROMISE-STALL fix (2026-08-05 — see the module-level bug note above
    * runManagerTurn for the full repro): honest note that a grounding
@@ -728,6 +738,8 @@ export function buildManagerDynamicContext(ctx: ManagerContext): string {
     groundedResultBlock('Web Search/Fetch Result (grounded — real web results for your last web_search / web_fetch action)', ctx.webQueryResult, 'This section, when present, is REAL data fetched from the web — not a guess. Answer the user\'s last question now using it. Do not emit another web_search or web_fetch action this turn.'),
     groundedResultBlock('Briefing Digest (grounded — real journal events for your last briefing_query action)', ctx.briefingDigestResult, 'This section, when present, is REAL data from the journal — not a guess. Summarize what happened concretely, citing mission ids and projects. Do not emit another briefing_query action this turn.'),
     groundedResultBlock('Decision Lookup Result (grounded — real brain search for your last decision_lookup action)', ctx.decisionLookupResult, 'This section, when present, is REAL data from the project brain\'s decision neurons — not a guess. Cite the decision #id and answer the user\'s last question now using it. Do not emit another decision_lookup action this turn.'),
+    groundedResultBlock('Jev Result (grounded — real typed judgment for your last ask_jev action)', ctx.jevResult, 'This section, when present, is a REAL answer from the TypeSafe Jev judgment model — calibrated probabilities, not a guess. Answer the user\'s last question or act on the judgment now. If it says unavailable, proceed without it. Do not emit another identical ask_jev action this turn.'),
+    presentSection(isJevModeOn() ? JEV_ACTION_DOC : undefined, (v) => `\n\n### Jev — fast bounded judgments (TypeSafe, opt-in)\n${v}`),
     groundedResultBlock('Grounding Failure (honest — a lookup in this exchange failed or timed out)', ctx.groundingFailureNote, 'This is a REAL failure, not empty results. Tell the user honestly that the lookup was slow/unavailable, then still decide and act on what you already know, or ask a clarifying question. Never end your reply on an announcement ("je lance...", "I will...") without either emitting the matching <lazy_actions> block or explaining why you are not acting.'),
     presentSection(ctx.charterStatusContext, (v) => `\n\n### Mission Charter Status (grounded — real conversation state, not your own recollection)\n${v}`),
     presentSection(ctx.goalStatusContext, (v) => `\n\n### Goal Evaluation (active goal for this conversation — founder's goal-loop directive: evaluate, act, or honestly stop)\n${v}`),
@@ -752,6 +764,19 @@ ${missionList}${tail}`;
 export function buildManagerSystemPrompt(ctx: ManagerContext): string {
   return `${buildManagerCorePrompt()}\n\n${buildManagerDynamicContext(ctx)}`;
 }
+
+/** Documented ONLY when Jev mode is on (injected into the dynamic context,
+ *  not the cached static core prompt — a model whose app has no TypeSafe
+ *  key never sees this action and can never be expected to use it). */
+const JEV_ACTION_DOC = `Jev mode is ON. You may delegate a bounded semantic judgment to TypeSafe Jev via the ask_jev action — it answers in ~100ms with calibrated probabilities and NEVER generates text or code. Use it when a micro-decision is genuinely ambiguous and a typed yes/no, pick, or score beats guessing or pestering the user.
+
+{"type": "ask_jev", "state": <any JSON context>, "questions": [{"id": "short-id", "type": "noul|choice|score", "instructions": "one atomic question", "options": ["a", "b"]}]}
+- noul → P(yes) — e.g. "is the user asking to run a bot?", "does this mission's summary look complete?"
+- choice → one of "options" + per-option probabilities — e.g. "which of these agents best fits this task?"
+- score → an index into "options" (ordered level descriptions) + confidence — e.g. "how risky is this change? 0=safe 1=review 2=risky"
+- "options" is REQUIRED for choice and score, ignored for noul. Ask ≤6 atomic questions per call; keep state small and factual.
+
+The answers arrive next turn as a grounded "Jev Result" block — act on them like any other grounding result. If the block says unavailable, proceed without it and never retry in a loop. Use sparingly: a judgment call, not a crutch — deterministic facts (ids, statuses, counts) come from the other actions, never from Jev.`;
 
 // ── Action parsing ─────────────────────────────────────────────────
 
@@ -2710,6 +2735,27 @@ export async function runManagerTurn(opts: ManagerTurnOptions): Promise<ManagerT
       console.warn(
         `[managerEngine] LAYER 3: model emitted no action after nudge + repair — reconstructed ` +
         `${reconstructed.type} from the user's request.`,
+      );
+    }
+  }
+
+  // LAYER 3b — OPTIONAL Jev-assisted disambiguation (src/lib/jev/). Runs
+  // only when Jev mode is on AND the deterministic LAYER 3 above found
+  // nothing (paraphrase the regexes don't cover, or several plausibly-
+  // named bots). Users without a TypeSafe key see zero behavior change:
+  // isJevModeOn() is false and this block is skipped entirely. Fail-safe
+  // inside — any error returns undefined and the turn stays a true
+  // failure, exactly as without Jev.
+  if (nudgeFailed && !repairRecovered && context.lazyBots && context.lazyBots.length > 0) {
+    const { jevResolveLazyBotIntent } = await import('../jev/jevEnhancements.js');
+    const jevIntent = await jevResolveLazyBotIntent(lastUserMessageContent, context.lazyBots);
+    if (jevIntent) {
+      finalActions = [{ type: 'run_lazybot', botId: jevIntent.botId, task: jevIntent.task }];
+      repairRecovered = true;
+      lazyBotFallbackNotice = formatJevFallbackNotice(context.locale, jevIntent.botId);
+      console.warn(
+        `[managerEngine] LAYER 3b: Jev resolved the bot intent the model missed — ` +
+        `run_lazybot(${jevIntent.botId}).`,
       );
     }
   }

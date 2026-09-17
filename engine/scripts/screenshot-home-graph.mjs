@@ -1,6 +1,6 @@
 /**
  * Capture home-graph-v2 screenshots using the wiki-tour brain (1933 nodes).
- * Saves to C:\Users\user\Documents\cerveau\_wiki-tour\
+ * Saves to C:\Users\user\Documents\projects\_wiki-tour\
  *
  * Usage:
  *   node scripts/screenshot-home-graph.mjs
@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
 const BRAIN_PATH = 'C:/Users/user/AppData/Local/Temp/wiki-tour-brain/brain';
-const OUT_DIR = 'C:/Users/user/Documents/cerveau/_wiki-tour';
+const OUT_DIR = 'C:/Users/user/Documents/projects/_wiki-tour';
 const PORT = 4388;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 

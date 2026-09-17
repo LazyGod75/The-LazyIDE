@@ -459,7 +459,7 @@ export function reconcile(inputs: ReconcileInputs): ReconcileResult {
   const rowMigration = migrateBloatedZoneRowPositions(zoneLayouts, positions);
   const positionsAfterMigration = Object.keys(rowMigration).length > 0 ? { ...positions, ...rowMigration } : positions;
 
-  // fix/canvas-auto-pack-avoid-pinned (David's round-6 real-profile finding
+  // fix/canvas-auto-pack-avoid-pinned (the owner's round-6 real-profile finding
   // — see reconcilerZones.ts's `packAutoPlacedZones` doc comment for the
   // full "why") — every PINNED zone's own (post-migration) rect, so a
   // freshly shelf-packed row is never even offered a Y a pinned zone

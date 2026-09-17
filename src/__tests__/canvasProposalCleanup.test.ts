@@ -109,10 +109,10 @@ describe('collectProposedPlanGroups', () => {
 // — a product/project NAME alone (however exact) is never enough.
 describe('inferReHomeTarget', () => {
   const openProjects: OpenProjectRef[] = [
-    { projectId: 'proj-backoffice', root: 'C:\\Users\\user\\Documents\\cerveau\\lazy-backoffice', name: 'lazy-backoffice' },
-    { projectId: 'proj-site', root: 'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet', name: 'LazySite-internet' },
-    { projectId: 'proj-marketing', root: 'C:\\Users\\user\\Documents\\cerveau\\lazy-marketng', name: 'lazy-marketng' },
-    { projectId: 'proj-lazy', root: 'C:\\Users\\user\\Documents\\cerveau\\Lazy', name: 'Lazy' },
+    { projectId: 'proj-backoffice', root: 'C:\\Users\\user\\Documents\\projects\\lazy-backoffice', name: 'lazy-backoffice' },
+    { projectId: 'proj-site', root: 'C:\\Users\\user\\Documents\\projects\\LazySite-internet', name: 'LazySite-internet' },
+    { projectId: 'proj-marketing', root: 'C:\\Users\\user\\Documents\\projects\\lazy-marketng', name: 'lazy-marketng' },
+    { projectId: 'proj-lazy', root: 'C:\\Users\\user\\Documents\\projects\\Lazy', name: 'Lazy' },
   ];
 
   it('THE INCIDENT, reproduced with the founder\'s real strings: a plan correctly homed in backoffice, whose objective names the PRODUCT ("Lazy") which also happens to be an open project, is NEVER re-homed', () => {
@@ -142,7 +142,7 @@ describe('inferReHomeTarget', () => {
     const orch = makeOrch({
       projectId: 'proj-backoffice',
       name: 'Site plan',
-      objective: 'Ship the homepage redesign for C:\\Users\\user\\Documents\\cerveau\\LazySite-internet',
+      objective: 'Ship the homepage redesign for C:\\Users\\user\\Documents\\projects\\LazySite-internet',
     });
     expect(inferReHomeTarget(orch, openProjects)?.projectId).toBe('proj-site');
   });
@@ -151,7 +151,7 @@ describe('inferReHomeTarget', () => {
     const orch = makeOrch({
       projectId: 'proj-backoffice',
       name: 'Site plan',
-      objective: 'work inside c:/users/user/documents/cerveau/lazysite-internet please',
+      objective: 'work inside c:/users/user/documents/projects/lazysite-internet please',
     });
     expect(inferReHomeTarget(orch, openProjects)?.projectId).toBe('proj-site');
   });
@@ -160,7 +160,7 @@ describe('inferReHomeTarget', () => {
     const orch = makeOrch({
       projectId: 'proj-backoffice',
       name: 'Backoffice fix',
-      objective: 'Repair C:\\Users\\user\\Documents\\cerveau\\lazy-backoffice\\admin panel',
+      objective: 'Repair C:\\Users\\user\\Documents\\projects\\lazy-backoffice\\admin panel',
     });
     expect(inferReHomeTarget(orch, openProjects)).toBeUndefined();
   });
@@ -169,7 +169,7 @@ describe('inferReHomeTarget', () => {
     const orch = makeOrch({
       projectId: 'proj-backoffice',
       name: 'Cross-project sync',
-      objective: 'Sync C:\\Users\\user\\Documents\\cerveau\\LazySite-internet content into C:\\Users\\user\\Documents\\cerveau\\lazy-marketng campaigns',
+      objective: 'Sync C:\\Users\\user\\Documents\\projects\\LazySite-internet content into C:\\Users\\user\\Documents\\projects\\lazy-marketng campaigns',
     });
     expect(inferReHomeTarget(orch, openProjects)).toBeUndefined();
   });

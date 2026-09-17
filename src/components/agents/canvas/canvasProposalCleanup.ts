@@ -218,7 +218,7 @@ function containsPathSegment(haystack: string, needlePath: string): boolean {
  * ONLY an absolute filesystem path, never a bare project/product name. An
  * objective's text must contain, verbatim (after `normalizePathForMatch`),
  * the OTHER project's real root path — e.g.
- * "C:\Users\user\Documents\cerveau\LazySite-internet" typed or pasted
+ * "C:\Users\user\Documents\projects\LazySite-internet" typed or pasted
  * into the objective, not the word "site" or the product name "Lazy". A
  * plan's objective naming a project only by its short name or by the
  * product it belongs to produces NO signal at all under this rule — that

@@ -34,7 +34,7 @@ import type { UseFleetMissionsResult } from '../lib/agents/fleetMissions';
 import { installReactFlowTestEnv } from './canvasTestEnv';
 import { emit } from '../lib/bus';
 
-// fix/canvas-collapse-reservation (David's round-8 report: collapsing the
+// fix/canvas-collapse-reservation (the owner's round-8 report: collapsing the
 // manager overlay left the canvas container exactly as narrow as before —
 // `reservedRightPx` never actually shrank, so "fit" stayed cramped until a
 // second, separate click). Two jsdom gaps this suite's own real-integration
@@ -354,7 +354,7 @@ describe('CanvasView — canvas pane never overlaps the floating overlays (38938
     expect(root.style.position).toBe('relative');
   });
 
-  // fix/canvas-overlay-occlusion (David's measured repro: the canvas
+  // fix/canvas-overlay-occlusion (the owner's measured repro: the canvas
   // toolbar AND a mission card's own action row both extended under the
   // docked ManagerOverlay — several toolbar controls unreachable, a review
   // card's reject button clipped) — canvas-view now reserves the overlay's
@@ -454,7 +454,7 @@ describe('CockpitLeftRail — "Rapport" round icon (W-CHROME)', () => {
   });
 });
 
-// fix/canvas-collapse-reservation — David's own instruction, verbatim:
+// fix/canvas-collapse-reservation — the owner's own instruction, verbatim:
 // "Test it as a state transition on one mounted tree: expanded -> collapsed
 // -> the container's reserved width shrinks -> fit yields a materially
 // higher zoom." This is the real end-to-end chain, not a fixture at one
@@ -554,7 +554,7 @@ describe('Cockpit — canvas auto-refit when the manager overlay collapses (fix/
   });
 });
 
-// fix/canvas-collapse-reservation round 2 (David's round-9 report, real
+// fix/canvas-collapse-reservation round 2 (the owner's round-9 report, real
 // packaged app containing 527d3ac — verified branch tip, binary built
 // after it — a FRESH LAUNCH, not a transition on an already-mounted tree):
 //
@@ -586,7 +586,7 @@ describe('Cockpit — initial mount reservation matches a persisted COLLAPSED st
 
     renderCockpit(WIDE_FLEET);
 
-    // Confirms the SAME real signal David verified live: the overlay
+    // Confirms the SAME real signal user verified live: the overlay
     // itself renders collapsed (its own tab, not the full panel).
     expect(await screen.findByTestId('manager-overlay-expand')).toBeInTheDocument();
     expect(screen.queryByTestId('manager-overlay')).toBeNull();

@@ -71,7 +71,7 @@ import { listAll } from '../src/indexer/fts.js';
 
 const mockListAll = vi.mocked(listAll);
 
-const CWD = 'C:\\Users\\user\\Documents\\cerveau\\lazy';
+const CWD = 'C:\\Users\\user\\Documents\\projects\\lazy';
 
 function note(overrides: Partial<IndexedNote>): IndexedNote {
   return {

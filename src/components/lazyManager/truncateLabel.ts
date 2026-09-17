@@ -5,9 +5,9 @@
    dynamic chip label with a bare `.slice(0, N)` and no truncation marker at
    all. For plain text this merely looked abrupt ("Dans index.js à la racine
    du pro"), but for a filesystem path it was actively misleading:
-   `C:\Users\user\Documents\cerveau\scratchpad\uc-smoke-2026-08-12`
+   `C:\Users\user\Documents\projects\scratchpad\uc-smoke-2026-08-12`
      .slice(0, 32)
-   produces EXACTLY `C:\Users\user\Documents\cerveau` — a real, different,
+   produces EXACTLY `C:\Users\user\Documents\projects` — a real, different,
    entirely plausible-looking directory with no ellipsis, no "...", nothing
    to signal the label was cut. The user asked to open the scratchpad
    sub-folder; the chip read as though a completely different (wrong, but

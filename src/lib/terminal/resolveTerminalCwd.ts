@@ -1,6 +1,6 @@
 /* resolveTerminalCwd.ts — pure "where should a NEW terminal spawn" decision.
    DEFECT 1 fix (Code space terminal panel opening in the workspace parent,
-   e.g. `PS C:\Users\user\Documents\cerveau>` instead of the active
+   e.g. `PS C:\Users\user\Documents\projects>` instead of the active
    project): TerminalStrip.tsx used to pass NO `cwd` at all to TerminalView,
    so the Rust side's `resolve_spawn_cwd(None)` fell back to
    `std::env::current_dir()` — the Tauri process's own launch directory, not

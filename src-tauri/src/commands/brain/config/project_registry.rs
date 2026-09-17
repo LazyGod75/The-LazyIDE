@@ -987,7 +987,7 @@ mod tests {
     /// rejected outright, never reach `is_dir`/`create_dir`.
     #[test]
     fn validate_project_create_path_rejects_the_dotdot_traversal_poc() {
-        let poc = r"C:\Users\user\Documents\cerveau\Lazy\..\..\..\evil_project";
+        let poc = r"C:\Users\user\Documents\projects\Lazy\..\..\..\evil_project";
         let err = validate_project_create_path(poc).expect_err("traversal PoC must be rejected");
         assert!(err.contains(".."), "error must name the '..' reason, got: {}", err);
         assert!(err.contains(poc), "error must name the real offending path, got: {}", err);
@@ -1086,7 +1086,7 @@ mod tests {
     /// `validate_project_create_path`.
     #[test]
     fn validate_project_create_path_rejects_verbatim_prefix() {
-        let path = r"\\?\C:\Users\user\Documents\cerveau\Lazy-Docs";
+        let path = r"\\?\C:\Users\user\Documents\projects\Lazy-Docs";
         let err = validate_project_create_path(path).expect_err("verbatim prefix must be rejected");
         assert!(
             err.contains("verbatim"),
@@ -1100,7 +1100,7 @@ mod tests {
     /// rejection as `\\?\` — see the doc comment's rationale.
     #[test]
     fn validate_project_create_path_rejects_device_namespace_prefix() {
-        let path = r"\\.\C:\Users\user\Documents\cerveau\Lazy-Docs";
+        let path = r"\\.\C:\Users\user\Documents\projects\Lazy-Docs";
         let err = validate_project_create_path(path).expect_err("device-namespace prefix must be rejected");
         assert!(
             err.contains("verbatim"),
@@ -1114,7 +1114,7 @@ mod tests {
     /// components and no verbatim prefix must be accepted.
     #[test]
     fn validate_project_create_path_accepts_a_normal_absolute_path() {
-        let path = r"C:\Users\user\Documents\cerveau\Lazy-Docs";
+        let path = r"C:\Users\user\Documents\projects\Lazy-Docs";
         validate_project_create_path(path).expect("a normal absolute path must be accepted");
         eprintln!("validate_project_create_path_accepts_a_normal_absolute_path PASSED");
     }

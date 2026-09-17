@@ -141,6 +141,7 @@ function actionSummary(action: ManagerAction, t: (key: string, params?: Record<s
     case 'brain_neighbours': return t('cockpit.manager.action.brainSearch');
     case 'web_search': return t('cockpit.manager.action.webSearch', { query: truncateLabel(action.query, TEXT_LABEL_MAX_CHARS_SHORT) });
     case 'web_fetch': return t('cockpit.manager.action.webFetch', { url: truncateLabel(action.url, TEXT_LABEL_MAX_CHARS_SHORT) });
+    case 'ask_jev': return t('cockpit.manager.action.askJev');
     case 'query_mission': return t('cockpit.manager.action.queryMission', { id: action.missionId });
     case 'get_agent_output': return t('cockpit.manager.action.agentOutput', { id: action.missionId });
     case 'quote_mission': return t('cockpit.manager.action.quote', { task: truncateLabel(action.task, TEXT_LABEL_MAX_CHARS_SHORT) });

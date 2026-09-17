@@ -73,7 +73,7 @@ function wrapper({ children }: { children: React.ReactNode }) {
 function baseMissionInput(overrides: Partial<Parameters<ReturnType<typeof useAgentsStore>['addMission']>[0]> = {}) {
   return {
     title: 'Scope guard repro',
-    repo: 'C:\\Users\\user\\Documents\\cerveau\\LazySite-internet',
+    repo: 'C:\\Users\\user\\Documents\\projects\\LazySite-internet',
     worktree: '',
     modelLabel: 'claude-sonnet-5',
     mode: 'agent' as const,
@@ -145,7 +145,7 @@ describe('addMission — refuses a task targeting a path outside the active proj
 
     await addMissionPastTimeout(result, {
       title: 'Fix README typos',
-      agentTask: 'Read C:\\Users\\user\\Documents\\cerveau\\LazySite-internet\\README.md and fix typos.',
+      agentTask: 'Read C:\\Users\\user\\Documents\\projects\\LazySite-internet\\README.md and fix typos.',
     });
 
     const mission = result.current.missions.find((m) => m.title === 'Fix README typos')!;
@@ -177,8 +177,8 @@ describe('addMission — refuses a task targeting a path outside the active proj
 
     await addMissionPastTimeout(result, {
       title: 'Document the Lazy tree',
-      agentTask: 'Lire directement sur disque l\'arbre reel de C:\\Users\\user\\Documents\\cerveau\\Lazy\\src et documenter.',
-      extraReadableRoots: ['C:\\Users\\user\\Documents\\cerveau\\Lazy'],
+      agentTask: 'Lire directement sur disque l\'arbre reel de C:\\Users\\user\\Documents\\projects\\Lazy\\src et documenter.',
+      extraReadableRoots: ['C:\\Users\\user\\Documents\\projects\\Lazy'],
     });
 
     const mission = result.current.missions.find((m) => m.title === 'Document the Lazy tree')!;
@@ -192,7 +192,7 @@ describe('addMission — refuses a task targeting a path outside the active proj
 
     await addMissionPastTimeout(result, {
       title: 'Document the Lazy tree (no declaration)',
-      agentTask: 'Lire directement sur disque l\'arbre reel de C:\\Users\\user\\Documents\\cerveau\\Lazy\\src et documenter.',
+      agentTask: 'Lire directement sur disque l\'arbre reel de C:\\Users\\user\\Documents\\projects\\Lazy\\src et documenter.',
     });
 
     const mission = result.current.missions.find((m) => m.title === 'Document the Lazy tree (no declaration)')!;
@@ -214,7 +214,7 @@ describe('addMission — refuses a task targeting a path outside the active proj
     await addMissionPastTimeout(result, {
       title: 'Wrong target despite declaration',
       agentTask: 'Finish the project at C:\\Users\\user\\Documents\\GameOn\\BackOfficeGameON — it needs a missing export fixed.',
-      extraReadableRoots: ['C:\\Users\\user\\Documents\\cerveau\\Lazy'],
+      extraReadableRoots: ['C:\\Users\\user\\Documents\\projects\\Lazy'],
     });
 
     const mission = result.current.missions.find((m) => m.title === 'Wrong target despite declaration')!;

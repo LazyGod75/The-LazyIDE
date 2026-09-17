@@ -375,6 +375,21 @@ export interface Mission {
    */
   judgeVerdict?: JudgeVerdict;
   /**
+   * Optional TypeSafe Jev second opinion, computed fire-and-forget when a
+   * mission enters review (jevScoreMissionReview, src/lib/jev/). Advisory
+   * only — NEVER feeds approveGate/auto-merge; the human decision stays
+   * human. Absent entirely when Jev mode is off or the call failed.
+   */
+  jevJudgment?: {
+    /** P(the diff satisfies the mission's task). */
+    satisfies: number;
+    /** 0=routine, 1=worth a look, 2=needs careful review. */
+    urgency: number;
+    confidence?: number;
+    model?: string;
+    atMs: number;
+  };
+  /**
    * Per-run observability metrics emitted by the Rust agent runner.
    * Only present after a live run (Tauri + claude CLI). Absent for mock/demo missions.
    */
@@ -1407,6 +1422,28 @@ export type ManagerAction =
   | { type: 'scan_project'; projectId?: string; depth?: 'quick' | 'deep' }
   | { type: 'web_search'; query: string; maxResults?: number }
   | { type: 'web_fetch'; url: string; maxChars?: number }
+  /**
+   * ask_jev — OPTIONAL TypeSafe Jev primitive (src/lib/jev/). Only
+   * documented in the system prompt when Jev mode is on (key configured +
+   * user opt-in), so a model that hallucinates it anyway is handled
+   * gracefully: the grounding resolver answers with an explicit
+   * "unavailable" result block instead of crashing or silently no-oping.
+   * Bounded semantic judgment ONLY — never generation: `state` is any
+   * JSON context, each question is noul (P(yes)) / choice (pick among
+   * `options`) / score (pick a level among `options`, index-ordered).
+   */
+  | {
+      type: 'ask_jev';
+      state?: unknown;
+      questions: Array<{
+        id: string;
+        type: 'noul' | 'choice' | 'score';
+        instructions: string;
+        /** Required for choice/score (option ids / level descriptions),
+         *  ignored for noul. */
+        options?: string[];
+      }>;
+    }
   | { type: 'query_mission'; missionId: string }
   | { type: 'get_agent_output'; missionId: string; lines?: number }
   | { type: 'clone_mission'; missionId: string; modifications?: Record<string, unknown> }

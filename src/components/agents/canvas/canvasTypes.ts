@@ -156,7 +156,7 @@ export interface ProjectNodeData {
   approvalMode?: ApprovalMode;
   /**
    * feat/always-visible-agents (additive) — this zone's per-mission roster
-   * for the low-zoom/collapsed "dot strip" (ZoneMissionDots.tsx): David's
+   * for the low-zoom/collapsed "dot strip" (ZoneMissionDots.tsx): the owner's
    * own 17%-zoom screenshot showed a zone reduced to nothing but aggregate
    * counts ("1 en cours / 2 en revue") with ZERO individual missions
    * visible. Below the chip zoom tier (and on a collapsed zone at ANY
@@ -1019,7 +1019,7 @@ export interface CanvasPrefs {
    * R11 (additive, OPTIONAL so every persisted prefs object/fixture written
    * before this field stays valid) — the plain-wheel scroll behavior:
    * `'zoom'` (default) makes a bare mouse-wheel/trackpad scroll ZOOM the
-   * canvas (David's own explicit expectation — he tried the wheel and
+   * canvas (the owner's own explicit expectation — he tried the wheel and
    * expected zoom, not pan); `'scroll'` restores R1b's earlier trackpad-
    * first scheme (plain scroll PANS, ctrl+wheel/pinch zooms) for anyone who
    * prefers that. CanvasView.tsx reads this to swap its `<ReactFlow>`
@@ -1065,7 +1065,7 @@ export function sanitizeCanvasPrefs(prefs: CanvasPrefs | undefined): CanvasPrefs
 // ── Semantic zoom thresholds (spec §4.5) ───────────────────────────────
 
 /**
- * W-UX3 three-tier fleet view (David's own 10% screenshot: "colored dots
+ * W-UX3 three-tier fleet view (the owner's own 10% screenshot: "colored dots
  * visible but ANONYMOUS"): below this zoom, individual dots USED TO hide
  * entirely (chrome/canvas.css's `[data-canvas-tier='aggregate']` rule) and
  * each project zone rendered a constant-screen-size SUMMARY CHIP instead.

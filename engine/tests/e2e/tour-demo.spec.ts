@@ -16,7 +16,7 @@ import { type Page, expect, test } from '@playwright/test';
 
 const DEMO_BASE = 'http://127.0.0.1:4399';
 const SPA_TIMEOUT = 15_000;
-const SCREENSHOT_DIR = 'C:\\Users\\user\\Documents\\cerveau\\_wiki-tour';
+const SCREENSHOT_DIR = 'C:\\Users\\user\\Documents\\projects\\_wiki-tour';
 
 // ---------------------------------------------------------------------------
 // Helpers

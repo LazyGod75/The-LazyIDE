@@ -2743,6 +2743,10 @@ interface GroundingActions {
    *  NEXT user message, and a terse model left the visible reply as the
    *  action chip alone. Same grounding treatment as scan_project. */
   listLazybotsAction?: Extract<ManagerAction, { type: 'list_lazybots' }>;
+  /** ask_jev — TypeSafe Jev bounded judgment (src/lib/jev/). Read-only,
+   *  resolved in the same grounding lane as web_search: the typed answers
+   *  reach the model as the next turn's context block. */
+  jevAction?: Extract<ManagerAction, { type: 'ask_jev' }>;
 }
 
 function findGroundingActions(actions: readonly ManagerAction[]): GroundingActions {
@@ -2778,6 +2782,9 @@ function findGroundingActions(actions: readonly ManagerAction[]): GroundingActio
     listLazybotsAction: actions.find(
       (a): a is Extract<ManagerAction, { type: 'list_lazybots' }> => a.type === 'list_lazybots',
     ),
+    jevAction: actions.find(
+      (a): a is Extract<ManagerAction, { type: 'ask_jev' }> => a.type === 'ask_jev',
+    ),
   };
 }
 
@@ -2787,7 +2794,7 @@ function hasAnyGroundingAction(g: GroundingActions): boolean {
   return !!(
     g.missionQueryAction || g.brainQueryAction || g.cssAction || g.neighboursAction ||
     g.webSearchAction || g.webFetchAction || g.briefingQueryAction || g.decisionLookupAction ||
-    g.scanProjectAction || g.listLazybotsAction
+    g.scanProjectAction || g.listLazybotsAction || g.jevAction
   );
 }
 
@@ -3241,6 +3248,9 @@ function groundingDedupKey(a: ManagerAction): string | undefined {
     case 'decision_lookup': return `decision_lookup:${a.question}`;
     case 'scan_project': return `scan_project:${a.projectId ?? ''}:${a.depth ?? 'quick'}`;
     case 'list_lazybots': return 'list_lazybots';
+    // Bounded by a stable serialization of the questions — identical
+    // judgment requests across turns are deduped exactly like brain_query.
+    case 'ask_jev': return `ask_jev:${JSON.stringify(a.questions).slice(0, 500)}`;
     default: return undefined;
   }
 }
@@ -3571,6 +3581,26 @@ async function resolveGroundingActions(
         const fallback = '(list_lazybots unavailable: bot storage read failed)';
         observations.push(fallback);
       }
+    }
+  }
+
+  if (grounding.jevAction) {
+    const key = groundingDedupKey(grounding.jevAction);
+    if (key && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      // runAskJev never throws — it returns an explicit "(ask_jev
+      // unavailable: …)" string on every failure mode (no key, mode off,
+      // HTTP error, timeout), so a model that emitted the action while
+      // Jev mode is off degrades honestly instead of breaking the turn.
+      const { runAskJev } = await import('../../lib/jev/jevAskRunner');
+      const jevRoot = getCachedProjectRoot();
+      const jevResult = await runAskJev(
+        grounding.jevAction.state,
+        grounding.jevAction.questions,
+        { subject: 'ask_jev', projectId: jevRoot ? projectIdFromRoot(jevRoot) : undefined },
+      );
+      ctx = { ...ctx, jevResult };
+      observations.push(`ask_jev:\n${jevResult}`);
     }
   }
 
@@ -9200,14 +9230,14 @@ export function AgentsStoreProvider({ children }: Props) {
     });
 
     if (feedback) {
-      // Brain-integration wave — "the brain learns David's review
+      // Brain-integration wave — "the brain learns the owner's review
       // standards": records the rejection feedback as a REAL decision
       // neuron via lib/brain/decisions.ts's createDecision, the SAME
       // primitive missionQuestion.ts's recordMissionAnswer uses to pair a
       // mission's ask_user question with its human answer (see that
       // module's own doc comment). Here the "question" half is the review
       // context (mission title + judge verdict summary — buildRejectionReviewQuestion,
-      // below) and the "answer" half is David's literal feedback text, so a
+      // below) and the "answer" half is the owner's literal feedback text, so a
       // FUTURE recall (this mission's own retry, or a similar one) can
       // surface this exact review standard instead of the agent repeating
       // the same mistake. Best-effort (void, no await) — never blocks or
@@ -13807,6 +13837,10 @@ stopAll(action.filter);
         'query_mission', 'get_agent_output', 'briefing_query',
         'decision_lookup', 'quote_mission', 'set_budget',
         'answer_question', 'generate_plan', 'scan_project',
+        // ask_jev is a read-only grounding action (same lane as
+        // brain_query/web_search above) — never defers alongside a pending
+        // proposal and never mutates anything itself.
+        'ask_jev',
         'propose_mission_charter', 'propose_artifact',
         // reject_plan targets an EXPLICIT planId of its own — unrelated to
         // whichever proposal this turn's own generate_plan/charter just
@@ -15129,6 +15163,15 @@ stopAll(action.filter);
         );
       },
       formatWakeupText: (candidates) => formatWakeupMessage(candidates, t),
+      // Jev second opinion on each debounced batch (src/lib/jev/) — the
+      // dep internally re-checks Jev mode every call and returns undefined
+      // on any failure, so wiring it unconditionally is safe for users
+      // without a TypeSafe key (zero behavior change).
+      judgeWakeupBatch: async (batch) => {
+        const { jevJudgeWakeupBatch } = await import('../../lib/jev/jevEnhancements');
+        const root = await resolveProjectRoot().catch(() => '.');
+        return jevJudgeWakeupBatch(batch, projectIdFromRoot(root));
+      },
       getConfig: getManagerWakeupConfig,
     });
     managerWakeupHandleRef.current = handle;

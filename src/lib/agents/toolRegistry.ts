@@ -637,6 +637,23 @@ const ORCHESTRATION_TOOLS: ToolDef[] = [
     schema: '{"query": "browser_click"}',
     feedbackHint: 'Return up to 5 full tool definitions (schema + description), or "No tool found matching ...".',
   },
+  {
+    name: 'ask_jev',
+    category: 'orchestration',
+    blockedInPlan: false,
+    description:
+      'Ask TypeSafe Jev for a fast, bounded semantic judgment (~100ms, typed answers with calibrated ' +
+      'probabilities — NEVER generated text or code). OPTIONAL capability: only usable when the user has ' +
+      'configured a TypeSafe key and enabled Jev mode; otherwise it answers "(ask_jev unavailable)" — ' +
+      'proceed without it, never retry in a loop. Three question types: "noul" returns P(yes) for a yes/no ' +
+      'judgment, "choice" picks one of "options" with a probability distribution, "score" picks a level ' +
+      'from index-ordered "options" with confidence. Use for genuinely ambiguous micro-decisions (which of ' +
+      'these files is relevant to the task, does this deliverable satisfy its contract, is this worth ' +
+      'escalating) — never for facts you can read with the other tools, never as a substitute for your ' +
+      'own reasoning loop.',
+    schema: '{"context": "short text or JSON the judgment is about", "questions": [{"id": "relevant", "type": "noul|choice|score", "instructions": "one atomic question", "options": ["a", "b"]}]}',
+    feedbackHint: 'Return the typed answers with probabilities/confidence, or "(ask_jev unavailable: ...)" — proceed without it in that case.',
+  },
 ];
 
 // ── Cloud tools (Solari browser / desktop / sandbox) ────────────────

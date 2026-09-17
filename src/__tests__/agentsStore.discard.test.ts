@@ -22,11 +22,11 @@ describe('resolveDiscardWorktreePath', () => {
     // Plain escaped string, not String.raw`...` — a trailing backslash right
     // before a closing backtick would be lexed as an escaped backtick (see
     // src/lib/paths.ts's header comment).
-    const repoPath = '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\Lazy';
+    const repoPath = '\\\\?\\C:\\Users\\user\\Documents\\projects\\Lazy';
     const result = resolveDiscardWorktreePath(repoPath, 'agent/m-review-fix-thing');
 
     expect(result).toBe(
-      '\\\\?\\C:\\Users\\user\\Documents\\cerveau\\Lazy\\.lazy\\worktrees\\agent-m-review-fix-thing',
+      '\\\\?\\C:\\Users\\user\\Documents\\projects\\Lazy\\.lazy\\worktrees\\agent-m-review-fix-thing',
     );
     expect(result).not.toContain('/');
   });

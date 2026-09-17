@@ -109,7 +109,7 @@ describe('buildMainPage — project scoping', () => {
   ];
 
   it('scopes to the matching project bucket and reports how many others exist', () => {
-    const result = buildMainPage(notes, 'C:\\Users\\user\\Documents\\cerveau\\lazy');
+    const result = buildMainPage(notes, 'C:\\Users\\user\\Documents\\projects\\lazy');
 
     expect(result).toMatch(/^lazy\//m);
     expect(result).not.toMatch(/lazybrain\//);
@@ -118,7 +118,7 @@ describe('buildMainPage — project scoping', () => {
   });
 
   it('falls back to the full unscoped listing when cwd matches no project bucket', () => {
-    const result = buildMainPage(notes, 'C:\\Users\\user\\Documents\\cerveau\\some-unrelated-dir');
+    const result = buildMainPage(notes, 'C:\\Users\\user\\Documents\\projects\\some-unrelated-dir');
 
     expect(result).toMatch(/lazy\//);
     expect(result).toMatch(/lazybrain\//);
@@ -200,7 +200,7 @@ describe('runMarkerInject — cross-project leak fix + budget gating', () => {
       }),
     ]);
 
-    const result = runMarkerInject(true, 'C:\\Users\\user\\Documents\\cerveau\\lazy');
+    const result = runMarkerInject(true, 'C:\\Users\\user\\Documents\\projects\\lazy');
 
     expect(result).toContain('Lazy own feature title');
     expect(result).not.toContain('LazyBrain sibling feature title');
@@ -217,8 +217,8 @@ describe('runMarkerInject — cross-project leak fix + budget gating', () => {
     );
     mockListAll.mockReturnValue(manyNotes);
 
-    const unbounded = runMarkerInject(true, 'C:\\Users\\user\\Documents\\cerveau\\lazy');
-    const bounded = runMarkerInject(true, 'C:\\Users\\user\\Documents\\cerveau\\lazy', 'skill', 60);
+    const unbounded = runMarkerInject(true, 'C:\\Users\\user\\Documents\\projects\\lazy');
+    const bounded = runMarkerInject(true, 'C:\\Users\\user\\Documents\\projects\\lazy', 'skill', 60);
 
     expect(bounded.length).toBeLessThan(unbounded.length);
     // The marker line and the final recall nudge must survive even under a tight budget.
@@ -243,7 +243,7 @@ describe('runMarkerInject — cross-project leak fix + budget gating', () => {
       ],
     } as unknown as ReturnType<typeof loadKnowledgeGraph>);
 
-    const result = runMarkerInject(true, 'C:\\Users\\user\\Documents\\cerveau\\lazy');
+    const result = runMarkerInject(true, 'C:\\Users\\user\\Documents\\projects\\lazy');
 
     const occurrences = (result.match(/other projects in brain/g) ?? []).length;
     expect(occurrences).toBe(1);

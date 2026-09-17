@@ -144,7 +144,7 @@ function sizeForKind(kind: 'draft' | 'router' | 'note'): Size {
  * applied to `dropPoint`, then resolved via {@link findFreePosition}
  * against a GROWING obstacle set seeded with `occupied` — so instantiated
  * siblings never overlap each other or anything already on the canvas
- * (David's no-overlap invariant, placementCollision.ts's own header).
+ * (the owner's no-overlap invariant, placementCollision.ts's own header).
  */
 export function instantiateMacro(
   macro: MacroSpec,

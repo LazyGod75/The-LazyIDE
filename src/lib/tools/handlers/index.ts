@@ -34,6 +34,7 @@ import {
   gitCreatePr,
 } from './git.js';
 import { webSearch, webFetch, checkUrl } from './network.js';
+import { askJev } from './jev.js';
 import {
   brainQuery,
   brainQueryCss,
@@ -140,6 +141,7 @@ export const toolHandlers: Record<string, ToolHandler> = {
   web_search: webSearch,
   web_fetch: webFetch,
   check_url: checkUrl,
+  ask_jev: askJev,
 
   brain_query: brainQuery,
   brain_query_css: brainQueryCss,

@@ -183,7 +183,7 @@ export function CanvasLodBroadcaster({ containerRef }: CanvasLodBroadcasterProps
   }, [zoom, x, y, instance]);
 
   // W-UX3 audit fix #4 — at aggregate zoom the fleet must use the pane, not
-  // sit cramped in a corner (David's own 10% capture). Debounced so it
+  // sit cramped in a corner (the owner's own 10% capture). Debounced so it
   // NEVER fights a live gesture: the timer resets on every viewport tick
   // (wheel/drag/programmatic pan alike), and only fires ~550ms after the
   // user has actually stopped — a gentle "snap the fleet to centre" then,

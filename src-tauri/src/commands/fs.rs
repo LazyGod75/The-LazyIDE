@@ -1362,7 +1362,7 @@ mod tests {
             .as_nanos();
         let dir = std::env::temp_dir()
             .join("claude")
-            .join("C--Users-David-Documents-cerveau")
+            .join("C--Users-user-Documents-repo")
             .join(format!("sess-{}-{}", std::process::id(), unique))
             .join("scratchpad")
             .join(project_label);
