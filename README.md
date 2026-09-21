@@ -17,14 +17,14 @@ A frontier model does the thinking; cheaper models do the grunt work. You stay t
 <img src="public/readme/hero-poster.png" width="100%" alt="Lazy cockpit: missions on a live canvas (sample project)" />
 
 <details>
-<summary>Watch a short demo</summary>
-
-<video src="public/readme/demo-light.webm" poster="public/readme/hero-poster.png" width="100%" controls playsinline muted>
-  <img src="public/readme/demo-light.gif" width="100%" alt="Lazy demo: brief the manager, missions on the canvas (sample)" />
+<summary>Watch a short demo (~8s, light file)</summary>
+<video poster="public/readme/hero-poster.png" width="100%" controls playsinline muted>
+  <source src="public/readme/manager-core-plan-take14.webm" type="video/webm" />
+  <source src="public/readme/manager-core-plan-take14.mp4" type="video/mp4" />
+  <img src="public/readme/demo-light.gif" width="100%" alt="Lazy demo: brief one LazyManager; it plans and delegates (sample)" />
 </video>
 
-[GIF fallback](public/readme/demo-light.gif) if the video does not play.
-
+Or open [`manager-core-plan-take14.webm`](./public/readme/manager-core-plan-take14.webm).
 </details>
 
 ---
